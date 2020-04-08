@@ -16,8 +16,9 @@ const options = {
     bosh: 'https://dev.getmycall.com/http-bind', // FIXME: use xep-0156 for that
 
     // // The name of client node advertised in XEP-0115 'c' stanza
-    // clientNode: 'http://jitsi.org/jitsimeet'
+    clientNode: 'http://jitsi.org/jitsimeet'
 };
+
 
 let connection, isJoined, room;
 let localTracks = [];
@@ -93,7 +94,6 @@ class Conference extends React.Component {
     }
 
     joinRoom () {
-        this.getLocalTracks();
         let roomName = (this.state.roomInfo && this.state.roomInfo.roomName) || "";
         room = connection.initJitsiConference(roomName, {}); //name of conference
 
@@ -102,6 +102,9 @@ class Conference extends React.Component {
         room.on(window.JitsiMeetJS.events.conference.CONFERENCE_JOINED, () => {
             this.onConferenceJoined();
             this.setState({ isLoggedIn: true });
+            setTimeout(()=>{
+                this.getLocalTracks();
+            }, 2);
         });
         // room.on( window.JitsiMeetJS.events.conference.CONNECTION_FAILED, function(){console.log('conference join failed')} );
         // room.on(jitsiClientApi.events.conference.USER_JOINED, id => { remoteTracks[id] = [] }); //when remote user joined
@@ -164,14 +167,23 @@ class Conference extends React.Component {
                 deviceId =>
                     console.log(`track audio output device was changed to ${deviceId}`));
 
-            console.log(localTracks[i], "current track");
             if (localTracks[i].getType() === 'video') {
-                $("#large-video-div").append(
-                    `<video width="100%" heigth="100%" autoplay='1' muted='true' id='localVideo${i}' />`);
+
+                let localVideoDiv = document.getElementById("large-video-div");
+                
+                var localVideo = document.createElement('video');
+                localVideo.autoplay = true;
+                localVideo.setAttribute("id", `localVideo${i}`);
+                localVideo.style.width = "100%";
+                localVideo.style.height = "100%";
+                console.log(localVideo, localVideoDiv, 'appending');
+                localVideoDiv.appendChild(localVideo);
                 localTracks[i].attach($(`#localVideo${i}`)[0]);
+                // $("#large-video-div").append(
+                //     `<video width="100%" heigth="100%" autoplay='1' muted='true' id='localVideo${i}' />`);
             } else {
                 $('body').append(
-                    `<audio autoplay='1' muted='true' id='localAudio${i}' />`);
+                    `<audio autoplay muted='false' id='localAudio${i}' />`);
                 localTracks[i].attach($(`#localAudio${i}`)[0]);
             }
             if (isJoined) {
@@ -190,7 +202,7 @@ class Conference extends React.Component {
             remoteTracks[participant] = [];
         }
         const idx = remoteTracks[participant].push(track);
-
+console.log(idx, remoteTracks, 'remote tracks')
         track.addEventListener(
             window.JitsiMeetJS.events.track.TRACK_AUDIO_LEVEL_CHANGED,
             audioLevel => console.log(`Audio Level remote: ${audioLevel}`));
@@ -209,7 +221,7 @@ class Conference extends React.Component {
         if (track.getType() === 'video') {
             $('#small-videos-box').append(
                 `<div class="card" style="width: 10rem; height: 9rem" id="small-video-box">
-                    <video className="small-video" id='${participant}video${idx}' />
+                    <video autoplay className="small-video" id='${participant}video${idx}' />
                     <div class="card-body">
                         <b id="userName">${userName}<b>
                     </div>
@@ -231,7 +243,7 @@ class Conference extends React.Component {
         const participant = track.getParticipantId();
         delete remoteTracks[participant];
 
-        // const idx = remoteTracks[participant].push(track);
+        const idx = remoteTracks[participant].pop(track); //see it again
         const id = participant + track.getType() + idx;
 
         if (track.getType() === 'video') {
