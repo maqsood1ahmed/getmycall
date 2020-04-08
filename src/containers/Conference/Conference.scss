@@ -1,0 +1,52 @@
+#form-section {
+    display: flex;
+    justify-content: center;
+    flex-direction: row;
+    margin-left: -5%;
+
+    #user-form {
+        margin-top: 5%;
+        width: 30%;
+
+        .help-block {
+            color: red;
+        }
+    }
+}
+
+// #large-video-div {
+//     position: relative;
+// }
+
+#large-video-container {
+    position: relative;
+    // background-color: lighten($color: #000000, $amount: 0);
+}
+
+#large-video-div > .btnStop {
+    width: 60px;
+    height: 60px;
+    left: 40%;
+    margin: -64px 0 0 -64px;
+    position: fixed;
+    top: 58%;
+    z-index: 1;
+}
+
+.small-videos {
+    margin-left: -15px;
+    margin-top: 19px;
+}
+
+.cart-number {
+    width: 200px;
+}
+
+.userName {
+    color: blue($color: #080000);
+}
+
+#small-videos-box {
+    margin-left: 175px;
+    margin-top: 10px;
+}
