@@ -9,16 +9,14 @@ import stopIcon from '../../assets/img/stop.png';
 
 const options = {
     hosts: {
-        domain: 'dev.getmycall.com',
-        muc: 'conference.dev.getmycall.com' // FIXME: use XEP-0030
-    }
-    ,
-    bosh: 'https://dev.getmycall.com/http-bind', // FIXME: use xep-0156 for that
+        domain: 'beta.meet.jit.si',
+        muc: 'conference.beta.meet.jit.si' // FIXME: use XEP-0030
+    },
+    bosh: 'https://beta.meet.jit.si/http-bind', // FIXME: use xep-0156 for that
 
-    // // The name of client node advertised in XEP-0115 'c' stanza
+    // The name of client node advertised in XEP-0115 'c' stanza
     clientNode: 'http://jitsi.org/jitsimeet'
 };
-
 
 let connection, isJoined, room;
 let localTracks = [];
@@ -221,7 +219,7 @@ console.log(idx, remoteTracks, 'remote tracks')
         if (track.getType() === 'video') {
             $('#small-videos-box').append(
                 `<div class="card" style="width: 10rem; height: 9rem" id="small-video-box">
-                    <video autoplay className="small-video" id='${participant}video${idx}' />
+                    <video autoplay width="100%" height="100%" className="small-video" id='${participant}video${idx}' />
                     <div class="card-body">
                         <b id="userName">${userName}<b>
                     </div>
@@ -413,3 +411,4 @@ console.log(idx, remoteTracks, 'remote tracks')
 }
 
 export default Conference;
+
