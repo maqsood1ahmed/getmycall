@@ -11,12 +11,13 @@ const { Option } = Select;
 
 const options = {
     hosts: {
-        domain: 'beta.meet.jit.si',
-        muc: 'conference.beta.meet.jit.si' // FIXME: use XEP-0030
-    },
-    bosh: 'https://beta.meet.jit.si/http-bind', // FIXME: use xep-0156 for that
+        domain: 'dev.getmycall.com',
+        muc: 'conference.dev.getmycall.com' // FIXME: use XEP-0030
+    }
+    ,
+    bosh: 'https://dev.getmycall.com/http-bind', // FIXME: use xep-0156 for that
 
-    // The name of client node advertised in XEP-0115 'c' stanza
+    // // The name of client node advertised in XEP-0115 'c' stanza
     clientNode: 'http://jitsi.org/jitsimeet'
 };
 
@@ -360,17 +361,17 @@ class Conference extends React.Component {
                 })
             })
         }
-
-        // if (studentRollNo) {
-        //     // //detach remote track from small videos
-        //     // if (track.getType() === 'video') {
-        //     //     track.detach($(`#video-tag-${studentRollNo}`));
-        //     // } else {
-        //     //     track.detach($(`#audio-tag-${studentRollNo}`));
-        //     // }
-        //     studentTracks[studentRollNo] = [];
-        //     console.log(studentRollNo, 'deleted')
-        // } 
+        conosle
+        if (studentRollNo) {
+            // //detach remote track from small videos
+            // if (track.getType() === 'video') {
+            //     track.detach($(`#video-tag-${studentRollNo}`));
+            // } else {
+            //     track.detach($(`#audio-tag-${studentRollNo}`));
+            // }
+            studentTracks[studentRollNo] = [];
+            console.log(studentRollNo, 'deleted')
+        } 
     }
 
     unload () {
