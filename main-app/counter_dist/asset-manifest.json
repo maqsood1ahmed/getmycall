@@ -1,0 +1,9 @@
+{
+  "main.css": "/static/css/react-counter.css",
+  "main.js": "/static/js/react-counter.js",
+  "main.js.map": "/static/js/react-counter.js.map",
+  "static/css/react-counter.css.map": "/static/css/react-counter.css.map",
+  "index.html": "/index.html",
+  "precache-manifest.3a535478bad23141dd1b7152e8bcb443.js": "/precache-manifest.3a535478bad23141dd1b7152e8bcb443.js",
+  "service-worker.js": "/service-worker.js"
+}

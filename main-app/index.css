@@ -1,0 +1,23 @@
+#class-room-container{
+    width: 100%;
+    height: 440px;
+    background-color: green;
+    margin-top: auto;
+    margin-bottom: auto;
+}
+
+#rows-separator{
+    height: 10px;
+}
+
+#main-page-box{
+    width: 100%;
+    height: 300px;
+    /* margin-top: auto;
+    margin-bottom: auto; */
+}
+#app-box{
+    background-color: grey;
+    height: 100%;
+    padding: 5px;
+}
