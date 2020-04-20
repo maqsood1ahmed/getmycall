@@ -11,13 +11,12 @@ const { Option } = Select;
 
 const options = {
     hosts: {
-        domain: 'dev.getmycall.com',
-        muc: 'conference.dev.getmycall.com' // FIXME: use XEP-0030
-    }
-    ,
-    bosh: 'https://dev.getmycall.com/http-bind', // FIXME: use xep-0156 for that
+        domain: 'beta.meet.jit.si',
+        muc: 'conference.beta.meet.jit.si' // FIXME: use XEP-0030
+    },
+    bosh: 'https://beta.meet.jit.si/http-bind', // FIXME: use xep-0156 for that
 
-    // // The name of client node advertised in XEP-0115 'c' stanza
+    // The name of client node advertised in XEP-0115 'c' stanza
     clientNode: 'http://jitsi.org/jitsimeet'
 };
 
@@ -35,14 +34,14 @@ class Conference extends React.Component {
         super(props);
         this.state = {
             roomInfo: {
-                roomName: "",
-                userName: "",
+                roomName: "maqroom1234", //changed
+                userName: "maq", //changed
                 rollNo: "",
                 password: "",
-                moderator: false
+                moderator: true //changed
             },
             loading: false,
-            isLoggedIn: false,
+            isLoggedIn: true, //changed
             errors: {},
             isTrackUpdate: false,
             resolutions: [ "180", "360", "720", "1080" ]
@@ -128,9 +127,13 @@ class Conference extends React.Component {
     }
 
     setConnectionListeners () {
-        connection.addEventListener(window.JitsiMeetJS.events.connection.CONNECTION_ESTABLISHED, function () {
+        connection.addEventListener(window.JitsiMeetJS.events.connection.CONNECTION_ESTABLISHED, () => {
             isConnected = true;
             message.success('connection established.');
+
+            setTimeout(()=> {
+                this.joinRoom()
+            }, 2000)
         });
         connection.addEventListener(window.JitsiMeetJS.events.connection.CONNECTION_FAILED, function () {
             isConnected = false;
