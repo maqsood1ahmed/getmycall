@@ -1,0 +1,9 @@
+{
+  "main.css": "/static/css/react-classroom.css",
+  "main.js": "/static/js/react-classroom.js",
+  "main.js.map": "/static/js/react-classroom.js.map",
+  "static/css/react-classroom.css.map": "/static/css/react-classroom.css.map",
+  "index.html": "/index.html",
+  "precache-manifest.6a6d37bc4051b283633ca5d2cfbdce97.js": "/precache-manifest.6a6d37bc4051b283633ca5d2cfbdce97.js",
+  "service-worker.js": "/service-worker.js"
+}
