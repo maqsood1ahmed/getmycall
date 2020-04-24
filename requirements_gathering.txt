@@ -1,0 +1,78 @@
+good.
+
+*** => next part is to make all by api so api will get all data in json and also real_time changes by api.
+
+unclear => room=X,data={source1=x... so on => next comment => they call me by API e.g 
+                                                                    (room=cryptedxxx
+
+p1 => bitrate, of each name of each => next comment => teacher bitrate is always high. bitrate FROM students will be low as defaul but if 
+                                                 we want them on source 1 need to be high.
+
+p2 => each position need to have {position 1, source X , bitrate high/low, mute 1/0, name x} => each student object have I wll manage it
+                                                                                                inside my library.
+                                                                                                    {
+                                                                                                        position: rollno(unclear),
+                                                                                                        sourceX: unclear,
+                                                                                                        currentBitrate (high or low (180 or 720)),
+                                                                                                        mute: true/false, (default mute),
+                                                                                                        name: "maq"
+
+                                                                                                    }
+p3 => teacher sources => teacher have 3 sources. camera, screen and html(as iframe).
+
+
+dev.getmycall.com
+Hj8G9gVgEV9MRq root
+
+teacher:-  //currently passing room data and sources through url
+http://localhost:8080/?room=crypted2&id=012&name=MaqsoodT&type=teacher&position=0&token=123fjbdf&bitrate=720&mute=false&sources=[{"id":"012", "position": "0", "type":"teacher"},{"id":"123", "position": "1"},{"id":"234", "position": "2"},{"id":"456", "position": "3"},{"id":"678", "position": "4"}, {"id":"8910", "position": "5"},{"id":"101112", "position": "6"},{"id":"121314", "position": "7"},{"id":"141516", "position": "8"},{"id":"161718", "position": "9"}]
+
+student1:-
+http://localhost:8080/?room=crypted2&id=123&name=MaqsoodSt1&type=student&position=1&token=123fjbdf&bitrate=180&mute=true&sources=[{"id":"012", "position": "0", "type":"teacher"},{"id":"123", "position": "1"},{"id":"234", "position": "2"},{"id":"456", "position": "3"},{"id":"678", "position": "4"}, {"id":"8910", "position": "5"},{"id":"101112", "position": "6"},{"id":"121314", "position": "7"},{"id":"141516", "position": "8"},{"id":"161718", "position": "9"}]
+
+student3:-
+http://localhost:8080/?room=crypted2&id=456&name=MaqsoodSt3&type=student&position=3&token=123fjbdf&bitrate=180&mute=true&sources=[{"id":"012", "position": "0", "type":"teacher"},{"id":"123", "position": "1"},{"id":"234", "position": "2"},{"id":"456", "position": "3"},{"id":"678", "position": "4"}, {"id":"8910", "position": "5"},{"id":"101112", "position": "6"},{"id":"121314", "position": "7"},{"id":"141516", "position": "8"},{"id":"161718", "position": "9"}]
+
+
+
+{"id":"8910", "position": "5"},{"id":"101112", "position": "6"},{"id":"121314", "position": "7"},{"id":"141516", "position": "8"},{"id":"161718", "position": "9"}
+
+[
+    {
+        id: '012',
+        position: '0',
+        name: "Maqsood",
+        type: "teacher",
+        tracks: [],
+        bitrate: '1080',
+        isMute: false
+    },
+    {
+        id: '123',
+        position: '1',
+        name: "maq1",
+        type: "student",
+        tracks: [],
+        bitrate: '180',
+        isMute: true
+    },
+    {
+        id: '234',
+        position: '2',
+        name: "maq2",
+        type: "student",
+        tracks: [],
+        bitrate: '180',
+        isMute: true
+    },
+    {
+        id: '345',
+        position: '3',
+        name: "maq3",
+        type: "student",
+        tracks: [],
+        bitrate: '180',
+        isMute: true
+    }
+]
+

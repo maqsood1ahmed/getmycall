@@ -1,11 +1,16 @@
 /* eslint-disable */
 import React from 'react';
+import queryString from 'query-string';
 
-import { message, Select  } from 'antd';
+import { message, Select, Button  } from 'antd';
 // import LoadingSpinner from '../../components/UI/Spinner/Spinner';
 import './Conference.css';
 
+import startIcon from './assets/img/start.png';
 import stopIcon from './assets/img/stop.png';
+import micOn from './assets/img/mic-on.svg';
+import micOff from './assets/img/mic-off.svg';
+import iconSwap from './assets/img/swap_video.png'
 
 const { Option } = Select;
 
@@ -20,12 +25,30 @@ const options = {
     clientNode: 'http://jitsi.org/jitsimeet'
 };
 
-let connection, isJoined, room;
-let localTracks = [];
-let remoteTracks = {};
+const jitsiInitOptions = {
+    disableAudioLevels: true,
 
-let studentTracks = {}
-let teacherTracks = [];
+    // The ID of the jidesha extension for Chrome.
+    desktopSharingChromeExtId: 'mbocklcggfhnbahlnepmldehdhpjfcjp',
+
+    // Whether desktop sharing should be disabled on Chrome.
+    desktopSharingChromeDisabled: false,
+
+    // The media sources to use when using screen sharing with the Chrome
+    // extension.
+    desktopSharingChromeSources: [ 'screen', 'window' ],
+
+    // Required version of Chrome extension
+    desktopSharingChromeMinExtVersion: '0.1',
+
+    // Whether desktop sharing should be disabled on Firefox.
+    desktopSharingFirefoxDisabled: false
+};
+
+var connection, isJoined, room;
+var screenConnection, isScreenJoined, screenRoom;
+
+let allParticipants = {};
 
 let isConnected = false;
 
@@ -44,7 +67,12 @@ class Conference extends React.Component {
             isLoggedIn: false,
             errors: {},
             isTrackUpdate: false,
-            resolutions: [ "180", "360", "720", "1080" ]
+            resolutions: [ "180", "360", "720", "1080" ],
+            roomData: {},
+            isLocalAudioMute: false,
+            remoteUserSwappedId: null,
+            isScreenSharing: false,
+            isStopped: false
         };
 
         if (window.performance) {
@@ -54,157 +82,202 @@ class Conference extends React.Component {
         }
     }
     componentDidMount () {
-        window.JitsiMeetJS.init();
-        connection = new window.JitsiMeetJS.JitsiConnection(null, null, options);
-        this.setConnectionListeners();
-        connection.connect();
+        let roomData = {};
+        if( this.props.roomData === '' ) {
+            roomData= queryString.parse(window.location.search.substring(1));
+            roomData['sources'] = roomData['sources'] && JSON.parse(roomData['sources']);
+        } else {
+            if( this.props.roomData !== '' ) {
+                roomData= queryString.parse( this.props.roomData );
+                roomData['sources'] = roomData['sources'] && JSON.parse(roomData['sources']);
+            }
+        }
+        console.log(roomData, "roomData");
+        this.setState({ roomData });
 
-        window.addEventListener(window.JitsiMeetJS.errors.conference.PASSWORD_REQUIRED, function () { message.error('Please provide room password'); });
-        let that = this;
-        window.addEventListener("beforeunload", that.unload);
+        if ( roomData.room && roomData.id && roomData.name && roomData.type && 
+                roomData.sources && ( roomData.sources.length > 0 ) && 
+                this.handleDataValidation( roomData ) ) {
+
+            let userSession = {
+                position: roomData.position,
+                name: roomData.name,
+                type: roomData.type,
+                tracks: [],
+                screenTracks: [],
+                bitrate: (roomData.bitrate ? roomData.bitrate : (roomData.type === 'teacher' ? '1080' : '180')),
+                isMute: (roomData.type === 'teacher' ? false : true)
+            }
+
+            allParticipants[roomData.id] = userSession;
+
+            window.JitsiMeetJS.init();
+            connection = new window.JitsiMeetJS.JitsiConnection(null, null, options);
+            this.setConnectionListeners();
+            connection.connect();
+    
+            window.addEventListener(window.JitsiMeetJS.errors.conference.PASSWORD_REQUIRED, function () { message.error('Please provide room password'); });
+
+            window.addEventListener("beforeunload", this.unload);
+        } else {
+            message.error('Must provide valid room data! See console errors.');
+        }
     }
 
     componentDidUpdate () {
-        console.log('students tracks', studentTracks);
-        console.log('teacher tracks', teacherTracks);
-        if( this.state.isTrackUpdate ) {
+        if ( this.state.isTrackUpdate ) {
             this.setState({ isTrackUpdate : false }); //setting false for new tracks update
 
-            for (let i = 0; i < teacherTracks.length ; i++) {
-                let teacherVideoTag = document.getElementById(`teacher-video-tag`);
-                let teacherAudioTag = document.getElementById(`teacher-audio-tag`);
-    
-                if( teacherTracks[i].getType() === 'video' ) {
-                    if( teacherVideoTag ) {
-                        teacherTracks[i].attach($(`#teacher-video-tag`)[0]);
-                    }
-                } else if ( teacherAudioTag ) {
-                    teacherTracks[i].attach($(`#teacher-audio-tag`)[0]);
-                }
-            }
-            let allStudentTracksKeys = Object.keys(studentTracks);
-            allStudentTracksKeys.forEach(key => {
-                for (let i = 0; i < studentTracks[key].length ; i++) {
-                    let track = studentTracks[key][i];
-
-                    if(track.isLocal()){
-                        let studentRollNo = this.state.roomInfo.rollNo;
-                        if (studentRollNo) {
-                            //map local track to small videos
-                            if (track.getType() === 'video') {
-                                track.attach($(`#video-tag-${studentRollNo}`)[0]);
-                                let localUserName = this.state.roomInfo.userName;
-                                if ( localUserName ) {
-                                    $(`#name-box-${studentRollNo} h6`).text(localUserName);
-                                }
-                            } else {
-                                track.attach($(`#audio-tag-${studentRollNo}`)[0]);
+            let allParticipantsIds = Object.keys( allParticipants );
+            allParticipantsIds.forEach( participantId => {
+                let participant = allParticipants[participantId];
+                let participantTracks = participant.tracks;
+                if ( (participant.position).toString() === "0" ) {
+                    for ( let i = 0; i < participantTracks.length ; i++ ) {
+                        let largeVideoTag = document.getElementById(`teacher-video-tag`);
+                        let largeAudioTag = document.getElementById(`teacher-audio-tag`);
+            
+                        if( participantTracks[i].getType() === 'video' ) {
+                            if( largeVideoTag ) {
+                                participantTracks[i].attach($(`#teacher-video-tag`)[0]);
                             }
+                        } else if ( largeAudioTag ) {
+                            // console.log('is teacher mute? => => ', participantTracks[i].isMuted());
+                            participantTracks[i].attach($(`#teacher-audio-tag`)[0]);
                         }
-                    } else {
-                        let participant = track.getParticipantId();
-                        let userName = room.getParticipantById(participant)._displayName;
-                        let studentRollNo = userName.split('###')[1];
-
-                        if (studentRollNo) {
-                            //map local track to small videos
-                            if (track.getType() === 'video') {
-                                track.attach($(`#video-tag-${studentRollNo}`)[0]);
-                                let remoteUserName = userName.split('###')[0];;
-                                if ( remoteUserName ) {
-                                    $(`#name-box-${studentRollNo} h6`).text(remoteUserName);
-                                }
-                            } else {
-                                track.attach($(`#audio-tag-${studentRollNo}`)[0]);
+                    }
+                } else { //if position not zero then map all other as small videos 
+                    for ( let i = 0; i < participantTracks.length ; i++ ) {
+                        if (participantTracks[i].getType() === 'video') {
+                            participantTracks[i].attach($(`#video-tag-${participant.position}`)[0]);
+                            let name = participant.name;
+                            if ( name === this.state.roomData.name ) {
+                                name = name + "(me)"
                             }
+                            if ( name ) {
+                                $(`#name-box-${participant.position} h6`).text(name);
+                            }
+                        } else {
+                            // console.log('is this remote track mute? => => ', participantTracks[i].isMuted());
+                            participantTracks[i].attach($(`#audio-tag-${participant.position}`)[0]);
                         }
                     }
                 }
             });
-            
         }
-        
     }
 
-    setConnectionListeners () {
-        connection.addEventListener(window.JitsiMeetJS.events.connection.CONNECTION_ESTABLISHED, () => {
-            isConnected = true;
-            message.success('connection established.');
+    setConnectionListeners ( isScreen = false ) {
 
-            // setTimeout(()=> {
-            //     this.joinRoom()
-            // }, 2000)
-        });
-        connection.addEventListener(window.JitsiMeetJS.events.connection.CONNECTION_FAILED, function () {
-            isConnected = false;
-            message.error('connection failed.');
-        });
-        connection.addEventListener(window.JitsiMeetJS.events.connection.CONNECTION_DISCONNECTED,() => this.disconnect());
+        if ( !isScreen ) {
+            connection.addEventListener(window.JitsiMeetJS.events.connection.CONNECTION_ESTABLISHED, () => {
+                isConnected = true;
+                message.success('connection established.');
+                setTimeout(()=>{
+                    this.joinRoom();
+                }, 1000)
+            });
+            connection.addEventListener(window.JitsiMeetJS.events.connection.CONNECTION_FAILED, function () {
+                isConnected = false;
+                message.error('connection failed.');
+            });
+            connection.addEventListener(window.JitsiMeetJS.events.connection.CONNECTION_DISCONNECTED,() => this.disconnect());
+        } else {
+            screenConnection.addEventListener(window.JitsiMeetJS.events.connection.CONNECTION_ESTABLISHED, () => {
+                isConnected = true;
+                setTimeout(()=>{
+                    this.joinRoom( true );
+                }, 1000)
+            });
+        }
+
     }
 
     disconnect () {
-        console.log('disconnect!');
+        console.error('disconnect!');
         this.unload();
         this.setState({ isLoggedIn: false });
-        window.location.reload();
+        // window.location.reload();
     }
 
-    onConferenceJoined () {
-        console.log('conference joined');
-        message.success('conference joined');
-        let userName = this.state.roomInfo && this.state.roomInfo.userName;
-        let rollNo = this.state.roomInfo && this.state.roomInfo.rollNo;
-        let uid = "";
-        if(!this.state.roomInfo.moderator){
-            uid = userName + "###" + rollNo;
+    onConferenceJoined ( isScreen = false) {
+        if ( !isScreen ) {
+            message.success('conference joined');
+            let userId = this.state.roomData.id;
+            let userName = this.state.roomData.name;
+            let type = this.state.roomData.type;
+            let position = this.state.roomData.position;
+            let uid = "";
+    
+            uid = userId + "###" + userName + "###" + type + "###" + position;
+    
+            room.setDisplayName(uid); //setting display name (consist id, name and type of user its trick to pass userId, and type)
+            let myRole = room.getRole(); //get my role
+    
+            if (myRole === "moderator") {
+                message.info("You are moderator of the Conference.", 5);
+            }
+            isJoined = true;
+            let localTracks = allParticipants[this.state.roomData.id].tracks;
+            for (let i = 0; i < localTracks.length; i++) {
+                room.addTrack(localTracks[i]);
+            }
         } else {
-            uid = userName + "###" + "IamTeacher321123";   //before rendering user tracks will check this to identify whether its teacher or student
+            let userId = this.state.roomData.id;
+            let userName = this.state.roomData.name;
+            let type = this.state.roomData.type;
+            let position = "9999";  //just like for teacher we set "0" so for screen we set "9999"
+            let uid = "";
+    
+            uid = userId + "###" + userName + "###" + type + "###" + position;
+    
+            screenRoom.setDisplayName(uid); //setting display name (consist id, name and type of user its trick to pass userId, and type)
+
+            isScreenJoined = true;
+            let screenTracks = allParticipants[this.state.roomData.id]['screenTracks'];
+            for (let i = 0; i < screenTracks.length; i++) {
+                screenRoom.addTrack(screenTracks[i]);
+            }
         }
-        room.setDisplayName(uid); //set my user name
-        let myRole = room.getRole(); //get my role
-        console.log(myRole, "myrole");
-        if (myRole === "moderator") {
-            message.info("You are moderator of the Conference.", 5);
-        }
-        isJoined = true;
-        console.log(localTracks, 'localtracks');
-        for (let i = 0; i < localTracks.length; i++) {
-            room.addTrack(localTracks[i]);
-        }
+
     }
 
-    joinRoom () {
-        let roomName = (this.state.roomInfo && this.state.roomInfo.roomName) || "";
-        room = connection.initJitsiConference(roomName, {}); //name of conference
+    joinRoom ( isScreen = false) {
+        let roomData = this.state.roomData;
+        let roomName = roomData.room;
+        console.log('room join data name => => ', roomData);
 
-        room.on(window.JitsiMeetJS.events.conference.TRACK_ADDED, (track) => this.onRemoteTrack(track));
-        room.on(window.JitsiMeetJS.events.conference.TRACK_REMOVED, (track) => this.onRemoveTrack(track)); //to remove track
-        room.on(window.JitsiMeetJS.events.conference.CONFERENCE_JOINED, () => {
-            this.onConferenceJoined();
-            this.setState({ isLoggedIn: true });
-            this.getLocalTracks();
-        });
-        // room.on( window.JitsiMeetJS.events.conference.CONNECTION_FAILED, function(){console.log('conference join failed')} );
-        // room.on(jitsiClientApi.events.conference.USER_JOINED, id => { remoteTracks[id] = [] }); //when remote user joined
-        room.on(window.JitsiMeetJS.events.conference.USER_LEFT, id => this.onUserLeft(id)); //user left
-        // room.on(jitsiClientApi.events.conference.TRACK_MUTE_CHANGED,
-        //     track => { console.log(`${track.getType()} - ${track.isMuted()}`) }); //mute in conference (found by track)
-        // room.on( jitsiClientApi.events.conference.DISPLAY_NAME_CHANGED,
-        //     (userID, displayName) => console.log(`${userID} - ${displayName}`)); //display name changed
-        // room.on(
-        //     jitsiClientApi.events.conference.TRACK_AUDIO_LEVEL_CHANGED, //audio level changed event
-        //     (userID, audioLevel) => console.log(`${userID} - ${audioLevel}`));
-        // room.on(
-        //     jitsiClientApi.events.conference.PHONE_NUMBER_CHANGED, //user phone changed
-        //     () => console.log(`${room.getPhoneNumber()} - ${room.getPhonePin()}`));
-        let password = this.state.roomInfo && this.state.roomInfo.password;
-        room.join(password); //after adding all conference/room listeneres join the room
+        if ( !isScreen ) {
+            room = connection.initJitsiConference( roomName, {} ); //name of conference
 
-        //after join set student lowest resolution to receive to other users and for teacher maximum
-        if  (this.state.roomInfo.moderator) {
-            room.setReceiverVideoConstraint("1080");  //we can increase it further
+            room.on(window.JitsiMeetJS.events.conference.TRACK_ADDED, (track) => this.onRemoteTrack(track));
+            room.on(window.JitsiMeetJS.events.conference.TRACK_REMOVED, (track) => this.onRemoveTrack(track)); //to remove track
+            room.on(window.JitsiMeetJS.events.conference.CONFERENCE_JOINED, () => {
+                this.onConferenceJoined();
+                this.setState({ isLoggedIn: true });
+                this.getLocalTracks();
+            });
+            room.on(window.JitsiMeetJS.events.conference.DISPLAY_NAME_CHANGED, (id) => {
+                console.log('==> teacher display name changed', id)
+                let roomParticipant = room.getParticipantById(id)
+                let userInfo = roomParticipant ? (roomParticipant._displayName ? roomParticipant._displayName.split('###') : null) : null;
+                console.log(userInfo,"=> => display changed")
+                message.info(displayName)
+            })
+            room.on(window.JitsiMeetJS.events.conference.USER_LEFT, id=>this.onUserLeft(id)); //user left
+    
+            room.join();
+    
+            let bitRate = roomData.bitrate ? roomData.bitrate : ( roomData.type==="teacher" ? "1080" : "180" );
+            room.setReceiverVideoConstraint(bitRate);
         } else {
-            room.setReceiverVideoConstraint("180");
+            screenRoom = screenConnection.initJitsiConference( roomName, {} ); //name of conference
+            screenRoom.on(window.JitsiMeetJS.events.conference.CONFERENCE_JOINED, () => {
+                this.onConferenceJoined( true );
+                this.getScreenTracks();
+            });
+                
+            screenRoom.join();
         }
 
     }
@@ -218,64 +291,43 @@ class Conference extends React.Component {
                 throw error;
             });
     }
-    onUserLeft (id) {
-        // console.log('user left => ', id,);
-        // if (!remoteTracks[id]) {
-        //     return;
-        // }
-        // const tracks = remoteTracks[id];
-        // for (let i = 0; i < tracks.length; i++) {
-        //     let trackId = "#" + id.toString() + tracks[i].getType().toString();
-        //     tracks[i].detach($(`#${id}${tracks[i].getType()}`)); //must see it again
-        //     delete tracks[trackId];
-        //     $(trackId).parent().remove();
-
-        //     $(`${participant}-li-${idx}`).parent().remove();
-        //     $(`#${participant}audio${idx}`).parent().remove();
-        // }
-        // remoteTracks = tracks;
-        const participant = id;
-        if( teacherTracks[0] &&  teacherTracks[0].getParticipantId() === participant ) {
-            message.info('Teacher Left!');
-            teacherTracks = [];
-        } else {
-            let studentRollNo = null;
-            if(studentTracks){
-                Object.keys(studentTracks).forEach(key => {
-                    studentTracks[key].forEach(oldTrack => {
-                        if ( oldTrack.getParticipantId() === participant ) {
-                            studentRollNo = key;
-                        }
-                    })
-                })
-            }
-    
-            if (studentRollNo) {
-                //detach remote track from small videos\
-                for( let i; i< studentTracks[studentRollNo].length ; i++){
-                    let track = studentTracks[studentRollNo][i];
+    onUserLeft (participantId) {
+        let roomParticipant = room.getParticipantById(participantId)
+        let userInfo = roomParticipant ? (roomParticipant._displayName ? roomParticipant._displayName.split('###') : null) : null;
+        console.log('user left => =>', participantId, userInfo)
+        if ( userInfo ) {
+            let id = userInfo[0];
+            let position = userInfo[3];
+            let tracks = allParticipants[id].tracks;
+            if ( tracks[0] ) {
+                for( let i; i< tracks.length ; i++){
+                    let track = tracks[i];
                     if (track.getType() === 'video') {
-                        track.detach($(`#video-tag-${studentRollNo}`));
-                        $(`#video-tag-${studentRollNo}`).attr('poster', 'https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTUq71y6yGEk94T1hyj89lV-khy9OMkgZt0Dl1hecguJxUpLU6a&usqp=CAU');
+                        track.detach($(`#video-tag-${position}`));
+                        $(`#video-tag-${position}`).attr('poster', 'https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTUq71y6yGEk94T1hyj89lV-khy9OMkgZt0Dl1hecguJxUpLU6a&usqp=CAU');
                     } else {
-                        track.detach($(`#audio-tag-${studentRollNo}`));
+                        track.detach($(`#audio-tag-${position}`));
                     }
                 }
-                delete studentTracks[studentRollNo];
-                console.log(studentRollNo, 'remove')
-            } 
+            }
+            delete allParticipants[id];
+            this.setState({ isTrackUpdate: true })
         }
     }
 
     onLocalTracks (tracks) {
-        // localTracks = tracks;
         for (let i = 0; i < tracks.length; i++) {
             tracks[i].addEventListener(
                 window.JitsiMeetJS.events.track.TRACK_AUDIO_LEVEL_CHANGED,
                 audioLevel => console.log(`Audio Level local: ${audioLevel}`));
             tracks[i].addEventListener(
                 window.JitsiMeetJS.events.track.TRACK_MUTE_CHANGED,
-                () => console.log('local track muted'));
+                (track) => { 
+                    if( track.getType() === "audio") {
+                        console.log('local track new audio status => =>', track.isMuted())
+                        this.setState({ isLocalAudioMute : track.isMuted() });
+                    }
+                }) //use it to show whether user muted or not
             tracks[i].addEventListener(
                 window.JitsiMeetJS.events.track.LOCAL_TRACK_STOPPED,
                 () => console.log('local track stoped'));
@@ -284,16 +336,16 @@ class Conference extends React.Component {
                 deviceId =>
                     console.log(`track audio output device was changed to ${deviceId}`));
 
-            if ( this.state.roomInfo.moderator ) {
-                console.log('teacher tracks (tracks)', tracks)
-                teacherTracks.push(tracks[i]);
-            } else {
-                if (!studentTracks[this.state.roomInfo.rollNo]) {
-                    studentTracks[this.state.roomInfo.rollNo] = [];
-                }
-                studentTracks[this.state.roomInfo.rollNo].push(tracks[i]);
-            }
+            allParticipants[this.state.roomData.id]["tracks"].push(tracks[i])
             if (isJoined) {
+
+                if ( this.state.roomData.type !== "teacher" ) {
+                    tracks.forEach(track=> {
+                        if ( track.getType() === "audio" ) {
+                            track.mute();
+                        }
+                    })
+                }
                 room.addTrack(tracks[i]);
             }
             this.setState({ isTrackUpdate: true });
@@ -301,94 +353,119 @@ class Conference extends React.Component {
     }
 
     onRemoteTrack (track) {
-        console.log('got track');
         if (track.isLocal()) {
             return;
         }
         const participant = track.getParticipantId();
 
-        // if (!remoteTracks[participant]) {
-        //     remoteTracks[participant] = [];
-        // }
-        console.log('get user name=', room.getParticipantById(participant))
-        let userName = room.getParticipantById(participant)._displayName;
-        let studentRollNo = userName.split('###')[1];
-
-        if(studentRollNo === "IamTeacher321123") {
-            // if(this.state.roomInfo.moderator) {
-            //     console.log('teacher already exist.');
-            //     message.error('Teacher already exist');
-            //     this.unload();
-            //     this.setState({ isLoggedIn: false });
-            //     window.location.reload();
-            // } else {
-            teacherTracks.push(track);
-            // }
+        let userInfo = room.getParticipantById(participant);
+        if ( !userInfo._displayName ) {
+            return;
         } else {
-            studentTracks[studentRollNo] = [];
-            studentTracks[studentRollNo].push(track);
+            userInfo = room.getParticipantById(participant)._displayName.split('###');
+        }
+        let id = userInfo[0];
+        let name = userInfo[1];
+        let type = userInfo[2];
+        let position = userInfo[3];
+
+        if ( id.toString() === (this.state.roomData.id).toString()) {
+            return;
         }
 
-        track.addEventListener(
-            window.JitsiMeetJS.events.track.TRACK_AUDIO_LEVEL_CHANGED,
-            audioLevel => console.log(`Audio Level remote: ${audioLevel}`));
-        track.addEventListener(
-            window.JitsiMeetJS.events.track.TRACK_MUTE_CHANGED,
-            () => console.log('remote track muted'));
-        track.addEventListener(
-            window.JitsiMeetJS.events.track.LOCAL_TRACK_STOPPED,
-            () => console.log('remote track stoped'));
-        track.addEventListener(
-            window.JitsiMeetJS.events.track.TRACK_AUDIO_OUTPUT_CHANGED,
-            deviceId => console.log(`track audio output device was changed to ${deviceId}`));
+        console.log('got remote user info => =>', userInfo, track);
+        if ( position === "9999") {
+            let screenVideo = $(`#teacher-screen-share-video`)[0];
+            track.attach(screenVideo);
+            $(screenVideo).on({
+                mouseenter: function () {
+                  screenVideo.setAttribute("controls","controls")
+                },
+                mouseleave: function () {
+                  screenVideo.removeAttribute("controls");
+                }
+            });
+        } else {
+            if ( !allParticipants[id] ) {
+                let newParticipant = {};
+                newParticipant['name'] = name;
+                newParticipant['type'] = type;
+                newParticipant['position'] = position.toString();
+                newParticipant['tracks'] = [];
+                newParticipant['tracks'].push(track);
+                allParticipants[id] = newParticipant;
+            } else if ( !allParticipants[id]['tracks'][0] ) {
+                allParticipants[id]['tracks'] = [];
+                allParticipants[id]['tracks'].push(track);
+            } else {
+                allParticipants[id]['tracks'].push(track);
+            }
+    
+            track.addEventListener(
+                window.JitsiMeetJS.events.track.TRACK_AUDIO_LEVEL_CHANGED,
+                audioLevel => console.log(`Audio Level remote: ${audioLevel}`));
+            track.addEventListener(
+                window.JitsiMeetJS.events.track.TRACK_MUTE_CHANGED,
+                () => this.onRemoteTrackMute(id, track));
+            track.addEventListener(
+                window.JitsiMeetJS.events.track.LOCAL_TRACK_STOPPED,
+                () => console.log('remote track stoped'));
+            track.addEventListener(
+                window.JitsiMeetJS.events.track.TRACK_AUDIO_OUTPUT_CHANGED,
+                deviceId => console.log(`track audio output device was changed to ${deviceId}`));
+    
+            this.setState({ isTrackUpdate: true });
+        }
+    }
 
-        this.setState({ isTrackUpdate: true });
+    onRemoteTrackMute = ( id, track ) => {
+        if ( allParticipants[id] && allParticipants[id].name ) {
+            message.info(`${allParticipants[id].name} ${track.isMuted() ? " Mic Off" : " Mic On"}`, 3)
+        }
+        console.log('=> => remote track muted', id);
     }
 
     onRemoveTrack (track) {
         if (track.isLocal()) {
             return;
         }
-        const participant = track.getParticipantId();
+        const participantId = track.getParticipantId();
 
-        console.log('participant remove => ', participant, room, track)
-        // let userName = room.getParticipantById(participant)._displayName;
-        // let studentRollNo = userName.split('###')[1];
-        let studentRollNo = null;
-        if(studentTracks){
-            Object.keys(studentTracks).forEach(key => {
-                studentTracks[key].forEach(oldTrack => {
-                    if ( oldTrack.getParticipantId() === track.getParticipantId() ) {
-                        studentRollNo = key;
+        let roomParticipant = room.getParticipantById(participantId)
+        let userInfo = roomParticipant ? (roomParticipant._displayName ? roomParticipant._displayName.split('###') : null) : null;
+        if ( userInfo ) {
+            let id = userInfo[0];
+            let position = userInfo[3];
+            let participant = allParticipants[id];
+    
+            if ( participant.tracks ) {
+                let tracks = participant.tracks;
+                tracks.forEach(( track, index ) => {
+                    if (track.getType() === 'video') {
+                        track.detach($(`#video-tag-${position}`));
+                    } else {
+                        track.detach($(`#audio-tag-${position}`));
                     }
+                    delete allParticipants[id][index];
                 })
-            })
+            }
         }
-        if (studentRollNo) {
-            // //detach remote track from small videos
-            // if (track.getType() === 'video') {
-            //     track.detach($(`#video-tag-${studentRollNo}`));
-            // } else {
-            //     track.detach($(`#audio-tag-${studentRollNo}`));
-            // }
-            studentTracks[studentRollNo] = [];
-            console.log(studentRollNo, 'deleted')
-        } 
     }
 
     unload () {
+        let localTracks = allParticipants[this.state.roomData.id]['tracks'];
         for (let i = 0; i < localTracks.length; i++) {
             localTracks[i].dispose();
-
-            teacherTracks[i].dispose();
         }
         room.leave();
         connection.disconnect();
     }
 
     componentWillUnmount () {
-        this.unload();
-        window.removeEventListener("beforeunload", () => this.unload());
+        if ( connection && room ) {
+            this.unload();
+            window.removeEventListener("beforeunload", () => this.unload());
+        }
     }
 
     handleChange = (event) => {
@@ -412,107 +489,41 @@ class Conference extends React.Component {
         this.setState({ roomInfo });
     }
 
-    handleFormSubmit = async () => {
-        if (this.handleFormValidation()) {
-            //add other code here like api call etc
-            this.joinRoom();
-        }
-    }
-    handleFormValidation = () => {
-        let fields = this.state.roomInfo;
-        let errors = {};
-        let formIsValid = true;
+    handleDataValidation = ( roomData ) => {
+        let fields = roomData;
+        let dataIsValid = true;
 
-        if (!fields["roomName"]) {
-            formIsValid = false;
-            errors["roomName"] = "Cannot be empty";
+        if (!fields["room"]) {
+            dataIsValid = false;
+            console.error("please provide room name");
         }
 
-        if (!fields["roomName"].match(/^[a-z0-9]+$/)) {
-            formIsValid = false;
-            errors["roomName"] = "Room Name should must be small characters";
+        if (!fields["room"].match(/^[a-z0-9]+$/)) {
+            dataIsValid = false;
+            console.error('room name should must contain small characters or numbers!')
         }
 
-        if (!fields["userName"]) {
-            formIsValid = false;
-            errors["userName"] = "Cannot be empty";
+        if (!fields["name"]) {
+            dataIsValid = false;
+            console.error("user name cannot be empty!")
         }
 
-        if(!this.state.roomInfo.moderator){
-            if (!fields["rollNo"]) {
-                formIsValid = false;
-                errors["rollNo"] = "Student must provide roll number";
-            }
+        if (!fields["id"]) {
+            dataIsValid = false;
+            console.error("id cannot be empty!")
         }
-        // if (!fields["password"]) {
-        //     formIsValid = false;
-        //     errors["password"] = "Cannot be empty";
-        // }
 
-        this.setState({ errors: errors });
-        return formIsValid;
-    }
+        if (!fields["type"]) {
+            dataIsValid = false;
+            console.error("Please provide user type teacher or student!")
+        }
 
-    renderForm = () => {
-        console.log('rendering form');
-        const { errors } = this.state;
-        const { roomName, rollNo, userName, password, moderator } = this.state.roomInfo;
-        return (<div id="form-section">
-            <form id="user-form">
-                <div className="form-group">
-                    <label htmlFor="roomname">Room Name</label>
-                    <input
-                        type="name"
-                        value={roomName}
-                        name="roomName"
-                        className="form-control"
-                        id="room-name"
-                        onChange={this.handleChange}/>
-                    <span className="help-block">{(errors['roomName'])}</span>
-                </div>
-                {
-                    !moderator && <div className="form-group">
-                                    <label htmlFor="username">Student Roll No</label>
-                                    <input
-                                        type="username"
-                                        value={rollNo}
-                                        name="rollNo"
-                                        className="form-control"
-                                        id="roll-no"
-                                        onChange={this.handleChange}/>
-                                    <span className="help-block">{(errors['rollNo'])}</span>
-                                </div> 
-                }
-                <div className="form-group">
-                    <label htmlFor="username">Name</label>
-                    <input
-                        type="username"
-                        value={userName}
-                        name="userName"
-                        className="form-control"
-                        id="user-name"
-                        onChange={this.handleChange}/>
-                    <span className="help-block">{(errors['userName'])}</span>
-                </div>
-                <div className="form-group">
-                    <label htmlFor="password">Password</label>
-                    <input
-                        type="password"
-                        value={password}
-                        name="password"
-                        className="form-control"
-                        id="password"
-                        onChange={this.handleChange}/>
-                    <span className="help-block">{(errors['password'])}</span>
-                </div>
-                <div className="checkbox">
-                    <label>
-                        <input name="moderator" value={moderator} onChange={this.handleChange} type="checkbox" /> Are you Teacher?
-                    </label>
-                </div>
-                <button disabled={!isConnected} type="button" onClick={this.handleFormSubmit.bind(this)} className="btn btn-default">{moderator ? "Create Room" : "Login"}</button>
-            </form>
-        </div>);
+        if( !fields["sources"] || fields["sources"].length < 1 ) {
+            dataIsValid = false;
+            console.error("Please provide sources list!");
+        }
+
+        return dataIsValid;
     }
 
     handleChangeResolutions = (value) => {
@@ -522,14 +533,146 @@ class Conference extends React.Component {
 
     leaveRoomBtn = (e) => {
         this.unload();
-        this.setState({ isLoggedIn: false });
-        window.location.reload();
+        this.setState({ isLoggedIn: false, isStopped: true });
+        // window.location.reload();
+    }
+
+    toggleAudio = async ( sourceId, isMute ) => {
+        console.log('local track old audio status => =>', isMute)
+        let tracks = [];
+        Object.keys(allParticipants).forEach(id => {
+            if ( id === sourceId ) {
+                tracks = allParticipants[id].tracks;
+                tracks.forEach( track=> {
+                    if( track.getType() === 'audio' ) {
+                        if ( isMute ) {
+                            track.unmute()
+                        } else {
+                            track.mute();
+                        }                        
+                    }
+                });
+            }
+        })
     }
     
+//remote user id
+
+    swapVideo = ( source ) => {
+        console.log('change this source with teacher video div => => ', source);
+        // *** source id used to swap with teacher div
+        
+        let sourceId = source.id;
+        let sourcePosition = source.position;
+        let roomData = this.state.roomData;
+
+        if ( sourceId === roomData.id ) {  //or sources[0]/allparticipants[].type==="teacher" for remote user
+            allParticipants[sourceId].position = "0";  //revert teacher position to 0
+            allParticipants[this.state.remoteUserSwappedId].position = sourcePosition;  //revert student position to curent teacher position
+            
+            roomData.sources = roomData.sources.map(source => {
+                if ( source.id === this.state.remoteUserSwappedId ) {
+                    source.position = sourcePosition;  //revert student back positiion 
+                    return source;
+                } else if ( source.id === roomData.id ) {
+                    source.position = "0";  //revert teacher back to 0 in sources
+                    return source;
+                }
+                return source;
+            });
+            this.setState({ roomData, isTrackUpdate: true, remoteUserSwappedId: null });
+        } else {
+            if ( allParticipants[sourceId] ) {
+                roomData.sources = roomData.sources.map(source => {
+                    if ( source.id === sourceId ) {
+                        source.position = "0";
+                        return source;
+                    } else if ( source.id === roomData.id ) {  //because swap only available for teacher so teacher id is in state
+                        source.position = sourcePosition;
+                        return source;
+                    }
+                    return source;
+                });
+    
+                Object.keys(allParticipants).forEach( id => {
+                    if ( id === sourceId ) {
+                        allParticipants[sourceId].position = "0";  //change remoted user position to 0 in place of teacher
+                    } else if ( allParticipants[id].type === "teacher" ) {
+                        allParticipants[id].position = sourcePosition; //relocate teacher position to student div
+                    }
+                });
+
+                //send display name change to all other participant
+                this.swapVideoDispayChangeForTeacher( sourcePosition, sourceId )
+    
+                console.log('all participant and sources => => ', allParticipants, roomData);
+                this.setState({ roomData, isTrackUpdate: true, remoteUserSwappedId: sourceId });
+            }
+        }
+    }
+
+    swapVideoDispayChangeForTeacher = ( positionSwapped, swappedWith ) => {
+        let userId = this.state.roomData.id;
+        let userName = this.state.roomData.name;
+        let type = this.state.roomData.type;
+        let position = positionSwapped;
+        let uid = "";
+
+        uid = userId + "###" + userName + "###" + type + "###" + position + "###" + swappedWith;
+
+        room.setDisplayName(uid);
+    }
+
+    getScreenTracks () {
+        window.JitsiMeetJS.createLocalTracks({ devices: ['screen', 'desktop'] })
+            .then((tracks) => {
+                this.onScreenTracks(tracks);
+                this.setState({ isScreenSharing: true })
+            })
+            .catch(error => {
+                throw error;
+            });
+    }
+    onScreenTracks ( tracks ) {
+        for (let i = 0; i < tracks.length; i++) {
+            tracks[i].addEventListener(
+                window.JitsiMeetJS.events.track.LOCAL_TRACK_STOPPED,
+                () => {
+                    console.log('screen share stopped! => =>');
+                    this.setState({ isScreenSharing: false })
+                });
+            allParticipants[this.state.roomData.id]["screenTracks"].push(tracks[i]);
+            if ( isScreenJoined ) {
+                let screenVideo = $(`#teacher-screen-share-video`)[0];
+                tracks[i].attach(screenVideo)
+                screenRoom.addTrack(tracks[i]);
+                $(screenVideo).on({
+                    mouseenter: function () {
+                      screenVideo.setAttribute("controls","controls")
+                    },
+                    mouseleave: function () {
+                      screenVideo.removeAttribute("controls");
+                    }
+                });
+            }
+        }
+    }
+
+    //jitsi supports only one video track at a time so we creating new connection for screen share separately
+    handleScreenShareButton = ( isScreenSharing ) => {
+        if ( !isScreenSharing ) {
+            // window.JitsiMeetJS.init(jitsiInitOptions); 
+            screenConnection = new window.JitsiMeetJS.JitsiConnection(null, null, options);
+
+            this.setConnectionListeners( true );
+            screenConnection.connect();
+        }
+    }
 
     render () {
-        const { isLoggedIn, roomInfo } = this.state;
-        const { roomName, userName } = roomInfo;
+        console.log('all participant => => ', allParticipants)
+        const { isLoggedIn, roomData } = this.state;
+        const { room, id, name, type } = roomData;
 
         const customStyle = {
             largeVideoPoster: {
@@ -540,8 +683,15 @@ class Conference extends React.Component {
             }
         }
 
-        if ( !roomName || !userName || !isLoggedIn ) {
-            return this.renderForm();
+        if ( !id || !room || !name || !type ) {
+            return <div className="container" style={{ height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "center" }}>
+                <p style={{ fontSize: "35px", color: "#ff4d4f" }}>Please provide room info</p>
+            </div>
+        } else if ( !isLoggedIn ) {
+            return <div className="container" style={{ height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "center" }}>
+                {this.state.isStopped && <p style={{ fontSize: "35px", color: this.state.isStopped? "red" : "black" }}> Stopped! </p>}
+                {/* {this.state.isStopped && <Button onClick={()=> this.joinRoom()} type="primary"> Join Again </Button>} */}
+            </div>
         } else {
             return (
                 <div className="container">
@@ -549,307 +699,66 @@ class Conference extends React.Component {
                         <div className="col-md-8 col-sm-12 col-xs-12 w-100 h-100 p-3" id="large-video-container">
                             <video id="teacher-video-tag" autoPlay width="100%" height="100%" style={ customStyle.largeVideoPoster } /> 
                             <audio autoPlay width="0%" height="0%" id="teacher-audio-tag"></audio>
-                            {/* { this.state.roomInfo.moderator &&
+                            { (type === "teacher") &&
                                 <Select
                                     defaultValue={this.state.resolutions[3]}
-                                    style={{ width: 80 }}
+                                    // style={{ width: 80 }}
                                     onChange={(value) => this.handleChangeResolutions(value)}
-                                >display
+                                >
                                 {this.state.resolutions.map(resolution => (
                                     <Option key={resolution}>{resolution}</Option>
                                 ))}
                                 </Select>
-                            } */}
-                            <div className="btnStop" onClick={this.leaveRoomBtn.bind(this)} style={{ backgroundImage: `url(${stopIcon})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat' }} />
+                            }
+                            <div id="large-video-actions-box" className="row w-20 h-10" style={{ background: (type==="teacher" ? "rgba(255, 255, 255, 0.301)": "none")}}>
+                                {(allParticipants[id]['type'] === "teacher") && <div onClick={() => this.toggleAudio( id, this.state.isLocalAudioMute )} style={{ backgroundImage: `url(${this.state.isLocalAudioMute?micOff:micOn})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', width: "35px", height: "35px", cursor: "pointer" }} />}
+                                <div onClick={this.leaveRoomBtn.bind(this)} style={{ backgroundImage: `url(${stopIcon})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', marginLeft: "8px", width: "40px", height: "40px", cursor: "pointer" }} />                            
+                            </div>
                         </div>
                         <div className="col-md-4 col-sm-4 col-xs-8 container w-100 h-100 p-3" id="teacher-dashboard">
-                            <video autoPlay width="100%" height="49%" controls>
+                            <video  autoPlay width="100%" height="49%" controls>
                             {/* // width="350" height="199" controls> */}
                                 <source src="" type="video/mp4" />>
                                 <source src="" type="video/ogg" />
                             </video>
-                            <video autoPlay width="100%" height="49%" controls>
-                            {/* // width="350" height="199" controls> */}
-                                <source src="" type="video/mp4" />>
-                                <source src="" type="video/ogg" />
-                            </video>
+                            
+                            <div style={{ width: "100%", height: "49%", position: "relative" }}>
+                                <video id="teacher-screen-share-video" autoPlay poster="https://cdn.pixabay.com/photo/2017/08/08/18/11/mockup-2612145_960_720.png" width="100%" height="100%" >
+                                {/* // width="350" height="199" controls> */}
+                                    <source src="" type="video/mp4" />>
+                                    <source src="" type="video/ogg" />
+                                </video>
+                                {(type === "teacher") &&<div className="btn-start-screen" onClick={() => this.handleScreenShareButton(this.state.isScreenSharing)} style={{ backgroundImage: `url(${!this.state.isScreenSharing && startIcon})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', pointerEvents: "all", opacity: "1" }} />}
+                            </div>
+                            
                         </div>
                     </div>
-                    <div className="row w-100 p-3" id="small-videos-box">
-                        <div className="student-small-video" id="student-box-1">
-                            <div id="video-box-1">
-                                <video id="video-tag-1" autoPlay poster="https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTUq71y6yGEk94T1hyj89lV-khy9OMkgZt0Dl1hecguJxUpLU6a&usqp=CAU" width="105" />
-                                <audio autoPlay width="0%" id="audio-tag-1"></audio>
-                            </div>
-                            <div className="student-name" id="name-box-1">
-                                <h6 className="student-name-text" align="center">Student Name</h6>
-                            </div>
-                        </div>
-                        <div className="student-small-video" id="student-box-2">
-                            <div id="video-box-2">
-                                <video id="video-tag-2" autoPlay poster="https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTUq71y6yGEk94T1hyj89lV-khy9OMkgZt0Dl1hecguJxUpLU6a&usqp=CAU" width="105" />
-                                <audio autoPlay id="audio-tag-2" />
-                            </div>
-                            <div className="student-name" id="name-box-2">
-                                <h6 className="student-name-text" align="center">Student Name</h6>
-                            </div>
-                        </div>
-                        <div className="student-small-video" id="student-box-3">
-                            <div id="video-box-3">
-                                <video id="video-tag-3" autoPlay poster="https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTUq71y6yGEk94T1hyj89lV-khy9OMkgZt0Dl1hecguJxUpLU6a&usqp=CAU" width="105" />
-                                <audio autoPlay id="audio-tag-3" />
-                            </div>
-                            <div className="student-name" id="name-box-3">
-                                <h6 className="student-name-text" align="center">Student Name</h6>
-                            </div>
-                        </div>
-                        <div className="student-small-video" id="student-box-4">
-                            <div id="video-box-4">
-                                <video id="video-tag-4" autoPlay poster="https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTUq71y6yGEk94T1hyj89lV-khy9OMkgZt0Dl1hecguJxUpLU6a&usqp=CAU" width="105" />
-                                <audio autoPlay id="audio-tag-4" />
-                            </div>
-                            <div className="student-name" id="name-box-4">
-                                <h6 className="student-name-text" align="center">Student Name</h6>
-                            </div>
-                        </div>
-                        <div className="student-small-video" id="student-box-5">
-                            <div id="video-box-5">
-                                <video id="video-tag-5" autoPlay poster="https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTUq71y6yGEk94T1hyj89lV-khy9OMkgZt0Dl1hecguJxUpLU6a&usqp=CAU" width="105" />
-                                <audio autoPlay id="audio-tag-5" />
-                            </div>
-                            <div className="student-name" id="name-box-5">
-                                <h6 className="student-name-text" align="center">Student Name</h6>
-                            </div>
-                        </div>
-                        <div className="student-small-video" id="student-box-6">
-                            <div id="video-box-6">
-                                <video id="video-tag-6" autoPlay poster="https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTUq71y6yGEk94T1hyj89lV-khy9OMkgZt0Dl1hecguJxUpLU6a&usqp=CAU" width="105" />
-                                <audio autoPlay id="audio-tag-6" />
-                            </div>
-                            <div className="student-name" id="name-box-6">
-                                <h6 className="student-name-text" align="center">Student Name</h6>
-                            </div>
-                        </div>
-                        <div className="student-small-video" id="student-box-7">
-                            <div id="video-box-7">
-                                <video id="video-tag-7" autoPlay poster="https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTUq71y6yGEk94T1hyj89lV-khy9OMkgZt0Dl1hecguJxUpLU6a&usqp=CAU" width="105" />
-                                <audio autoPlay id="audio-tag-7" />
-                            </div>
-                            <div className="student-name" id="name-box-7">
-                                <h6 className="student-name-text" align="center">Student Name</h6>
-                            </div>
-                        </div>
-                        <div className="student-small-video" id="student-box-8">
-                            <div id="video-box-8">
-                                <video id="video-tag-8" autoPlay poster="https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTUq71y6yGEk94T1hyj89lV-khy9OMkgZt0Dl1hecguJxUpLU6a&usqp=CAU" width="105" />
-                                <audio autoPlay id="audio-tag-8" />
-                            </div>
-                            <div className="student-name" id="name-box-8">
-                                <h6 className="student-name-text" align="center">Student Name</h6>
-                            </div>
-                        </div>
-                        <div className="student-small-video" id="student-box-9">
-                            <div id="video-box-9">
-                                <video id="video-tag-9" autoPlay poster="https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTUq71y6yGEk94T1hyj89lV-khy9OMkgZt0Dl1hecguJxUpLU6a&usqp=CAU" width="105" />
-                                <audio autoPlay id="audio-tag-9" />
-                            </div>
-                            <div className="student-name" id="name-box-9">
-                                <h6 className="student-name-text" align="center">Student Name</h6>
-                            </div>
-                        </div>
-                        <div className="student-small-video" id="student-box-10">
-                            <div id="video-box-10">
-                                <video id="video-tag-10" autoPlay poster="https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTUq71y6yGEk94T1hyj89lV-khy9OMkgZt0Dl1hecguJxUpLU6a&usqp=CAU" width="105" />
-                                <audio autoPlay id="audio-tag-10" />
-                            </div>
-                            <div className="student-name" id="name-box-10">
-                                <h6 className="student-name-text" align="center">Student Name</h6>
-                            </div>
-                        </div>
-                        <div className="student-small-video" id="student-box-11">
-                            <div id="video-box-11">
-                                <video id="video-tag-11" autoPlay poster="https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTUq71y6yGEk94T1hyj89lV-khy9OMkgZt0Dl1hecguJxUpLU6a&usqp=CAU" width="105" />
-                                <audio autoPlay width="0%" id="audio-tag-11" />
-                            </div>
-                            <div className="student-name" id="name-box-11">
-                                <h6 className="student-name-text" align="center">Student Name</h6>
-                            </div>
-                        </div>
-                        <div className="student-small-video" id="student-box-12">
-                            <div id="video-box-12">
-                                <video id="video-tag-12" autoPlay poster="https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTUq71y6yGEk94T1hyj89lV-khy9OMkgZt0Dl1hecguJxUpLU6a&usqp=CAU" width="105" />
-                                <audio autoPlay id="audio-tag-12" />
-                            </div>
-                            <div className="student-name" id="name-box-12">
-                                <h6 className="student-name-text" align="center">Student Name</h6>
-                            </div>
-                        </div>
-                        <div className="student-small-video" id="student-box-13">
-                            <div id="video-box-13">
-                                <video id="video-tag-13" autoPlay poster="https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTUq71y6yGEk94T1hyj89lV-khy9OMkgZt0Dl1hecguJxUpLU6a&usqp=CAU" width="105" />
-                                <audio autoPlay id="audio-tag-13" />
-                            </div>
-                            <div className="student-name" id="name-box-13">
-                                <h6 className="student-name-text" align="center">Student Name</h6>
-                            </div>
-                        </div>
-                        <div className="student-small-video" id="student-box-14">
-                            <div id="video-box-14">
-                                <video id="video-tag-14" autoPlay poster="https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTUq71y6yGEk94T1hyj89lV-khy9OMkgZt0Dl1hecguJxUpLU6a&usqp=CAU" width="105" />
-                                <audio autoPlay id="audio-tag-14" />
-                            </div>
-                            <div className="student-name" id="name-box-14">
-                                <h6 className="student-name-text" align="center">Student Name</h6>
-                            </div>
-                        </div>
-                        <div className="student-small-video" id="student-box-15">
-                            <div id="video-box-15">
-                                <video id="video-tag-15" autoPlay poster="https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTUq71y6yGEk94T1hyj89lV-khy9OMkgZt0Dl1hecguJxUpLU6a&usqp=CAU" width="105" />
-                                <audio autoPlay id="audio-tag-15" />
-                            </div>
-                            <div className="student-name" id="name-box-15">
-                                <h6 className="student-name-text" align="center">Student Name</h6>
-                            </div>
-                        </div>
-                        <div className="student-small-video" id="student-box-16">
-                            <div id="video-box-16">
-                                <video id="video-tag-16" autoPlay poster="https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTUq71y6yGEk94T1hyj89lV-khy9OMkgZt0Dl1hecguJxUpLU6a&usqp=CAU" width="105" />
-                                <audio autoPlay id="audio-tag-16" />
-                            </div>
-                            <div className="student-name" id="name-box-16">
-                                <h6 className="student-name-text" align="center">Student Name</h6>
-                            </div>
-                        </div>
-                        <div className="student-small-video" id="student-box-17">
-                            <div id="video-box-17">
-                                <video id="video-tag-17" autoPlay poster="https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTUq71y6yGEk94T1hyj89lV-khy9OMkgZt0Dl1hecguJxUpLU6a&usqp=CAU" width="105" />
-                                <audio autoPlay id="audio-tag-17" />
-                            </div>
-                            <div className="student-name" id="name-box-17">
-                                <h6 className="student-name-text" align="center">Student Name</h6>
-                            </div>
-                        </div>
-                        <div className="student-small-video" id="student-box-18">
-                            <div id="video-box-18">
-                                <video id="video-tag-18" autoPlay poster="https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTUq71y6yGEk94T1hyj89lV-khy9OMkgZt0Dl1hecguJxUpLU6a&usqp=CAU" width="105" />
-                                <audio autoPlay id="audio-tag-18" />
-                            </div>
-                            <div className="student-name" id="name-box-18">
-                                <h6 className="student-name-text" align="center">Student Name</h6>
-                            </div>
-                        </div>
-                        <div className="student-small-video" id="student-box-19">
-                            <div id="video-box-19">
-                                <video id="video-tag-19" autoPlay poster="https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTUq71y6yGEk94T1hyj89lV-khy9OMkgZt0Dl1hecguJxUpLU6a&usqp=CAU" width="105" />
-                                <audio autoPlay id="audio-tag-19" />
-                            </div>
-                            <div className="student-name" id="name-box-19">
-                                <h6 className="student-name-text" align="center">Student Name</h6>
-                            </div>
-                        </div>
-                        <div className="student-small-video" id="student-box-20">
-                            <div id="video-box-20">
-                                <video id="video-tag-20" autoPlay poster="https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTUq71y6yGEk94T1hyj89lV-khy9OMkgZt0Dl1hecguJxUpLU6a&usqp=CAU" width="105" />
-                                <audio autoPlay id="audio-tag-20" />
-                            </div>
-                            <div className="student-name" id="name-box-20">
-                                <h6 className="student-name-text" align="center">Student Name</h6>
-                            </div>
-                        </div>
-                        <div className="student-small-video" id="student-box-21">
-                            <div id="video-box-21">
-                                <video id="video-tag-21" autoPlay poster="https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTUq71y6yGEk94T1hyj89lV-khy9OMkgZt0Dl1hecguJxUpLU6a&usqp=CAU" width="105" />
-                                <audio autoPlay width="0%" id="audio-tag-21" />
-                            </div>
-                            <div className="student-name" id="name-box-21">
-                                <h6 className="student-name-text" align="center">Student Name</h6>
-                            </div>
-                        </div>
-                        <div className="student-small-video" id="student-box-22">
-                            <div id="video-box-22">
-                                <video id="video-tag-22" autoPlay poster="https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTUq71y6yGEk94T1hyj89lV-khy9OMkgZt0Dl1hecguJxUpLU6a&usqp=CAU" width="105" />
-                                <audio autoPlay id="audio-tag-22" />
-                            </div>
-                            <div className="student-name" id="name-box-22">
-                                <h6 className="student-name-text" align="center">Student Name</h6>
-                            </div>
-                        </div>
-                        <div className="student-small-video" id="student-box-23">
-                            <div id="video-box-23">
-                                <video id="video-tag-23" autoPlay poster="https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTUq71y6yGEk94T1hyj89lV-khy9OMkgZt0Dl1hecguJxUpLU6a&usqp=CAU" width="105" />
-                                <audio autoPlay id="audio-tag-23" />
-                            </div>
-                            <div className="student-name" id="name-box-23">
-                                <h6 className="student-name-text" align="center">Student Name</h6>
-                            </div>
-                        </div>
-                        <div className="student-small-video" id="student-box-24">
-                            <div id="video-box-24">
-                                <video id="video-tag-24" autoPlay poster="https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTUq71y6yGEk94T1hyj89lV-khy9OMkgZt0Dl1hecguJxUpLU6a&usqp=CAU" width="105" />
-                                <audio autoPlay id="audio-tag-24" />
-                            </div>
-                            <div className="student-name" id="name-box-24">
-                                <h6 className="student-name-text" align="center">Student Name</h6>
-                            </div>
-                        </div>
-                        <div className="student-small-video" id="student-box-25">
-                            <div id="video-box-25">
-                                <video id="video-tag-25" autoPlay poster="https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTUq71y6yGEk94T1hyj89lV-khy9OMkgZt0Dl1hecguJxUpLU6a&usqp=CAU" width="105" />
-                                <audio autoPlay id="audio-tag-25" />
-                            </div>
-                            <div className="student-name" id="name-box-25">
-                                <h6 className="student-name-text" align="center">Student Name</h6>
-                            </div>
-                        </div>
-                        <div className="student-small-video" id="student-box-26">
-                            <div id="video-box-26">
-                                <video id="video-tag-26" autoPlay poster="https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTUq71y6yGEk94T1hyj89lV-khy9OMkgZt0Dl1hecguJxUpLU6a&usqp=CAU" width="105" />
-                                <audio autoPlay id="audio-tag-26" />
-                            </div>
-                            <div className="student-name" id="name-box-26">
-                                <h6 className="student-name-text" align="center">Student Name</h6>
-                            </div>
-                        </div>
-                        <div className="student-small-video" id="student-box-27">
-                            <div id="video-box-27">
-                                <video id="video-tag-27" autoPlay poster="https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTUq71y6yGEk94T1hyj89lV-khy9OMkgZt0Dl1hecguJxUpLU6a&usqp=CAU" width="105" />
-                                <audio autoPlay id="audio-tag-27" />
-                            </div>
-                            <div className="student-name" id="name-box-27">
-                                <h6 className="student-name-text" align="center">Student Name</h6>
-                            </div>
-                        </div>
-                        <div className="student-small-video" id="student-box-28">
-                            <div id="video-box-28">
-                                <video id="video-tag-28" autoPlay poster="https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTUq71y6yGEk94T1hyj89lV-khy9OMkgZt0Dl1hecguJxUpLU6a&usqp=CAU" width="105" />
-                                <audio autoPlay id="audio-tag-28" />
-                            </div>
-                            <div className="student-name" id="name-box-28">
-                                <h6 className="student-name-text" align="center">Student Name</h6>
-                            </div>
-                        </div>
-                        <div className="student-small-video" id="student-box-29">
-                            <div id="video-box-29">
-                                <video id="video-tag-29" autoPlay poster="https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTUq71y6yGEk94T1hyj89lV-khy9OMkgZt0Dl1hecguJxUpLU6a&usqp=CAU" width="105" />
-                                <audio autoPlay id="audio-tag-29" />
-                            </div>
-                            <div className="student-name" id="name-box-29">
-                                <h6 className="student-name-text" align="center">Student Name</h6>
-                            </div>
-                        </div>
-                        <div className="student-small-video" id="student-box-30">
-                            <div id="video-box-30">
-                                <video id="video-tag-30" autoPlay poster="https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTUq71y6yGEk94T1hyj89lV-khy9OMkgZt0Dl1hecguJxUpLU6a&usqp=CAU" width="105" />
-                                <audio autoPlay id="audio-tag-30" />
-                            </div>
-                            <div className="student-name" id="name-box-30">
-                                <h6 className="student-name-text" align="center">Student Name</h6>
-                            </div>
-                        </div>
+                    <div className="row w-100 p-3 justify-content-center" id="small-videos-box">
+                        {
+                            this.state.roomData && this.state.roomData.sources && (this.state.roomData.sources.length > 1) &&
+                            this.state.roomData.sources.map(source => {
+                                // let isMute = source.isMute === "true" ? true : false;
+                                // let isMe = ( source.id === this.state.roomData.id ) ? true : false;
+                                if( source.position.toString() !== "0" ) {
+                                    let sourceUserId = source.id;
+                                    return (
+                                        <div className="student-small-video" id={`student-box-${source.position}`}>
+                                            <div id={`video-box-${source.position}`}>
+                                                <video id={`video-tag-${source.position}`} autoPlay poster="https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTUq71y6yGEk94T1hyj89lV-khy9OMkgZt0Dl1hecguJxUpLU6a&usqp=CAU" width="105" />
+                                                {type==="teacher" && allParticipants[sourceUserId] && <div className="btn-swap-video" onClick={() => this.swapVideo( source )} style={{ backgroundImage: `url(${iconSwap})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', pointerEvents: "all", opacity: "1" }} />}
+                                                {/* <div className="btn-mute-unmute" onClick={() => this.toggleAudio( source, isMute )} style={{ backgroundImage: `url(${isMute?micOff:micOn})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', pointerEvents: "none", opacity: "0.5" }} /> */}
+                                                <audio autoPlay id={`audio-tag-${source.position}`} />
+                                            </div>
+                                            <div className="student-name" id={`name-box-${source.position}`}>
+                                                <h6 className="student-name-text" align="center">Student Name</h6>
+                                            </div>
+                                        </div>
+                                    )
+                                }
+                            })
+                        }
                     </div>
-                    <div id="small-audios-placeholder" />
                 </div>
-
             );
         }
     }

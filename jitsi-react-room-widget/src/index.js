@@ -5,7 +5,8 @@ import 'antd/dist/antd.css';
 
 // comment this lines when you dont want to auto run ReactDOM.render
 const el = document.getElementById('conference-container');
-ReactDOM.render(<Confernece />, el);
+const roomData = ''//el.getAttribute('room-data')
+ReactDOM.render(<Confernece roomData={roomData} />, el);
 
 /* uncomment this block to "defer" ReactDOM.render and expose it globaly
 window.ReactCounter = {
