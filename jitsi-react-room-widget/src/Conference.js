@@ -1,8 +1,10 @@
 /* eslint-disable */
 import React from 'react';
 import queryString from 'query-string';
+import axios from  'axios';
 
 import { message, Select, Button  } from 'antd';
+import socketIOClient from "socket.io-client";
 // import LoadingSpinner from '../../components/UI/Spinner/Spinner';
 import './Conference.css';
 
@@ -47,6 +49,7 @@ const jitsiInitOptions = {
 
 var connection, isJoined, room;
 var screenConnection, isScreenJoined, screenRoom;
+var socket;
 
 let allParticipants = {};
 
@@ -56,13 +59,13 @@ class Conference extends React.Component {
     constructor (props) {
         super(props);
         this.state = {
-            roomInfo: {
-                roomName: "",
-                userName: "", 
-                rollNo: "",
-                password: "",
-                moderator: false
-            },
+            // roomInfo: {
+            //     roomName: "",
+            //     userName: "", 
+            //     rollNo: "",
+            //     password: "",
+            //     moderator: false
+            // },
             loading: false,
             isLoggedIn: false,
             errors: {},
@@ -72,56 +75,148 @@ class Conference extends React.Component {
             isLocalAudioMute: false,
             remoteUserSwappedId: null,
             isScreenSharing: false,
-            isStopped: false
+            isStopped: false,
+            socketEndpoint: 'http://localhost:3001/class-rooms'
         };
+
+        socket = socketIOClient(this.state.socketEndpoint);
+        this.addSocketEvents();
 
         if (window.performance) {
             if (performance.navigation.type === 1) {
-                this.state.jitsiMeetClient && this.state.jitsiMeetClient.leaveRoom();
+                // this.state.jitsiMeetClient && this.state.jitsiMeetClient.leaveRoom();
+                this.unload();
             }
         }
     }
-    componentDidMount () {
+    async componentDidMount () {
         let roomData = {};
-        if( this.props.roomData === '' ) {
-            roomData= queryString.parse(window.location.search.substring(1));
-            roomData['sources'] = roomData['sources'] && JSON.parse(roomData['sources']);
-        } else {
-            if( this.props.roomData !== '' ) {
-                roomData= queryString.parse( this.props.roomData );
-                roomData['sources'] = roomData['sources'] && JSON.parse(roomData['sources']);
+
+        // let params = this.props.params;
+        // if ( !params ) { //temporary for testing
+            let params= queryString.parse(window.location.search.substring(1));
+        // }
+        console.log('params => =>', params);
+
+        if ( params.id && params.type && params.class_id ) {
+            let response = await this.getUserData(params);
+            console.log('=> => respone ', response.data.data)
+            let roomId = params.class_id;
+            if ( response.status ) {
+                roomData = response.data && response.data.data;
+                roomData.roomId = roomId;
+                if ( roomData.roomId && roomData.id && roomData.name && roomData.type && 
+                    roomData.sources && ( roomData.sources.length > 0 ) && 
+                    this.handleDataValidation( roomData ) ) {
+                        
+                    let userSession = {
+                        name: roomData.name,
+                        roomId: roomData.roomId,
+                        position: roomData.position,
+                        type: roomData.type,
+                        tracks: [],
+                        screenTracks: [],
+                        bitrate: (roomData.bitrate ? roomData.bitrate : (roomData.type === 'teacher' ? '720' : '180')),
+                        isMute: roomData.mute
+                    }
+        
+
+                    //***change teacher id later in both if and else block currenlty using manually
+                    //*** its related to sources */
+                    let id = roomData.id; //in case of student add without change
+                    if ( roomData.type === "teacher" ) {
+                        id = '012'; //***allparticipants teacher //teachers id should not match with student id
+                        roomData.id = '012'
+                        // assign position 0 to teacher for so we can swap any user with position 0 and asign user position to teacher
+                        roomData.sources.push({ id: '012', position: "0", name: roomData.name })  //***teacher sources */
+                    } else {
+                        //id = roomData.id;
+                        // assign position 0 to teacher for so we can swap any user with position 0 and asign user position to teacher
+                        roomData.sources.push({ id: '012', position: "0", name: "teacher_name" }) //*** student sources */
+                    }
+                    allParticipants[id] = userSession;
+        
+                    var messageObj = {
+                        type: 'joinRoom',
+                        data: { //store user data at socket server as well
+                            id: id, //userId
+                            roomId: roomId,
+                            name: roomData.name,
+                            type: roomData.type,
+                            position: roomData.position,
+                            bitrate: roomData.bitrate,
+                            isMute: roomData.mute
+                        }
+                    };
+                    socket.emit('event', messageObj);
+        
+                    window.JitsiMeetJS.init();
+                    connection = new window.JitsiMeetJS.JitsiConnection(null, null, options);
+                    this.setConnectionListeners();
+                    connection.connect();
+            
+                    // window.addEventListener(window.JitsiMeetJS.errors.conference.PASSWORD_REQUIRED, function () { message.error('Please provide room password'); });
+        
+                    window.addEventListener("beforeunload", this.unload);
+
+                    this.setState({ roomData });
+                } else {
+                    message.error('Must provide valid user params! See console errors.');
+                }
             }
         }
-        console.log(roomData, "roomData");
-        this.setState({ roomData });
-
-        if ( roomData.room && roomData.id && roomData.name && roomData.type && 
-                roomData.sources && ( roomData.sources.length > 0 ) && 
-                this.handleDataValidation( roomData ) ) {
-
-            let userSession = {
-                position: roomData.position,
-                name: roomData.name,
-                type: roomData.type,
-                tracks: [],
-                screenTracks: [],
-                bitrate: (roomData.bitrate ? roomData.bitrate : (roomData.type === 'teacher' ? '1080' : '180')),
-                isMute: (roomData.type === 'teacher' ? false : true)
+    }
+    async getUserData( params,  ) {
+        console.log(params , 'params => =>')
+        try {
+          const response = await axios.get('https://wfh.wnets.net/api.php', { params });
+          console.log('user api response => =>', response);
+          if ( response.status ) {
+              return {
+                  status: true,
+                  data: response.data
+              }
+          } else {
+            return {
+                status: false,
+                data: response.data
             }
-
-            allParticipants[roomData.id] = userSession;
-
-            window.JitsiMeetJS.init();
-            connection = new window.JitsiMeetJS.JitsiConnection(null, null, options);
-            this.setConnectionListeners();
-            connection.connect();
-    
-            window.addEventListener(window.JitsiMeetJS.errors.conference.PASSWORD_REQUIRED, function () { message.error('Please provide room password'); });
-
-            window.addEventListener("beforeunload", this.unload);
-        } else {
-            message.error('Must provide valid room data! See console errors.');
+          }
+        } catch (error) {
+            message.error('something went wrong when fetching user data.');
+            console.error('something went wrong when fetching user data. => ', error);
+            return {
+                status: true,
+                error: error
+            }
         }
+    }
+
+    addSocketEvents = () => {
+        socket.on('event', (messageObj) => {
+            console.log(messageObj, 'message from server. => =>');
+            let type = messageObj.type;
+            let data = messageObj.data;
+            switch ( type ) {
+                case 'newUser':
+                    console.log('new user joining room => ', data);
+                    break;
+                case 'roomJoinResponse':
+                    console.log('successfully joined socket room =>', data);
+                    break;
+                case 'video-swapped-from-server':
+                    console.log('video swapped from server', data)
+                    this.swapVideo( data.selectedSource , data.teacherId, data.remoteUserSwappedId );
+                    break;
+                case 'message-undefined':
+                    console.error('socketio server message type undefined!') 
+                    break;
+                case 'error':
+                    console.log('error when processing socketio request => ', data.error)
+                default:
+                    console.error('socketio server message type undefined!', data);
+            }
+        });
     }
 
     componentDidUpdate () {
@@ -151,9 +246,9 @@ class Conference extends React.Component {
                         if (participantTracks[i].getType() === 'video') {
                             participantTracks[i].attach($(`#video-tag-${participant.position}`)[0]);
                             let name = participant.name;
-                            if ( name === this.state.roomData.name ) {
-                                name = name + "(me)"
-                            }
+                            // if ( name === this.state.roomData.name ) {
+                            //     name = name + "(me)"
+                            // }
                             if ( name ) {
                                 $(`#name-box-${participant.position} h6`).text(name);
                             }
@@ -218,6 +313,7 @@ class Conference extends React.Component {
                 message.info("You are moderator of the Conference.", 5);
             }
             isJoined = true;
+            console.log('all participants before setting localtracks => => ', allParticipants)
             let localTracks = allParticipants[this.state.roomData.id].tracks;
             for (let i = 0; i < localTracks.length; i++) {
                 room.addTrack(localTracks[i]);
@@ -244,11 +340,11 @@ class Conference extends React.Component {
 
     joinRoom ( isScreen = false) {
         let roomData = this.state.roomData;
-        let roomName = roomData.room;
+        let roomId = roomData.roomId;
         console.log('room join data name => => ', roomData);
 
         if ( !isScreen ) {
-            room = connection.initJitsiConference( roomName, {} ); //name of conference
+            room = connection.initJitsiConference( roomId, {} ); //name of conference
 
             room.on(window.JitsiMeetJS.events.conference.TRACK_ADDED, (track) => this.onRemoteTrack(track));
             room.on(window.JitsiMeetJS.events.conference.TRACK_REMOVED, (track) => this.onRemoveTrack(track)); //to remove track
@@ -262,16 +358,16 @@ class Conference extends React.Component {
                 let roomParticipant = room.getParticipantById(id)
                 let userInfo = roomParticipant ? (roomParticipant._displayName ? roomParticipant._displayName.split('###') : null) : null;
                 console.log(userInfo,"=> => display changed")
-                message.info(displayName)
+                message.info(userInfo[1]);
             })
             room.on(window.JitsiMeetJS.events.conference.USER_LEFT, id=>this.onUserLeft(id)); //user left
     
             room.join();
     
-            let bitRate = roomData.bitrate ? roomData.bitrate : ( roomData.type==="teacher" ? "1080" : "180" );
-            room.setReceiverVideoConstraint(bitRate);
+            let bitrate = roomData.bitrate ? roomData.bitrate : ( roomData.type==="teacher" ? "720" : "180" );
+            room.setReceiverVideoConstraint(bitrate);
         } else {
-            screenRoom = screenConnection.initJitsiConference( roomName, {} ); //name of conference
+            screenRoom = screenConnection.initJitsiConference( roomId, {} ); //name of conference
             screenRoom.on(window.JitsiMeetJS.events.conference.CONFERENCE_JOINED, () => {
                 this.onConferenceJoined( true );
                 this.getScreenTracks();
@@ -327,7 +423,7 @@ class Conference extends React.Component {
                         console.log('local track new audio status => =>', track.isMuted())
                         this.setState({ isLocalAudioMute : track.isMuted() });
                     }
-                }) //use it to show whether user muted or not
+                }) //use it to show whether teacher muted or not
             tracks[i].addEventListener(
                 window.JitsiMeetJS.events.track.LOCAL_TRACK_STOPPED,
                 () => console.log('local track stoped'));
@@ -348,6 +444,19 @@ class Conference extends React.Component {
                 }
                 room.addTrack(tracks[i]);
             }
+
+            // let roomData = this.state.roomData;
+
+            // if ( this.state.roomData.type === "teacher" ) {  //updating teacher id when teacher joined on student page
+            //     roomData.sources = roomData.sources.map(source => {
+            //         if ( source.position === "0" ) {
+            //             source.id = "teacher" + this.state.roomData.id;
+            //             return source;
+            //         }
+            //         return source;
+            //     })
+            // }
+            
             this.setState({ isTrackUpdate: true });
         }
     }
@@ -434,11 +543,13 @@ class Conference extends React.Component {
         let roomParticipant = room.getParticipantById(participantId)
         let userInfo = roomParticipant ? (roomParticipant._displayName ? roomParticipant._displayName.split('###') : null) : null;
         if ( userInfo ) {
+            console.log('id => => ', id)
             let id = userInfo[0];
             let position = userInfo[3];
+            
             let participant = allParticipants[id];
     
-            if ( participant.tracks ) {
+            if ( participant['localTracks'] ) {
                 let tracks = participant.tracks;
                 tracks.forEach(( track, index ) => {
                     if (track.getType() === 'video') {
@@ -453,12 +564,15 @@ class Conference extends React.Component {
     }
 
     unload () {
-        let localTracks = allParticipants[this.state.roomData.id]['tracks'];
-        for (let i = 0; i < localTracks.length; i++) {
-            localTracks[i].dispose();
+        let id = this.state.roomData.id;
+        if (allParticipants[id]) {
+            let localTracks = allParticipants[id]['tracks'];
+            for (let i = 0; i < localTracks.length; i++) {
+                localTracks[i].dispose();
+            }
+            room.leave();
+            connection.disconnect();
         }
-        room.leave();
-        connection.disconnect();
     }
 
     componentWillUnmount () {
@@ -468,39 +582,39 @@ class Conference extends React.Component {
         }
     }
 
-    handleChange = (event) => {
-        let { roomInfo, errors } = this.state;
-        const name = event.target.name;
-        const value = event.target.value;
+    // handleChange = (event) => {
+    //     let { roomInfo, errors } = this.state;
+    //     const name = event.target.name;
+    //     const value = event.target.value;
 
-        if (name === "moderator") {
-            roomInfo[name] = !roomInfo[name];
-        } else if (name === "rollNo") {
-            const regex = /^[0-9\b]+$/;
-            if (value === "" || regex.test(value)) {
-                roomInfo[name] = value;
-            } else {
-                errors["rollNo"] = "Roll Number must be integer";
-                this.setState({ errors })
-            }
-        } else {
-            roomInfo[name] = value; 
-        }
-        this.setState({ roomInfo });
-    }
+    //     if (name === "moderator") {
+    //         roomInfo[name] = !roomInfo[name];
+    //     } else if (name === "rollNo") {
+    //         const regex = /^[0-9\b]+$/;
+    //         if (value === "" || regex.test(value)) {
+    //             roomInfo[name] = value;
+    //         } else {
+    //             errors["rollNo"] = "Roll Number must be integer";
+    //             this.setState({ errors })
+    //         }
+    //     } else {
+    //         roomInfo[name] = value; 
+    //     }
+    //     this.setState({ roomInfo });
+    // }
 
     handleDataValidation = ( roomData ) => {
         let fields = roomData;
         let dataIsValid = true;
 
-        if (!fields["room"]) {
+        if (!fields["roomId"]) {
             dataIsValid = false;
-            console.error("please provide room name");
+            console.error("please provide room id");
         }
 
-        if (!fields["room"].match(/^[a-z0-9]+$/)) {
+        if (!fields["roomId"].match(/^[a-z0-9]+$/)) {
             dataIsValid = false;
-            console.error('room name should must contain small characters or numbers!')
+            console.error('room id should must contain small characters or numbers!')
         }
 
         if (!fields["name"]) {
@@ -558,69 +672,102 @@ class Conference extends React.Component {
     
 //remote user id
 
-    swapVideo = ( source ) => {
-        console.log('change this source with teacher video div => => ', source);
+    swapVideo = ( source, teacherId, remoteUserSwappedId ) => {
+        console.log('change this source with teacher video div => => ', source, teacherId, remoteUserSwappedId);
         // *** source id used to swap with teacher div
         
-        let sourceId = source.id;
-        let sourcePosition = source.position;
-        let roomData = this.state.roomData;
+        remoteUserSwappedId = remoteUserSwappedId ? remoteUserSwappedId : this.state.remoteUserSwappedId; //in case of student pass through params.
+        //send source, teacherId, remoteUserSwappedId
+        //remote student have allParticipants, sources 
 
-        if ( sourceId === roomData.id ) {  //or sources[0]/allparticipants[].type==="teacher" for remote user
+        let roomData = this.state.roomData;
+        let tempSource= Object.assign({}, source);;
+        let sourceId = source.id;
+        teacherId = teacherId ? teacherId : roomData.id;  //in case of student provide teacher id as params
+        let sourcePosition = source.position;
+        let roomId = roomData.roomId;
+
+        if ( sourceId === teacherId ) {  //means source is teacher so revert teacher position back
             allParticipants[sourceId].position = "0";  //revert teacher position to 0
-            allParticipants[this.state.remoteUserSwappedId].position = sourcePosition;  //revert student position to curent teacher position
+            allParticipants[remoteUserSwappedId].position = sourcePosition;  //revert student position to curent teacher position
             
-            roomData.sources = roomData.sources.map(source => {
-                if ( source.id === this.state.remoteUserSwappedId ) {
-                    source.position = sourcePosition;  //revert student back positiion 
-                    return source;
-                } else if ( source.id === roomData.id ) {
-                    source.position = "0";  //revert teacher back to 0 in sources
-                    return source;
+            roomData.sources = roomData.sources.map(sourceElement => { // update souces for both student and teacher
+                if ( sourceElement.id === remoteUserSwappedId ) {
+                    sourceElement.position = sourcePosition;  //revert student position back         
+                    if ( this.state.roomData.type === "student" ) {
+                        console.log(allParticipants[sourceId], '=> => participant')
+                        allParticipants[remoteUserSwappedId].tracks.forEach( track => {
+                            if ( track.getType() === 'audio' ) {
+                                track.mute();
+                                room.setReceiverVideoConstraint('180'); //manually setting small box at 180
+                            }
+                        });
+                    }
+                    return sourceElement;
+                } else if ( sourceElement.id === teacherId.toString() ) {
+                    sourceElement.position = "0";  //revert teacher back to 0 in sources
+                    if ( this.state.roomData.type === "teacher" ) {
+                        allParticipants[teacherId].tracks.forEach( track => {
+                            if ( track.getType() === 'audio' ) {
+                                track.unmute();
+                                room.setReceiverVideoConstraint(roomData.bitrate);
+                            }
+                        });
+                    }
+                    return sourceElement;
                 }
-                return source;
+                return sourceElement;
             });
             this.setState({ roomData, isTrackUpdate: true, remoteUserSwappedId: null });
-        } else {
+        } else { //when click on student
             if ( allParticipants[sourceId] ) {
-                roomData.sources = roomData.sources.map(source => {
-                    if ( source.id === sourceId ) {
-                        source.position = "0";
-                        return source;
-                    } else if ( source.id === roomData.id ) {  //because swap only available for teacher so teacher id is in state
-                        source.position = sourcePosition;
-                        return source;
+                roomData.sources = roomData.sources.map(sourceElement => {
+                    if ( sourceElement.id === sourceId ) {
+                        console.log('changing student position to 0 => =>', source)
+                        sourceElement.position = "0";
+                        return sourceElement;
+                    } else if ( sourceElement.id === teacherId ) {  //because swap only available for teacher so teacher id is in state
+                        sourceElement.position = sourcePosition;
+                        console.log('changing teacher position to  => =>', sourcePosition ,source)
+                        return sourceElement;
                     }
-                    return source;
+                    return sourceElement;
                 });
     
                 Object.keys(allParticipants).forEach( id => {
                     if ( id === sourceId ) {
                         allParticipants[sourceId].position = "0";  //change remoted user position to 0 in place of teacher
+                        if ( this.state.roomData.type === "student" ) {
+                            allParticipants[sourceId].tracks.forEach( track => {
+                                if ( track.getType() === 'audio' ) {
+                                    track.unmute();
+                                    room.setReceiverVideoConstraint('720'); //set student bitrate at 720
+                                }
+                            });
+                        }
                     } else if ( allParticipants[id].type === "teacher" ) {
-                        allParticipants[id].position = sourcePosition; //relocate teacher position to student div
+                        allParticipants[id].position = sourcePosition; //change teacher position to student div
+                        if ( this.state.roomData.type === "teacher" ) {
+                            allParticipants[id].tracks.forEach( track => {
+                                if ( track.getType() === 'audio' ) {
+                                    track.mute();
+                                    room.setReceiverVideoConstraint('180'); //set teacher bitrate to 180
+                                }
+                            });
+                        }
                     }
                 });
 
-                //send display name change to all other participant
-                this.swapVideoDispayChangeForTeacher( sourcePosition, sourceId )
-    
+                remoteUserSwappedId = sourceId;
                 console.log('all participant and sources => => ', allParticipants, roomData);
-                this.setState({ roomData, isTrackUpdate: true, remoteUserSwappedId: sourceId });
+                this.setState({ roomData, isTrackUpdate: true, remoteUserSwappedId });
             }
         }
-    }
-
-    swapVideoDispayChangeForTeacher = ( positionSwapped, swappedWith ) => {
-        let userId = this.state.roomData.id;
-        let userName = this.state.roomData.name;
-        let type = this.state.roomData.type;
-        let position = positionSwapped;
-        let uid = "";
-
-        uid = userId + "###" + userName + "###" + type + "###" + position + "###" + swappedWith;
-
-        room.setDisplayName(uid);
+        if ( roomData.type === "teacher" ) {
+            console.log('sending this => => ', source, tempSource)
+            let messageObject = { type: 'videos-swapped', data: { selectedSource: tempSource, teacherId, remoteUserSwappedId, roomId  } };
+            socket.emit( 'event', messageObject );
+        }
     }
 
     getScreenTracks () {
@@ -669,10 +816,20 @@ class Conference extends React.Component {
         }
     }
 
+    sortSources = ( a, b ) => {
+        if ( parseInt(a.position) < parseInt(b.position) ){
+          return -1;
+        }
+        if ( parseInt(a.position) > parseInt(b.position) ){
+          return 1;
+        }
+        return 0;
+    }
+
     render () {
-        console.log('all participant => => ', allParticipants)
+        console.log('all participant => => ', allParticipants, this.state.roomData)
         const { isLoggedIn, roomData } = this.state;
-        const { room, id, name, type } = roomData;
+        const { roomId, id, name, type } = roomData;
 
         const customStyle = {
             largeVideoPoster: {
@@ -683,7 +840,7 @@ class Conference extends React.Component {
             }
         }
 
-        if ( !id || !room || !name || !type ) {
+        if ( !id || !roomId || !name || !type ) {
             return <div className="container" style={{ height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "center" }}>
                 <p style={{ fontSize: "35px", color: "#ff4d4f" }}>Please provide room info</p>
             </div>
@@ -733,16 +890,14 @@ class Conference extends React.Component {
                             
                         </div>
                     </div>
-                    <div className="row w-100 p-3 justify-content-center" id="small-videos-box">
+                    <div className="row w-100 p-3 justify-content-start" id="small-videos-box">
                         {
                             this.state.roomData && this.state.roomData.sources && (this.state.roomData.sources.length > 1) &&
-                            this.state.roomData.sources.map(source => {
-                                // let isMute = source.isMute === "true" ? true : false;
-                                // let isMe = ( source.id === this.state.roomData.id ) ? true : false;
+                            this.state.roomData.sources.sort(this.sortSources.bind(this)).map(source => {
                                 if( source.position.toString() !== "0" ) {
                                     let sourceUserId = source.id;
                                     return (
-                                        <div className="student-small-video" id={`student-box-${source.position}`}>
+                                        <div key={source.position} className="student-small-video" id={`student-box-${source.position}`}>
                                             <div id={`video-box-${source.position}`}>
                                                 <video id={`video-tag-${source.position}`} autoPlay poster="https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTUq71y6yGEk94T1hyj89lV-khy9OMkgZt0Dl1hecguJxUpLU6a&usqp=CAU" width="105" />
                                                 {type==="teacher" && allParticipants[sourceUserId] && <div className="btn-swap-video" onClick={() => this.swapVideo( source )} style={{ backgroundImage: `url(${iconSwap})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', pointerEvents: "all", opacity: "1" }} />}
@@ -750,7 +905,7 @@ class Conference extends React.Component {
                                                 <audio autoPlay id={`audio-tag-${source.position}`} />
                                             </div>
                                             <div className="student-name" id={`name-box-${source.position}`}>
-                                                <h6 className="student-name-text" align="center">Student Name</h6>
+                                                <h6 className="student-name-text" align="center">{source.name}</h6>
                                             </div>
                                         </div>
                                     )

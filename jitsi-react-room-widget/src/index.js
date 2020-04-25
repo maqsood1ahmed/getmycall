@@ -5,8 +5,15 @@ import 'antd/dist/antd.css';
 
 // comment this lines when you dont want to auto run ReactDOM.render
 const el = document.getElementById('conference-container');
-const roomData = ''//el.getAttribute('room-data')
-ReactDOM.render(<Confernece roomData={roomData} />, el);
+const type = el.getAttribute('type');
+const id = el.getAttribute('user_id');
+const class_id = el.getAttribute('class_id');
+const api = el.getAttribute('api') ? el.getAttribute('api') : 'login';
+
+console.log('=> => ', id, type, class_id)
+
+let params = { api, type, id, class_id }
+ReactDOM.render(<Confernece params={params} />, el);
 
 /* uncomment this block to "defer" ReactDOM.render and expose it globaly
 window.ReactCounter = {
