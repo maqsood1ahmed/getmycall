@@ -1,14 +1,21 @@
-var app = require('express')();
+var express = require('express');
+var app = express();
 var server = require('http').Server(app);
 var io = require('socket.io')(server);
+var path = require('path');
 
 var ioClassRoom = io.of('/class-rooms');
 
-app.get('/', function(req, res) {
-    res.sendFile(__dirname + '/index.html');
+app.get('/teacher-dashboard', function(req, res) {
+    res.sendFile(__dirname + '/public/teacher-dashboard.html');
 });
+app.use(express.static(path.join(__dirname, 'public')));
 
 var rooms = {};
+
+server.listen(3001, function(){
+    console.log('server start at port => 3001')
+});
 
 ioClassRoom.on('connection', (socket) => {
     console.log('client connected => ', socket.id)
@@ -85,7 +92,3 @@ function leaveRoom( socket ) {
         }
     })
 }
-
-server.listen(3001, function(){
-    console.log('server start at port => 3001')
-});

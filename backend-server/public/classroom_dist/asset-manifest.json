@@ -1,0 +1,13 @@
+{
+  "main.css": "/static/css/react-classroom.css",
+  "main.js": "/static/js/react-classroom.js",
+  "main.js.map": "/static/js/react-classroom.js.map",
+  "static/media/start.png": "/static/media/start.png",
+  "static/media/mic-on.svg": "/static/media/mic-on.svg",
+  "static/media/mic-off.svg": "/static/media/mic-off.svg",
+  "static/media/swap_video.png": "/static/media/swap_video.png",
+  "static/css/react-classroom.css.map": "/static/css/react-classroom.css.map",
+  "index.html": "/index.html",
+  "precache-manifest.caae4e66aa9f09132aa28125ca9335a5.js": "/precache-manifest.caae4e66aa9f09132aa28125ca9335a5.js",
+  "service-worker.js": "/service-worker.js"
+}

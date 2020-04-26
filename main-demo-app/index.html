@@ -15,7 +15,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.dev.js"></script>
 
     <link rel="stylesheet" type="text/css" href="index.css">
-    <link rel="stylesheet" type="text/css" href="static/css/react-classroom.css">
+    <link rel="stylesheet" type="text/css" href="http://localhost:3001/static/css/react-classroom.css">
 </head>
 <body>
     <div class="container">
@@ -33,42 +33,7 @@
             </div>
         </div>
     </div>
-    <script>
-            var socket = io('http://localhost:3001/class-rooms');
-
-            socket.on('event', (messageObj) => {
-                console.log(messageObj, 'message from server.');
-                let type = messageObj.type;
-                let data = messageObj.data;
-                switch ( type ) {
-                    case 'newUser':
-                        console.log('new user joining room => ', data);
-                        break;
-                    case 'roomJoinResponse':
-                        console.log('successfully joined socket room =>', data);
-                        break;
-                    case 'message-undefined':
-                        console.error('socketio server message type undefined!') 
-                        break;
-                    case 'error':
-                        console.log('error when processing socketio request => ', data.error)
-                    default:
-                        console.error('socketio server message type undefined!', data);
-                }
-            });
-            var messageObj = {
-                type: 'joinRoom',
-                data: {
-                    id: "012", //userId
-                    roomName: "room12345",
-                    name: "Maqsood Ahmed Room",
-                    type: "teacher"
-                }
-            };
-            socket.emit('event', messageObj);
-            
-    </script>
     <script src="https://meet.jit.si/libs/lib-jitsi-meet.min.js"></script>
-    <script src="static/js/react-classroom.js"></script> 
+    <script src="http://localhost:3001/static/js/react-classroom.js"></script> 
 </body>
 </html>

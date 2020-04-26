@@ -3,18 +3,20 @@ import React from 'react';
 import queryString from 'query-string';
 import axios from  'axios';
 
-import { message, Select, Button  } from 'antd';
+import { message, Select  } from 'antd';
 import socketIOClient from "socket.io-client";
 // import LoadingSpinner from '../../components/UI/Spinner/Spinner';
 import './Conference.css';
 
-import startIcon from './assets/img/start.png';
-import stopIcon from './assets/img/stop.png';
-import micOn from './assets/img/mic-on.svg';
-import micOff from './assets/img/mic-off.svg';
-import iconSwap from './assets/img/swap_video.png'
+// import startIcon from './assets/img/start.png';
+// import stopIcon from './assets/img/stop.png';
+// import micOn from './assets/img/mic-on.svg';
+// import micOff from './assets/img/mic-off.svg';
+// import iconSwap from './assets/img/swap_video.png'
+// import loadingIcon from './assets/img/loading-icon.gif';
 
 const { Option } = Select;
+const staticServerURL = "http://localhost:3001";
 
 const options = {
     hosts: {
@@ -31,7 +33,7 @@ const jitsiInitOptions = {
     disableAudioLevels: true,
 
     // The ID of the jidesha extension for Chrome.
-    desktopSharingChromeExtId: 'mbocklcggfhnbahlnepmldehdhpjfcjp',
+    // desktopSharingChromeExtId: 'mbocklcggfhnbahlnepmldehdhpjfcjp',
 
     // Whether desktop sharing should be disabled on Chrome.
     desktopSharingChromeDisabled: false,
@@ -59,13 +61,6 @@ class Conference extends React.Component {
     constructor (props) {
         super(props);
         this.state = {
-            // roomInfo: {
-            //     roomName: "",
-            //     userName: "", 
-            //     rollNo: "",
-            //     password: "",
-            //     moderator: false
-            // },
             loading: false,
             isLoggedIn: false,
             errors: {},
@@ -76,18 +71,11 @@ class Conference extends React.Component {
             remoteUserSwappedId: null,
             isScreenSharing: false,
             isStopped: false,
-            socketEndpoint: 'http://localhost:3001/class-rooms'
+            socketEndpoint: `${staticServerURL}/class-rooms`
         };
 
         socket = socketIOClient(this.state.socketEndpoint);
         this.addSocketEvents();
-
-        if (window.performance) {
-            if (performance.navigation.type === 1) {
-                // this.state.jitsiMeetClient && this.state.jitsiMeetClient.leaveRoom();
-                this.unload();
-            }
-        }
     }
     async componentDidMount () {
         let roomData = {};
@@ -102,10 +90,12 @@ class Conference extends React.Component {
             let response = await this.getUserData(params);
             console.log('=> => respone ', response.data.data)
             let roomId = params.class_id;
-            if ( response.status ) {
+            let type = params.type;
+            if ( response.status && response.data.data ) {
                 roomData = response.data && response.data.data;
                 roomData.roomId = roomId;
-                if ( roomData.roomId && roomData.id && roomData.name && roomData.type && 
+                roomData.type = type;
+                if ( roomId && roomData.id && roomData.name && roomData.type && 
                     roomData.sources && ( roomData.sources.length > 0 ) && 
                     this.handleDataValidation( roomData ) ) {
                         
@@ -121,19 +111,19 @@ class Conference extends React.Component {
                     }
         
 
-                    //***change teacher id later in both if and else block currenlty using manually
-                    //*** its related to sources */
+                    // //***change teacher id later in both if and else block currenlty using manually
+                    // //*** its related to sources */
                     let id = roomData.id; //in case of student add without change
-                    if ( roomData.type === "teacher" ) {
-                        id = '012'; //***allparticipants teacher //teachers id should not match with student id
-                        roomData.id = '012'
-                        // assign position 0 to teacher for so we can swap any user with position 0 and asign user position to teacher
-                        roomData.sources.push({ id: '012', position: "0", name: roomData.name })  //***teacher sources */
-                    } else {
-                        //id = roomData.id;
-                        // assign position 0 to teacher for so we can swap any user with position 0 and asign user position to teacher
-                        roomData.sources.push({ id: '012', position: "0", name: "teacher_name" }) //*** student sources */
-                    }
+                    // if ( roomData.type === "teacher" ) {
+                    //     id = '012'; //***allparticipants teacher //teachers id should not match with student id
+                    //     roomData.id = '012'
+                    //     // assign position 0 to teacher for so we can swap any user with position 0 and asign user position to teacher
+                    //     roomData.sources.push({ id: '012', position: "0", name: roomData.name })  //***teacher sources */
+                    // } else {
+                    //     //id = roomData.id;
+                    //     // assign position 0 to teacher for so we can swap any user with position 0 and asign user position to teacher
+                    //     roomData.sources.push({ id: '012', position: "0", name: "teacher_name" }) //*** student sources */
+                    // }
                     allParticipants[id] = userSession;
         
                     var messageObj = {
@@ -150,14 +140,12 @@ class Conference extends React.Component {
                     };
                     socket.emit('event', messageObj);
         
-                    window.JitsiMeetJS.init();
+                    window.JitsiMeetJS.init(jitsiInitOptions);
                     connection = new window.JitsiMeetJS.JitsiConnection(null, null, options);
                     this.setConnectionListeners();
                     connection.connect();
             
                     // window.addEventListener(window.JitsiMeetJS.errors.conference.PASSWORD_REQUIRED, function () { message.error('Please provide room password'); });
-        
-                    window.addEventListener("beforeunload", this.unload);
 
                     this.setState({ roomData });
                 } else {
@@ -165,7 +153,16 @@ class Conference extends React.Component {
                 }
             }
         }
+        let $ = window.jQuery;
+        $(window).bind('beforeunload', this.unload.bind(this));
+        $(window).bind('unload', this.unload.bind(this));
     }
+    handleLeavePage(e) {
+        window.alert('changing')
+        const confirmationMessage = 'Some message';
+        e.returnValue = confirmationMessage;     // Gecko, Trident, Chrome 34+
+        return confirmationMessage;              // Gecko, WebKit, Chrome <34
+      }
     async getUserData( params,  ) {
         console.log(params , 'params => =>')
         try {
@@ -435,13 +432,13 @@ class Conference extends React.Component {
             allParticipants[this.state.roomData.id]["tracks"].push(tracks[i])
             if (isJoined) {
 
-                if ( this.state.roomData.type !== "teacher" ) {
-                    tracks.forEach(track=> {
-                        if ( track.getType() === "audio" ) {
-                            track.mute();
-                        }
-                    })
-                }
+                // if ( this.state.roomData.mute !== "teacher" ) {
+                tracks.forEach(track=> {
+                    if ( track.getType() === "audio" ) {
+                        this.state.roomData.mute === "1" && track.mute();
+                    }
+                })
+                // }
                 room.addTrack(tracks[i]);
             }
 
@@ -578,7 +575,6 @@ class Conference extends React.Component {
     componentWillUnmount () {
         if ( connection && room ) {
             this.unload();
-            window.removeEventListener("beforeunload", () => this.unload());
         }
     }
 
@@ -690,12 +686,11 @@ class Conference extends React.Component {
         if ( sourceId === teacherId ) {  //means source is teacher so revert teacher position back
             allParticipants[sourceId].position = "0";  //revert teacher position to 0
             allParticipants[remoteUserSwappedId].position = sourcePosition;  //revert student position to curent teacher position
-            
+
             roomData.sources = roomData.sources.map(sourceElement => { // update souces for both student and teacher
                 if ( sourceElement.id === remoteUserSwappedId ) {
-                    sourceElement.position = sourcePosition;  //revert student position back         
-                    if ( this.state.roomData.type === "student" ) {
-                        console.log(allParticipants[sourceId], '=> => participant')
+                    sourceElement.position = sourcePosition;  //revert student position back       
+                    if ( roomData.type === "student" ) {
                         allParticipants[remoteUserSwappedId].tracks.forEach( track => {
                             if ( track.getType() === 'audio' ) {
                                 track.mute();
@@ -737,7 +732,7 @@ class Conference extends React.Component {
                 Object.keys(allParticipants).forEach( id => {
                     if ( id === sourceId ) {
                         allParticipants[sourceId].position = "0";  //change remoted user position to 0 in place of teacher
-                        if ( this.state.roomData.type === "student" ) {
+                        if ( this.state.roomData.type === "student" && sourceId === this.state.roomData.id ) {
                             allParticipants[sourceId].tracks.forEach( track => {
                                 if ( track.getType() === 'audio' ) {
                                     track.unmute();
@@ -771,7 +766,22 @@ class Conference extends React.Component {
     }
 
     getScreenTracks () {
-        window.JitsiMeetJS.createLocalTracks({ devices: ['screen', 'desktop'] })
+        let options = {
+            devices: ['desktop'],
+            minFps: "15",
+            resolution: 720,
+            constraints: {
+                video: {
+                    aspectRatio: 16 / 9,
+                    height: {
+                        ideal: 720,
+                        max: 720,
+                        min: 180
+                    }
+                }
+            },
+        }
+        window.JitsiMeetJS.createLocalTracks( options )
             .then((tracks) => {
                 this.onScreenTracks(tracks);
                 this.setState({ isScreenSharing: true })
@@ -807,8 +817,7 @@ class Conference extends React.Component {
 
     //jitsi supports only one video track at a time so we creating new connection for screen share separately
     handleScreenShareButton = ( isScreenSharing ) => {
-        if ( !isScreenSharing ) {
-            // window.JitsiMeetJS.init(jitsiInitOptions); 
+        if ( !isScreenSharing ) { 
             screenConnection = new window.JitsiMeetJS.JitsiConnection(null, null, options);
 
             this.setConnectionListeners( true );
@@ -826,6 +835,12 @@ class Conference extends React.Component {
         return 0;
     }
 
+    iframe = () => {
+        return {
+          __html: `<iframe src="${staticServerURL}/teacher-dashboard.html" width="100%" height="100%" frameborder="0" allowfullscreen></iframe>`
+        }
+    }
+
     render () {
         console.log('all participant => => ', allParticipants, this.state.roomData)
         const { isLoggedIn, roomData } = this.state;
@@ -839,14 +854,20 @@ class Conference extends React.Component {
                 backgroundRepeat: 'no-repeat'
             }
         }
-
+ 
         if ( !id || !roomId || !name || !type ) {
             return <div className="container" style={{ height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "center" }}>
                 <p style={{ fontSize: "35px", color: "#ff4d4f" }}>Please provide room info</p>
             </div>
         } else if ( !isLoggedIn ) {
-            return <div className="container" style={{ height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "center" }}>
-                {this.state.isStopped && <p style={{ fontSize: "35px", color: this.state.isStopped? "red" : "black" }}> Stopped! </p>}
+            return <div className="container" style={{ paddingLeft: "0px", paddingRight: "0px", height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "center" }}>
+                {this.state.isStopped ? <p style={{ fontSize: "35px", color: this.state.isStopped? "red" : "black" }}> Stopped! </p> : 
+                // <div style={{ width: "100%" }}>
+                //     <img src={loadingIcon} alt="" width="100%" height="100%" />
+                // </div>}
+                <div className="justify-content-center" style= {{ width: "100%", height: "100%", top: "50%", backgroundColor: 'white' }}>
+                    <img src={`${staticServerURL}/static/media/loading-icon.gif`} alt="" width="200" height="200" style={{ marginTop: "120px" }} />
+                </div>}
                 {/* {this.state.isStopped && <Button onClick={()=> this.joinRoom()} type="primary"> Join Again </Button>} */}
             </div>
         } else {
@@ -858,7 +879,7 @@ class Conference extends React.Component {
                             <audio autoPlay width="0%" height="0%" id="teacher-audio-tag"></audio>
                             { (type === "teacher") &&
                                 <Select
-                                    defaultValue={this.state.resolutions[3]}
+                                    defaultValue={this.state.roomData.bitrate}
                                     // style={{ width: 80 }}
                                     onChange={(value) => this.handleChangeResolutions(value)}
                                 >
@@ -868,24 +889,15 @@ class Conference extends React.Component {
                                 </Select>
                             }
                             <div id="large-video-actions-box" className="row w-20 h-10" style={{ background: (type==="teacher" ? "rgba(255, 255, 255, 0.301)": "none")}}>
-                                {(allParticipants[id]['type'] === "teacher") && <div onClick={() => this.toggleAudio( id, this.state.isLocalAudioMute )} style={{ backgroundImage: `url(${this.state.isLocalAudioMute?micOff:micOn})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', width: "35px", height: "35px", cursor: "pointer" }} />}
-                                <div onClick={this.leaveRoomBtn.bind(this)} style={{ backgroundImage: `url(${stopIcon})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', marginLeft: "8px", width: "40px", height: "40px", cursor: "pointer" }} />                            
+                                {(allParticipants[id]['type'] === "teacher") && <div onClick={() => this.toggleAudio( id, this.state.isLocalAudioMute )} style={{ backgroundImage: `url(${this.state.isLocalAudioMute?`${staticServerURL}/static/media/mic-off.svg`:`${staticServerURL}/static/media/mic-on.svg`})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', width: "35px", height: "35px", cursor: "pointer" }} />}
+                                <div onClick={this.leaveRoomBtn.bind(this)} style={{ backgroundImage: `url("${staticServerURL}/static/media/stop.png")`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', marginLeft: "8px", width: "40px", height: "40px", cursor: "pointer" }} />                            
                             </div>
                         </div>
                         <div className="col-md-4 col-sm-4 col-xs-8 container w-100 h-100 p-3" id="teacher-dashboard">
-                            <video  autoPlay width="100%" height="49%" controls>
-                            {/* // width="350" height="199" controls> */}
-                                <source src="" type="video/mp4" />>
-                                <source src="" type="video/ogg" />
-                            </video>
-                            
+                            <div style={{ width: "100%", height: "49%", position: "relative" }} dangerouslySetInnerHTML={ this.iframe() }/>
                             <div style={{ width: "100%", height: "49%", position: "relative" }}>
-                                <video id="teacher-screen-share-video" autoPlay poster="https://cdn.pixabay.com/photo/2017/08/08/18/11/mockup-2612145_960_720.png" width="100%" height="100%" >
-                                {/* // width="350" height="199" controls> */}
-                                    <source src="" type="video/mp4" />>
-                                    <source src="" type="video/ogg" />
-                                </video>
-                                {(type === "teacher") &&<div className="btn-start-screen" onClick={() => this.handleScreenShareButton(this.state.isScreenSharing)} style={{ backgroundImage: `url(${!this.state.isScreenSharing && startIcon})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', pointerEvents: "all", opacity: "1" }} />}
+                                <video id="teacher-screen-share-video" autoPlay poster="https://miro.medium.com/max/3200/0*-fWZEh0j_bNfhn2Q" width="100%" height="100%" />
+                                {(type === "teacher") &&<div className="btn-start-screen" onClick={() => this.handleScreenShareButton(this.state.isScreenSharing)} style={{ backgroundImage: `url(${!this.state.isScreenSharing && `${staticServerURL}/static/media/start.png`})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', pointerEvents: "all", opacity: "1" }} />}
                             </div>
                             
                         </div>
@@ -900,7 +912,7 @@ class Conference extends React.Component {
                                         <div key={source.position} className="student-small-video" id={`student-box-${source.position}`}>
                                             <div id={`video-box-${source.position}`}>
                                                 <video id={`video-tag-${source.position}`} autoPlay poster="https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTUq71y6yGEk94T1hyj89lV-khy9OMkgZt0Dl1hecguJxUpLU6a&usqp=CAU" width="105" />
-                                                {type==="teacher" && allParticipants[sourceUserId] && <div className="btn-swap-video" onClick={() => this.swapVideo( source )} style={{ backgroundImage: `url(${iconSwap})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', pointerEvents: "all", opacity: "1" }} />}
+                                                {type==="teacher" && allParticipants[sourceUserId] && ( !this.state.remoteUserSwappedId || ( sourceUserId===id ) ) && <div className="btn-swap-video" onClick={() => this.swapVideo( source )} style={{ backgroundImage: `url("${staticServerURL}/static/media/swap_video.png")`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', pointerEvents: "all", opacity: "1" }} />}
                                                 {/* <div className="btn-mute-unmute" onClick={() => this.toggleAudio( source, isMute )} style={{ backgroundImage: `url(${isMute?micOff:micOn})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', pointerEvents: "none", opacity: "0.5" }} /> */}
                                                 <audio autoPlay id={`audio-tag-${source.position}`} />
                                             </div>
