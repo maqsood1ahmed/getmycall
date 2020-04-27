@@ -76,3 +76,6 @@ http://localhost:8080/?room=crypted2&id=456&name=MaqsoodSt3&type=student&positio
     }
 ]
 
+
+teacher 11 => https://api.getmycall.com/index.html?api=login&type=teacher&id=11&class_id=1
+student 91 => https://api.getmycall.com/index.html?api=login&type=student&id=91&class_id=1&teacher_id=11

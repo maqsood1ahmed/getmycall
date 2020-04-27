@@ -15,8 +15,10 @@ import './Conference.css';
 // import iconSwap from './assets/img/swap_video.png'
 // import loadingIcon from './assets/img/loading-icon.gif';
 
+import teacherBoardLoader from './assets/img/teacher-board-loader.gif';
+
 const { Option } = Select;
-const staticServerURL = "http://localhost:3001";
+const staticServerURL = "https://api.getmycall.com";
 
 const options = {
     hosts: {
@@ -71,6 +73,7 @@ class Conference extends React.Component {
             remoteUserSwappedId: null,
             isScreenSharing: false,
             isStopped: false,
+            selectedBoard: null,
             socketEndpoint: `${staticServerURL}/class-rooms`
         };
 
@@ -836,10 +839,18 @@ class Conference extends React.Component {
     }
 
     iframe = () => {
+        let roomData = this.state.roomData;
+        const htmlSource = this.state.selectedBoard ? this.state.selectedBoard.source : (roomData? (roomData.board_sources ? roomData.board_sources[0].source: "") : "");
+        console.log('iframe source => => ', htmlSource)
         return {
-          __html: `<iframe src="${staticServerURL}/teacher-dashboard.html" width="100%" height="100%" frameborder="0" allowfullscreen></iframe>`
+          __html: `<iframe src="${htmlSource}" width="100%" height="100%" onload="$('.iframe-loading').css('background-image', 'none'); frameborder="0" allowfullscreen></iframe>`
         }
     }
+
+    handleChangeBoard = ( index ) => {
+        const selectedBoard = this.state.roomData.board_sources[index];
+        this.setState({ selectedBoard })
+    } 
 
     render () {
         console.log('all participant => => ', allParticipants, this.state.roomData)
@@ -852,7 +863,15 @@ class Conference extends React.Component {
                 backgroundPosition: 'center',
                 backgroundSize: 'cover',
                 backgroundRepeat: 'no-repeat'
-            }
+            },
+            // iframeLoader: {
+            //     backgroundImage: `url(${this.state.selectedBoard ? "" : teacherBoardLoader})`,
+            //     backgroundPosition: 'center',
+            //     backgroundSize: 'cover',
+            //     backgroundRepeat: 'no-repeat',
+            //     width: "100%", 
+            //     height: "100%"
+            // }
         }
  
         if ( !id || !roomId || !name || !type ) {
@@ -879,7 +898,7 @@ class Conference extends React.Component {
                             <audio autoPlay width="0%" height="0%" id="teacher-audio-tag"></audio>
                             { (type === "teacher") &&
                                 <Select
-                                    defaultValue={this.state.roomData.bitrate}
+                                    defaultValue={roomData.bitrate}
                                     // style={{ width: 80 }}
                                     onChange={(value) => this.handleChangeResolutions(value)}
                                 >
@@ -894,7 +913,19 @@ class Conference extends React.Component {
                             </div>
                         </div>
                         <div className="col-md-4 col-sm-4 col-xs-8 container w-100 h-100 p-3" id="teacher-dashboard">
-                            <div style={{ width: "100%", height: "49%", position: "relative" }} dangerouslySetInnerHTML={ this.iframe() }/>
+                            <div style={{ width: "100%", height: "49%", position: "relative" }}>
+                                <div dangerouslySetInnerHTML={ this.iframe() } />
+                                {/* with loader <div style={ customStyle.iframeLoader} dangerouslySetInnerHTML={ this.iframe() } /> */}
+                                <Select
+                                    defaultValue={roomData.board_sources && roomData.board_sources[0].name}
+                                    style={{ right: "5%" }}
+                                    onChange={(index) => this.handleChangeBoard(index)}
+                                >
+                                 {roomData.board_sources.map( ( board, index ) => (
+                                    <Option key={index}>{board.name}</Option>
+                                    ))}
+                                </Select>
+                            </div>
                             <div style={{ width: "100%", height: "49%", position: "relative" }}>
                                 <video id="teacher-screen-share-video" autoPlay poster="https://miro.medium.com/max/3200/0*-fWZEh0j_bNfhn2Q" width="100%" height="100%" />
                                 {(type === "teacher") &&<div className="btn-start-screen" onClick={() => this.handleScreenShareButton(this.state.isScreenSharing)} style={{ backgroundImage: `url(${!this.state.isScreenSharing && `${staticServerURL}/static/media/start.png`})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', pointerEvents: "all", opacity: "1" }} />}
