@@ -67,6 +67,7 @@ class Conference extends React.Component {
             isLoggedIn: false,
             errors: {},
             isTrackUpdate: false,
+            isScreenTrackUpdate: false,
             resolutions: [ "180", "360", "720", "1080" ],
             roomData: {},
             isLocalAudioMute: false,
@@ -74,7 +75,8 @@ class Conference extends React.Component {
             isScreenSharing: false,
             isStopped: false,
             selectedBoard: null,
-            socketEndpoint: `${staticServerURL}/class-rooms`
+            socketEndpoint: `${staticServerURL}/class-rooms`,
+            currentTeacherToggledView: 'video'  //three types 1=>video(video at center), 2=>screen and 3=>html
         };
 
         socket = socketIOClient(this.state.socketEndpoint);
@@ -91,10 +93,10 @@ class Conference extends React.Component {
 
         if ( params.id && params.type && params.class_id ) {
             let response = await this.getUserData(params);
-            console.log('=> => respone ', response.data.data)
+            console.log('=> => respone ', response)
             let roomId = params.class_id;
             let type = params.type;
-            if ( response.status && response.data.data ) {
+            if ( response.status && response.data && response.data.data ) {
                 roomData = response.data && response.data.data;
                 roomData.roomId = roomId;
                 roomData.type = type;
@@ -149,7 +151,6 @@ class Conference extends React.Component {
                     connection.connect();
             
                     // window.addEventListener(window.JitsiMeetJS.errors.conference.PASSWORD_REQUIRED, function () { message.error('Please provide room password'); });
-
                     this.setState({ roomData });
                 } else {
                     message.error('Must provide valid user params! See console errors.');
@@ -160,12 +161,17 @@ class Conference extends React.Component {
         $(window).bind('beforeunload', this.unload.bind(this));
         $(window).bind('unload', this.unload.bind(this));
     }
+    componentDidCatch(error, errorInfo) {
+        // You can also log the error to an error reporting service
+        console.error(error, errorInfo);
+    }
+
     handleLeavePage(e) {
         window.alert('changing')
         const confirmationMessage = 'Some message';
         e.returnValue = confirmationMessage;     // Gecko, Trident, Chrome 34+
         return confirmationMessage;              // Gecko, WebKit, Chrome <34
-      }
+    }
     async getUserData( params,  ) {
         console.log(params , 'params => =>')
         try {
@@ -208,6 +214,9 @@ class Conference extends React.Component {
                     console.log('video swapped from server', data)
                     this.swapVideo( data.selectedSource , data.teacherId, data.remoteUserSwappedId );
                     break;
+                case 'teacher-view-change':
+                    this.toggleTeacherView( data.currentTeacherToggledView );
+                    break;
                 case 'message-undefined':
                     console.error('socketio server message type undefined!') 
                     break;
@@ -220,43 +229,58 @@ class Conference extends React.Component {
     }
 
     componentDidUpdate () {
-        if ( this.state.isTrackUpdate ) {
-            this.setState({ isTrackUpdate : false }); //setting false for new tracks update
-
+        let { isTrackUpdate, isScreenTrackUpdate } = this.state;
+        if ( isTrackUpdate || isScreenTrackUpdate ) {
             let allParticipantsIds = Object.keys( allParticipants );
             allParticipantsIds.forEach( participantId => {
                 let participant = allParticipants[participantId];
                 let participantTracks = participant.tracks;
-                if ( (participant.position).toString() === "0" ) {
-                    for ( let i = 0; i < participantTracks.length ; i++ ) {
-                        let largeVideoTag = document.getElementById(`teacher-video-tag`);
-                        let largeAudioTag = document.getElementById(`teacher-audio-tag`);
-            
-                        if( participantTracks[i].getType() === 'video' ) {
-                            if( largeVideoTag ) {
-                                participantTracks[i].attach($(`#teacher-video-tag`)[0]);
+
+                if ( isTrackUpdate ) {
+                    if ( (participant.position).toString() === "0" && isTrackUpdate ) {
+                        for ( let i = 0; i < participantTracks.length ; i++ ) {
+                            let largeVideoTag = document.getElementById(`teacher-video-tag`);
+                            let largeAudioTag = document.getElementById(`teacher-audio-tag`);
+                
+                            if( participantTracks[i].getType() === 'video' ) {
+                                if( largeVideoTag ) {
+                                    participantTracks[i].attach($(`#teacher-video-tag`)[0]);
+                                }
+                            } else if ( largeAudioTag ) {
+                                // console.log('is teacher mute? => => ', participantTracks[i].isMuted());
+                                participantTracks[i].attach($(`#teacher-audio-tag`)[0]);
                             }
-                        } else if ( largeAudioTag ) {
-                            // console.log('is teacher mute? => => ', participantTracks[i].isMuted());
-                            participantTracks[i].attach($(`#teacher-audio-tag`)[0]);
+                        }
+                    } else { //if position not zero then map all other as small videos 
+                        for ( let i = 0; i < participantTracks.length ; i++ ) {
+                            if (participantTracks[i].getType() === 'video') {
+                                participantTracks[i].attach($(`#video-tag-${participant.position}`)[0]);
+                                let name = participant.name;
+                                // if ( name === this.state.roomData.name ) {
+                                //     name = name + "(me)"
+                                // }
+                                if ( name ) {
+                                    $(`#name-box-${participant.position} h6`).text(name);
+                                }
+                            } else {
+                                // console.log('is this remote track mute? => => ', participantTracks[i].isMuted());
+                                participantTracks[i].attach($(`#audio-tag-${participant.position}`)[0]);
+                            }
                         }
                     }
-                } else { //if position not zero then map all other as small videos 
-                    for ( let i = 0; i < participantTracks.length ; i++ ) {
-                        if (participantTracks[i].getType() === 'video') {
-                            participantTracks[i].attach($(`#video-tag-${participant.position}`)[0]);
-                            let name = participant.name;
-                            // if ( name === this.state.roomData.name ) {
-                            //     name = name + "(me)"
-                            // }
-                            if ( name ) {
-                                $(`#name-box-${participant.position} h6`).text(name);
-                            }
-                        } else {
-                            // console.log('is this remote track mute? => => ', participantTracks[i].isMuted());
-                            participantTracks[i].attach($(`#audio-tag-${participant.position}`)[0]);
+                    this.setState({ isTrackUpdate: false });
+                }
+
+                let screenTracks = participant.screenTracks;
+                if ( screenTracks[0] && this.state.isScreenTrackUpdate ) {
+                    this.setState({ isScreenTrackUpdate: false });
+                    screenTracks.forEach( track => {
+                        let screenVideo = $(`#teacher-screen-share-video`)[0];
+                        track.attach(screenVideo)
+                        if ( screenRoom && this.state.roomData.type === "teacher" ) {
+                            screenRoom.addTrack(track);
                         }
-                    }
+                    })
                 }
             });
         }
@@ -310,7 +334,7 @@ class Conference extends React.Component {
             let myRole = room.getRole(); //get my role
     
             if (myRole === "moderator") {
-                message.info("You are moderator of the Conference.", 5);
+                console.info("You are moderator of the Conference.");
             }
             isJoined = true;
             console.log('all participants before setting localtracks => => ', allParticipants)
@@ -384,7 +408,10 @@ class Conference extends React.Component {
                 this.onLocalTracks(tracks);
             })
             .catch(error => {
-                throw error;
+                if ( error.name === window.JitsiMeetJS.errors.track.PERMISSION_DENIED ) {
+                    message.error('Please enable camera/microphone then refresh the page.', 10)
+                }
+                console.error("local tracks error => ", error);
             });
     }
     onUserLeft (participantId) {
@@ -484,16 +511,8 @@ class Conference extends React.Component {
 
         console.log('got remote user info => =>', userInfo, track);
         if ( position === "9999") {
-            let screenVideo = $(`#teacher-screen-share-video`)[0];
-            track.attach(screenVideo);
-            $(screenVideo).on({
-                mouseenter: function () {
-                  screenVideo.setAttribute("controls","controls")
-                },
-                mouseleave: function () {
-                  screenVideo.removeAttribute("controls");
-                }
-            });
+            allParticipants[id] && allParticipants[id]['screenTracks'].push(track);
+            this.setState({ isScreenTrackUpdate: true })
         } else {
             if ( !allParticipants[id] ) {
                 let newParticipant = {};
@@ -501,6 +520,7 @@ class Conference extends React.Component {
                 newParticipant['type'] = type;
                 newParticipant['position'] = position.toString();
                 newParticipant['tracks'] = [];
+                newParticipant['screenTracks'] = [];
                 newParticipant['tracks'].push(track);
                 allParticipants[id] = newParticipant;
             } else if ( !allParticipants[id]['tracks'][0] ) {
@@ -521,8 +541,8 @@ class Conference extends React.Component {
                 () => console.log('remote track stoped'));
             track.addEventListener(
                 window.JitsiMeetJS.events.track.TRACK_AUDIO_OUTPUT_CHANGED,
-                deviceId => console.log(`track audio output device was changed to ${deviceId}`));
-    
+                deviceId => console.log(`track audio output device was changed to ${deviceId}`));    
+
             this.setState({ isTrackUpdate: true });
         }
     }
@@ -672,99 +692,109 @@ class Conference extends React.Component {
 //remote user id
 
     swapVideo = ( source, teacherId, remoteUserSwappedId ) => {
-        console.log('change this source with teacher video div => => ', source, teacherId, remoteUserSwappedId);
-        // *** source id used to swap with teacher div
-        
-        remoteUserSwappedId = remoteUserSwappedId ? remoteUserSwappedId : this.state.remoteUserSwappedId; //in case of student pass through params.
-        //send source, teacherId, remoteUserSwappedId
-        //remote student have allParticipants, sources 
-
-        let roomData = this.state.roomData;
-        let tempSource= Object.assign({}, source);;
-        let sourceId = source.id;
-        teacherId = teacherId ? teacherId : roomData.id;  //in case of student provide teacher id as params
-        let sourcePosition = source.position;
-        let roomId = roomData.roomId;
-
-        if ( sourceId === teacherId ) {  //means source is teacher so revert teacher position back
-            allParticipants[sourceId].position = "0";  //revert teacher position to 0
-            allParticipants[remoteUserSwappedId].position = sourcePosition;  //revert student position to curent teacher position
-
-            roomData.sources = roomData.sources.map(sourceElement => { // update souces for both student and teacher
-                if ( sourceElement.id === remoteUserSwappedId ) {
-                    sourceElement.position = sourcePosition;  //revert student position back       
-                    if ( roomData.type === "student" ) {
-                        allParticipants[remoteUserSwappedId].tracks.forEach( track => {
-                            if ( track.getType() === 'audio' ) {
-                                track.mute();
-                                room.setReceiverVideoConstraint('180'); //manually setting small box at 180
-                            }
-                        });
-                    }
-                    return sourceElement;
-                } else if ( sourceElement.id === teacherId.toString() ) {
-                    sourceElement.position = "0";  //revert teacher back to 0 in sources
-                    if ( this.state.roomData.type === "teacher" ) {
-                        allParticipants[teacherId].tracks.forEach( track => {
-                            if ( track.getType() === 'audio' ) {
-                                track.unmute();
-                                room.setReceiverVideoConstraint(roomData.bitrate);
-                            }
-                        });
-                    }
-                    return sourceElement;
-                }
-                return sourceElement;
-            });
-            this.setState({ roomData, isTrackUpdate: true, remoteUserSwappedId: null });
-        } else { //when click on student
-            if ( allParticipants[sourceId] ) {
-                roomData.sources = roomData.sources.map(sourceElement => {
-                    if ( sourceElement.id === sourceId ) {
-                        console.log('changing student position to 0 => =>', source)
-                        sourceElement.position = "0";
-                        return sourceElement;
-                    } else if ( sourceElement.id === teacherId ) {  //because swap only available for teacher so teacher id is in state
-                        sourceElement.position = sourcePosition;
-                        console.log('changing teacher position to  => =>', sourcePosition ,source)
-                        return sourceElement;
-                    }
-                    return sourceElement;
-                });
+        try {
+            console.log('change this source with teacher video div => => ', this.state.roomData.sources, teacherId, remoteUserSwappedId);
+            // *** source id used to swap with teacher div
+            
+            remoteUserSwappedId = remoteUserSwappedId ? remoteUserSwappedId : this.state.remoteUserSwappedId; //in case of student pass through params.
+            //send source, teacherId, remoteUserSwappedId
+            //remote student have allParticipants, sources 
     
-                Object.keys(allParticipants).forEach( id => {
-                    if ( id === sourceId ) {
-                        allParticipants[sourceId].position = "0";  //change remoted user position to 0 in place of teacher
-                        if ( this.state.roomData.type === "student" && sourceId === this.state.roomData.id ) {
-                            allParticipants[sourceId].tracks.forEach( track => {
-                                if ( track.getType() === 'audio' ) {
-                                    track.unmute();
-                                    room.setReceiverVideoConstraint('720'); //set student bitrate at 720
-                                }
-                            });
-                        }
-                    } else if ( allParticipants[id].type === "teacher" ) {
-                        allParticipants[id].position = sourcePosition; //change teacher position to student div
-                        if ( this.state.roomData.type === "teacher" ) {
-                            allParticipants[id].tracks.forEach( track => {
+            let roomData = this.state.roomData;
+            let tempSource= Object.assign({}, source);;
+            let sourceId = source.id;
+            teacherId = teacherId ? teacherId : roomData.id;  //in case of student provide teacher id as params
+            let sourcePosition = source.position;
+            let roomId = roomData.roomId;
+
+            if ( sourceId === teacherId ) {  //means source is teacher so revert teacher position back
+                allParticipants[sourceId].position = "0";  //revert teacher position to 0
+                allParticipants[remoteUserSwappedId].position = sourcePosition;  //revert student position to curent teacher position
+    
+                roomData.sources = roomData.sources.map(sourceElement => { // update souces for both student and teacher
+                    if ( sourceElement.id === remoteUserSwappedId ) {
+                        sourceElement.position = sourcePosition;  //revert student position back       
+                        if ( roomData.type === "student" ) {
+                            allParticipants[remoteUserSwappedId].tracks.forEach( track => {
                                 if ( track.getType() === 'audio' ) {
                                     track.mute();
-                                    room.setReceiverVideoConstraint('180'); //set teacher bitrate to 180
+                                    room.setReceiverVideoConstraint('180'); //manually setting small box at 180
                                 }
                             });
                         }
+                        return sourceElement;
+                    } else if ( sourceElement.id === teacherId.toString() ) {
+                        sourceElement.position = "0";  //revert teacher back to 0 in sources
+                        if ( this.state.roomData.type === "teacher" ) {
+                            allParticipants[teacherId].tracks.forEach( track => {
+                                if ( track.getType() === 'audio' ) {
+                                    track.unmute();
+                                    room.setReceiverVideoConstraint(roomData.bitrate);
+                                }
+                            });
+                        }
+                        return sourceElement;
                     }
+                    return sourceElement;
                 });
+                this.setState({ roomData, isTrackUpdate: true, remoteUserSwappedId: null });
+            } else { //when click on student
+                if ( allParticipants[sourceId] ) {
+                    roomData.sources = roomData.sources.map(sourceElement => {
+                        console.log('changing teacher  => =>', roomData.sources, sourceElement.id, teacherId, sourceId)
+                        if ( sourceElement.id === teacherId ) {  //because swap only available for teacher so teacher id is in state
+                            console.log('changing teacher position to  => =>', sourcePosition ,source)
+                            sourceElement.position = sourcePosition;
+                            return sourceElement;
+                        } else if ( sourceElement.id === sourceId ) {
+                            console.log('croom data sources before => =>', roomData.sources)
+                            sourceElement["position"] = "0";
+                            return sourceElement;
+                        }
+                        return sourceElement;
+                    });
 
-                remoteUserSwappedId = sourceId;
-                console.log('all participant and sources => => ', allParticipants, roomData);
-                this.setState({ roomData, isTrackUpdate: true, remoteUserSwappedId });
+                    console.log('room data sources after => =>', roomData.sources)
+        
+                    Object.keys(allParticipants).forEach( id => {
+                        if ( id === sourceId ) {
+                            allParticipants[sourceId].position = "0";  //change remoted user position to 0 in place of teacher
+                            if ( this.state.roomData.type === "student" && sourceId === this.state.roomData.id ) {
+                                allParticipants[sourceId].tracks.forEach( track => {
+                                    if ( track.getType() === 'audio' ) {
+                                        track.unmute();
+                                        room.setReceiverVideoConstraint('720'); //set student bitrate at 720
+                                    }
+                                });
+                            }
+                        } else if ( allParticipants[id].type === "teacher" ) {
+                            allParticipants[id].position = sourcePosition; //change teacher position to student div
+                            if ( this.state.roomData.type === "teacher" ) {
+                                allParticipants[id].tracks.forEach( track => {
+                                    if ( track.getType() === 'audio' ) {
+                                        track.mute();
+                                        room.setReceiverVideoConstraint('180'); //set teacher bitrate to 180
+                                    }
+                                });
+                            }
+                        }
+                    });
+    
+                    remoteUserSwappedId = sourceId;
+                    console.log('all participant and sources => => ', allParticipants, roomData);
+                    this.setState({ roomData, isTrackUpdate: true, remoteUserSwappedId });
+                }
             }
-        }
-        if ( roomData.type === "teacher" ) {
-            console.log('sending this => => ', source, tempSource)
-            let messageObject = { type: 'videos-swapped', data: { selectedSource: tempSource, teacherId, remoteUserSwappedId, roomId  } };
-            socket.emit( 'event', messageObject );
+
+            console.log('final data => => ', roomData)
+            if ( roomData.type === "teacher" ) {
+                console.log('sending this => => ', source, tempSource)
+                let messageObject = { type: 'videos-swapped', data: { selectedSource: tempSource, teacherId, remoteUserSwappedId, roomId  } };
+                socket.emit( 'event', messageObject );
+            }
+        } catch ( error ) {
+            message.error('Something went wrong with video swap!');
+            console.error('something went wrong with video swap!', error)
         }
     }
 
@@ -790,7 +820,7 @@ class Conference extends React.Component {
                 this.setState({ isScreenSharing: true })
             })
             .catch(error => {
-                throw error;
+                console.log('user canceled screen share => ', error);
             });
     }
     onScreenTracks ( tracks ) {
@@ -802,19 +832,7 @@ class Conference extends React.Component {
                     this.setState({ isScreenSharing: false })
                 });
             allParticipants[this.state.roomData.id]["screenTracks"].push(tracks[i]);
-            if ( isScreenJoined ) {
-                let screenVideo = $(`#teacher-screen-share-video`)[0];
-                tracks[i].attach(screenVideo)
-                screenRoom.addTrack(tracks[i]);
-                $(screenVideo).on({
-                    mouseenter: function () {
-                      screenVideo.setAttribute("controls","controls")
-                    },
-                    mouseleave: function () {
-                      screenVideo.removeAttribute("controls");
-                    }
-                });
-            }
+            this.setState({ isScreenTrackUpdate: true });
         }
     }
 
@@ -843,7 +861,7 @@ class Conference extends React.Component {
         const htmlSource = this.state.selectedBoard ? this.state.selectedBoard.source : (roomData? (roomData.board_sources ? roomData.board_sources[0].source: "") : "");
         console.log('iframe source => => ', htmlSource)
         return {
-          __html: `<iframe src="${htmlSource}" width="100%" height="100%" onload="$('.iframe-loading').css('background-image', 'none'); frameborder="0" allowfullscreen></iframe>`
+          __html: `<iframe src="${htmlSource}" width="100%" height="100%"></iframe>`
         }
     }
 
@@ -852,18 +870,54 @@ class Conference extends React.Component {
         this.setState({ selectedBoard })
     } 
 
-    render () {
-        console.log('all participant => => ', allParticipants, this.state.roomData)
-        const { isLoggedIn, roomData } = this.state;
-        const { roomId, id, name, type } = roomData;
+    toggleTeacherView = ( view ) => {
+        let { roomData } = this.state;
+        if ( view === "board" || this.state.currentTeacherToggledView === "board" ) {  //incase of screen toggle update both screen and video tracks
+            this.setState({ isTrackUpdate: true, isScreenTrackUpdate: false, currentTeacherToggledView: view })
+        } else {
+            this.setState({ isTrackUpdate: true, isScreenTrackUpdate: true, currentTeacherToggledView: view })
+        }
+        if ( roomData.type === "teacher" ) {
+            let messageObject = { type: 'teacher-view-change', data: { currentTeacherToggledView: view, teacherId: roomData.id, roomId: roomData.roomId } };
+            socket.emit( 'event', messageObject);
+        }
+    }
 
+    teacherViews = ( viewType ) => {
+        const { currentTeacherToggledView, roomData, isScreenSharing, remoteUserSwappedId } = this.state;
+        const { type, bitrate } = roomData;
         const customStyle = {
             largeVideoPoster: {
                 backgroundImage: "url(" + "https://www.clipartmax.com/png/middle/148-1488113_teachers-icon-teachers-png.png" + ")",
                 backgroundPosition: 'center',
                 backgroundSize: 'cover',
-                backgroundRepeat: 'no-repeat'
+                backgroundRepeat: 'no-repeat',
+                width: "100%",
+                height: "100%"
             },
+            btnSwapScreen: {
+                backgroundImage: `url("https://lh3.googleusercontent.com/proxy/hiyEet6lDpyNKNALfe1P10gSUul-sZXJ2CZJyO070hUj7lzkMa_q2Sh5kl4b3etekqruvzhEk0HCCtZ8c-Hgz53M8g8SMscflGbFtJpI9iKevvHHgACIDtga9GDL")`,//`url("${staticServerURL}/static/media/swap_video.png")`,
+                backgroundPosition: 'center',
+                backgroundSize: 'cover',
+                backgroundRepeat: 'no-repeat',
+                pointerEvents: "all",
+                opacity: "1",
+                width: "20px",
+                height: "20px",
+                position: "absolute",
+                zIndex: 1,
+                cursor: "pointer",
+                top: "80%",
+                left: "5%"
+            },
+            btnStartScreen: {
+                backgroundImage: `url(${!this.state.isScreenSharing && `${staticServerURL}/static/media/start.png`})`,
+                backgroundPosition: 'center',
+                backgroundSize: 'cover',
+                backgroundRepeat: 'no-repeat',
+                pointerEvents: "all",
+                opacity: "1"
+            }
             // iframeLoader: {
             //     backgroundImage: `url(${this.state.selectedBoard ? "" : teacherBoardLoader})`,
             //     backgroundPosition: 'center',
@@ -873,6 +927,58 @@ class Conference extends React.Component {
             //     height: "100%"
             // }
         }
+        if ( viewType === "video" ){
+            return (
+                <div style={{ width: "100%", height: ( currentTeacherToggledView === "video" ) ? "100%" : "50%", position: "relative" }}>
+                    <video id="teacher-video-tag" autoPlay style={ customStyle.largeVideoPoster } /> 
+                    <audio autoPlay width="0%" height="0%" id="teacher-audio-tag"></audio>
+                    { (type === "teacher") &&
+                        <Select
+                            defaultValue={bitrate}
+                            // style={{ width: 80 }}
+                            onChange={(value) => this.handleChangeResolutions(value)}
+                        >
+                        {this.state.resolutions.map(resolution => (
+                            <Option key={resolution}>{resolution}</Option>
+                        ))}
+                        </Select>
+                    }
+                    {(currentTeacherToggledView === "board" || currentTeacherToggledView === "screen") && ( type === "teacher" ) && <div className="btn-swap-screen" onClick={() => this.toggleTeacherView( 'video' )} style={ customStyle.btnSwapScreen } />}
+
+                </div>);
+        } else if ( viewType === "board" ) {
+            return (
+                <div style={{ width: "100%", height: ( currentTeacherToggledView === "board" ? "100%" : "50%" ), position: "relative" }}>
+                    <div style={{ width: "100%", height: "100%" }} dangerouslySetInnerHTML={ this.iframe() } />
+                    {/* with loader <div style={ customStyle.iframeLoader} dangerouslySetInnerHTML={ this.iframe() } /> */}
+                    <Select
+                        defaultValue={roomData.board_sources && roomData.board_sources[0].name}
+                        style={{ right: "5%" }}
+                        onChange={(index) => this.handleChangeBoard(index)}
+                    >
+                        {roomData.board_sources.map( ( board, index ) => (
+                        <Option key={index}>{board.name}</Option>
+                        ))}
+                    </Select>
+                    {(currentTeacherToggledView === "video") && ( type === "teacher" ) && !remoteUserSwappedId && <div className="btn-swap-screen" onClick={() => this.toggleTeacherView( 'board' )} style={ customStyle.btnSwapScreen } />}
+                </div>
+            );
+        } else if ( viewType === "screen" ) {
+            return (
+                <div style={{ width: "100%", height: ( currentTeacherToggledView === "screen" ? "100%" : "50%" ), position: "relative" }}>
+                    <video id="teacher-screen-share-video" autoPlay poster="https://miro.medium.com/max/3200/0*-fWZEh0j_bNfhn2Q" width="100%" height="100%" />
+                    {(type === "teacher") &&<div className="btn-start-screen" onClick={() => this.handleScreenShareButton(this.state.isScreenSharing)} style={ customStyle.btnStartScreen} />}
+                    {(currentTeacherToggledView === "video") && isScreenSharing && ( type === "teacher" ) && !remoteUserSwappedId && <div className="btn-swap-screen" onClick={() => this.toggleTeacherView( 'screen' )} style={ customStyle.btnSwapScreen } />}
+                </div>
+            );
+        }
+    }
+    
+
+    render () {
+        console.log('all participant => => ', allParticipants, this.state.roomData)
+        const { isLoggedIn, roomData, currentTeacherToggledView } = this.state;
+        const { roomId, id, name, type } = roomData;
  
         if ( !id || !roomId || !name || !type ) {
             return <div className="container" style={{ height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "center" }}>
@@ -894,43 +1000,15 @@ class Conference extends React.Component {
                 <div className="container">
                     <div className="row w-100 h-100 p-3" id="teacher-container">
                         <div className="col-md-8 col-sm-12 col-xs-12 w-100 h-100 p-3" id="large-video-container">
-                            <video id="teacher-video-tag" autoPlay width="100%" height="100%" style={ customStyle.largeVideoPoster } /> 
-                            <audio autoPlay width="0%" height="0%" id="teacher-audio-tag"></audio>
-                            { (type === "teacher") &&
-                                <Select
-                                    defaultValue={roomData.bitrate}
-                                    // style={{ width: 80 }}
-                                    onChange={(value) => this.handleChangeResolutions(value)}
-                                >
-                                {this.state.resolutions.map(resolution => (
-                                    <Option key={resolution}>{resolution}</Option>
-                                ))}
-                                </Select>
-                            }
+                            {currentTeacherToggledView==="video" ? this.teacherViews('video' ) : (currentTeacherToggledView==="board" ? this.teacherViews('board') : this.teacherViews('screen'))}
                             <div id="large-video-actions-box" className="row w-20 h-10" style={{ background: (type==="teacher" ? "rgba(255, 255, 255, 0.301)": "none")}}>
                                 {(allParticipants[id]['type'] === "teacher") && <div onClick={() => this.toggleAudio( id, this.state.isLocalAudioMute )} style={{ backgroundImage: `url(${this.state.isLocalAudioMute?`${staticServerURL}/static/media/mic-off.svg`:`${staticServerURL}/static/media/mic-on.svg`})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', width: "35px", height: "35px", cursor: "pointer" }} />}
                                 <div onClick={this.leaveRoomBtn.bind(this)} style={{ backgroundImage: `url("${staticServerURL}/static/media/stop.png")`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', marginLeft: "8px", width: "40px", height: "40px", cursor: "pointer" }} />                            
                             </div>
                         </div>
                         <div className="col-md-4 col-sm-4 col-xs-8 container w-100 h-100 p-3" id="teacher-dashboard">
-                            <div style={{ width: "100%", height: "49%", position: "relative" }}>
-                                <div dangerouslySetInnerHTML={ this.iframe() } />
-                                {/* with loader <div style={ customStyle.iframeLoader} dangerouslySetInnerHTML={ this.iframe() } /> */}
-                                <Select
-                                    defaultValue={roomData.board_sources && roomData.board_sources[0].name}
-                                    style={{ right: "5%" }}
-                                    onChange={(index) => this.handleChangeBoard(index)}
-                                >
-                                 {roomData.board_sources.map( ( board, index ) => (
-                                    <Option key={index}>{board.name}</Option>
-                                    ))}
-                                </Select>
-                            </div>
-                            <div style={{ width: "100%", height: "49%", position: "relative" }}>
-                                <video id="teacher-screen-share-video" autoPlay poster="https://miro.medium.com/max/3200/0*-fWZEh0j_bNfhn2Q" width="100%" height="100%" />
-                                {(type === "teacher") &&<div className="btn-start-screen" onClick={() => this.handleScreenShareButton(this.state.isScreenSharing)} style={{ backgroundImage: `url(${!this.state.isScreenSharing && `${staticServerURL}/static/media/start.png`})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', pointerEvents: "all", opacity: "1" }} />}
-                            </div>
-                            
+                            {(currentTeacherToggledView==="video" || currentTeacherToggledView==="screen") ? this.teacherViews('board' ) : (currentTeacherToggledView==="board" && this.teacherViews('video'))}
+                            {(currentTeacherToggledView==="video" || currentTeacherToggledView==="board") ? this.teacherViews('screen' ) : (currentTeacherToggledView==="screen" && this.teacherViews('video'))}
                         </div>
                     </div>
                     <div className="row w-100 p-3 justify-content-start" id="small-videos-box">
@@ -943,7 +1021,7 @@ class Conference extends React.Component {
                                         <div key={source.position} className="student-small-video" id={`student-box-${source.position}`}>
                                             <div id={`video-box-${source.position}`}>
                                                 <video id={`video-tag-${source.position}`} autoPlay poster="https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTUq71y6yGEk94T1hyj89lV-khy9OMkgZt0Dl1hecguJxUpLU6a&usqp=CAU" width="105" />
-                                                {type==="teacher" && allParticipants[sourceUserId] && ( !this.state.remoteUserSwappedId || ( sourceUserId===id ) ) && <div className="btn-swap-video" onClick={() => this.swapVideo( source )} style={{ backgroundImage: `url("${staticServerURL}/static/media/swap_video.png")`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', pointerEvents: "all", opacity: "1" }} />}
+                                                {type==="teacher" && (currentTeacherToggledView === "video") && allParticipants[sourceUserId] && ( !this.state.remoteUserSwappedId || ( sourceUserId===id ) ) && <div className="btn-swap-video" onClick={() => this.swapVideo( source )} style={{ backgroundImage: `url("${staticServerURL}/static/media/swap_video.png")`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', pointerEvents: "all", opacity: "1" }} />}
                                                 {/* <div className="btn-mute-unmute" onClick={() => this.toggleAudio( source, isMute )} style={{ backgroundImage: `url(${isMute?micOff:micOn})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', pointerEvents: "none", opacity: "0.5" }} /> */}
                                                 <audio autoPlay id={`audio-tag-${source.position}`} />
                                             </div>
