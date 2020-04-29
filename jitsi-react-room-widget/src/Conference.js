@@ -14,18 +14,19 @@ import './Conference.css';
 // import micOff from './assets/img/mic-off.svg';
 // import iconSwap from './assets/img/swap_video.png'
 // import loadingIcon from './assets/img/loading-icon.gif';
+import swapTeacherSourcesIcon from './assets/img/swap-teacher-sources.png';
 
-import teacherBoardLoader from './assets/img/teacher-board-loader.gif';
+// import teacherBoardLoader from './assets/img/teacher-board-loader.gif';
 
 const { Option } = Select;
 const staticServerURL = "https://api.getmycall.com";
 
 const options = {
     hosts: {
-        domain: 'beta.meet.jit.si',
-        muc: 'conference.beta.meet.jit.si' // FIXME: use XEP-0030
+        domain: 'dev.getmycall.com',
+        muc: 'conference.dev.getmycall.com' // FIXME: use XEP-0030
     },
-    bosh: 'https://beta.meet.jit.si/http-bind', // FIXME: use xep-0156 for that
+    bosh: 'https://dev.getmycall.com/http-bind', // FIXME: use xep-0156 for that
 
     // The name of client node advertised in XEP-0115 'c' stanza
     clientNode: 'http://jitsi.org/jitsimeet'
@@ -896,7 +897,7 @@ class Conference extends React.Component {
                 height: "100%"
             },
             btnSwapScreen: {
-                backgroundImage: `url("https://lh3.googleusercontent.com/proxy/hiyEet6lDpyNKNALfe1P10gSUul-sZXJ2CZJyO070hUj7lzkMa_q2Sh5kl4b3etekqruvzhEk0HCCtZ8c-Hgz53M8g8SMscflGbFtJpI9iKevvHHgACIDtga9GDL")`,//`url("${staticServerURL}/static/media/swap_video.png")`,
+                backgroundImage: `url(${swapTeacherSourcesIcon})`,//`url("${staticServerURL}/static/media/swap_video.png")`,
                 backgroundPosition: 'center',
                 backgroundSize: 'cover',
                 backgroundRepeat: 'no-repeat',
@@ -1048,6 +1049,5 @@ export default Conference;
 
 
 //things to note
-
 //only one teacher for specific room
 //student roll no should must be unique

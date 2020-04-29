@@ -79,3 +79,14 @@ http://localhost:8080/?room=crypted2&id=456&name=MaqsoodSt3&type=student&positio
 
 teacher 11 => https://api.getmycall.com/index.html?api=login&type=teacher&id=11&class_id=1
 student 91 => https://api.getmycall.com/index.html?api=login&type=student&id=91&class_id=1&teacher_id=11
+
+
+
+** to access our jitsi server from different domain we need to add
+goto => cd /etc/nginx/sites-available/dev.getmycall.com.conf
+then add inside => location /http-bind
+
+add_header 'Access-Control-Allow-Headers' 'Authorization,Content-Type,Accept,Origin,User-Agent,DNT,Cache-Control,X-Mx-ReqToken,Keep-Alive,X-Requested-With,If-Modified-Since';
+add_header Access-Control-Allow-Origin *; 
+
+ref => https://community.jitsi.org/t/development-setup-cross-domain/14093/6

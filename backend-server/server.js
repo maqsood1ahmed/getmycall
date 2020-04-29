@@ -34,6 +34,9 @@ ioClassRoom.on('connection', (socket) => {
                     console.log('data => ', data)
                     socket.broadcast.to(data.roomId).emit('event', { type: 'video-swapped-from-server', data: data }); //send swapped videos info to all users
                     break;
+                case 'teacher-view-change':
+                    socket.broadcast.to(data.roomId).emit('event', messageObj ); //send swapped videos info to all users
+                    break;
                 default:
                     let messageObj = { type: 'message-undefined', data: { status: false, message: 'message type undefined.'} }
                     socket.emit('event', messageObj);
