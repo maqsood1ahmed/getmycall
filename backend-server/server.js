@@ -16,8 +16,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 var rooms = {};
 
-server.listen(3000, function(){
-    console.log('server start at port => 3001')
+server.listen(55555, function(){
+    console.log('server start at port => 55555')
 });
 
 ioClassRoom.on('connection', (socket) => {
@@ -41,8 +41,8 @@ ioClassRoom.on('connection', (socket) => {
                     socket.broadcast.to(data.roomId).emit('event', messageObj ); //send swapped videos info to all users
                     break;
                 default:
-                    let messageObj = { type: 'message-undefined', data: { status: false, message: 'message type undefined.'} }
-                    socket.emit('event', messageObj);
+                    let newMessageObj = { type: 'message-undefined', data: { status: false, message: 'message type undefined.'} }
+                    socket.emit('event', newMessageObj);
             }
         });
     } catch (error) {
