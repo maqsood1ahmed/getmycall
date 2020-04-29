@@ -6,6 +6,9 @@ var path = require('path');
 
 var ioClassRoom = io.of('/class-rooms');
 
+app.get('/', function(req, res) {
+    res.sendFile(__dirname + '/public/index.html');
+});
 app.get('/teacher-dashboard', function(req, res) {
     res.sendFile(__dirname + '/public/teacher-dashboard.html');
 });
@@ -13,7 +16,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 var rooms = {};
 
-server.listen(3001, function(){
+server.listen(3000, function(){
     console.log('server start at port => 3001')
 });
 

@@ -8,12 +8,12 @@ import socketIOClient from "socket.io-client";
 // import LoadingSpinner from '../../components/UI/Spinner/Spinner';
 import './Conference.css';
 
-// import startIcon from './assets/img/start.png';
-// import stopIcon from './assets/img/stop.png';
-// import micOn from './assets/img/mic-on.svg';
-// import micOff from './assets/img/mic-off.svg';
-// import iconSwap from './assets/img/swap_video.png'
-// import loadingIcon from './assets/img/loading-icon.gif';
+import startIcon from './assets/img/start.png';
+import stopIcon from './assets/img/stop.png';
+import micOn from './assets/img/mic-on.svg';
+import micOff from './assets/img/mic-off.svg';
+import iconSwap from './assets/img/swap_video.png'
+import loadingIcon from './assets/img/loading-icon.gif';
 import swapTeacherSourcesIcon from './assets/img/swap-teacher-sources.png';
 
 // import teacherBoardLoader from './assets/img/teacher-board-loader.gif';
@@ -912,7 +912,7 @@ class Conference extends React.Component {
                 left: "5%"
             },
             btnStartScreen: {
-                backgroundImage: `url(${!this.state.isScreenSharing && `${staticServerURL}/static/media/start.png`})`,
+                backgroundImage: `url(${!this.state.isScreenSharing && startIcon})`,
                 backgroundPosition: 'center',
                 backgroundSize: 'cover',
                 backgroundRepeat: 'no-repeat',
@@ -992,7 +992,7 @@ class Conference extends React.Component {
                 //     <img src={loadingIcon} alt="" width="100%" height="100%" />
                 // </div>}
                 <div className="justify-content-center" style= {{ width: "100%", height: "100%", top: "50%", backgroundColor: 'white' }}>
-                    <img src={`${staticServerURL}/static/media/loading-icon.gif`} alt="" width="200" height="200" style={{ marginTop: "120px" }} />
+                    <img src={`${loadingIcon}`} alt="" width="200" height="200" style={{ marginTop: "120px" }} />
                 </div>}
                 {/* {this.state.isStopped && <Button onClick={()=> this.joinRoom()} type="primary"> Join Again </Button>} */}
             </div>
@@ -1003,8 +1003,8 @@ class Conference extends React.Component {
                         <div className="col-md-8 col-sm-12 col-xs-12 w-100 h-100 p-3" id="large-video-container">
                             {currentTeacherToggledView==="video" ? this.teacherViews('video' ) : (currentTeacherToggledView==="board" ? this.teacherViews('board') : this.teacherViews('screen'))}
                             <div id="large-video-actions-box" className="row w-20 h-10" style={{ background: (type==="teacher" ? "rgba(255, 255, 255, 0.301)": "none")}}>
-                                {(allParticipants[id]['type'] === "teacher") && <div onClick={() => this.toggleAudio( id, this.state.isLocalAudioMute )} style={{ backgroundImage: `url(${this.state.isLocalAudioMute?`${staticServerURL}/static/media/mic-off.svg`:`${staticServerURL}/static/media/mic-on.svg`})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', width: "35px", height: "35px", cursor: "pointer" }} />}
-                                <div onClick={this.leaveRoomBtn.bind(this)} style={{ backgroundImage: `url("${staticServerURL}/static/media/stop.png")`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', marginLeft: "8px", width: "40px", height: "40px", cursor: "pointer" }} />                            
+                                {(allParticipants[id]['type'] === "teacher") && <div onClick={() => this.toggleAudio( id, this.state.isLocalAudioMute )} style={{ backgroundImage: `url(${this.state.isLocalAudioMute?micOff:micOn})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', width: "35px", height: "35px", cursor: "pointer" }} />}
+                                <div onClick={this.leaveRoomBtn.bind(this)} style={{ backgroundImage: `url(${stopIcon})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', marginLeft: "8px", width: "40px", height: "40px", cursor: "pointer" }} />                            
                             </div>
                         </div>
                         <div className="col-md-4 col-sm-4 col-xs-8 container w-100 h-100 p-3" id="teacher-dashboard">
@@ -1022,7 +1022,7 @@ class Conference extends React.Component {
                                         <div key={source.position} className="student-small-video" id={`student-box-${source.position}`}>
                                             <div id={`video-box-${source.position}`}>
                                                 <video id={`video-tag-${source.position}`} autoPlay poster="https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTUq71y6yGEk94T1hyj89lV-khy9OMkgZt0Dl1hecguJxUpLU6a&usqp=CAU" width="105" />
-                                                {type==="teacher" && (currentTeacherToggledView === "video") && allParticipants[sourceUserId] && ( !this.state.remoteUserSwappedId || ( sourceUserId===id ) ) && <div className="btn-swap-video" onClick={() => this.swapVideo( source )} style={{ backgroundImage: `url("${staticServerURL}/static/media/swap_video.png")`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', pointerEvents: "all", opacity: "1" }} />}
+                                                {type==="teacher" && (currentTeacherToggledView === "video") && allParticipants[sourceUserId] && ( !this.state.remoteUserSwappedId || ( sourceUserId===id ) ) && <div className="btn-swap-video" onClick={() => this.swapVideo( source )} style={{ backgroundImage: `url("${iconSwap}")`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', pointerEvents: "all", opacity: "1" }} />}
                                                 {/* <div className="btn-mute-unmute" onClick={() => this.toggleAudio( source, isMute )} style={{ backgroundImage: `url(${isMute?micOff:micOn})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', pointerEvents: "none", opacity: "0.5" }} /> */}
                                                 <audio autoPlay id={`audio-tag-${source.position}`} />
                                             </div>
