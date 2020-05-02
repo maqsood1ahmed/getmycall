@@ -15,6 +15,8 @@ import micOff from './assets/img/mic-off.svg';
 import iconSwap from './assets/img/swap_video.png'
 import loadingIcon from './assets/img/loading-icon.gif';
 import swapTeacherSourcesIcon from './assets/img/swap-teacher-sources.png';
+import videoSolidIcon from './assets/img/video-solid.svg';
+import videoSlashIcon from './assets/img/video-slash-solid.svg';
 
 // import teacherBoardLoader from './assets/img/teacher-board-loader.gif';
 
@@ -72,6 +74,7 @@ class Conference extends React.Component {
             resolutions: [ "180", "360", "720", "1080" ],
             roomData: {},
             isLocalAudioMute: false,
+            isLocalVideoMute: false,
             remoteUserSwappedId: null,
             isScreenSharing: false,
             isStopped: false,
@@ -86,10 +89,10 @@ class Conference extends React.Component {
     async componentDidMount () {
         let roomData = {};
 
-        let params = this.props.params;
-        // // if ( !params ) { //temporary for testing
-        //     let params= queryString.parse(window.location.search.substring(1));
-        // // }
+        let params = null;//this.props.params;
+        if ( !params ) { //temporary for testing
+            params= queryString.parse(window.location.search.substring(1));
+        }
         console.log('params => =>', params);
 
         if ( params.id && params.type && params.class_id ) {
@@ -450,6 +453,9 @@ class Conference extends React.Component {
                     if( track.getType() === "audio") {
                         console.log('local track new audio status => =>', track.isMuted())
                         this.setState({ isLocalAudioMute : track.isMuted() });
+                    } else if( track.getType() === "video") {
+                        console.log('local track new video status => =>', track.isMuted())
+                        this.setState({ isLocalVideoMute : track.isMuted() });
                     }
                 }) //use it to show whether teacher muted or not
             tracks[i].addEventListener(
@@ -550,7 +556,16 @@ class Conference extends React.Component {
 
     onRemoteTrackMute = ( id, track ) => {
         if ( allParticipants[id] && allParticipants[id].name ) {
-            message.info(`${allParticipants[id].name} ${track.isMuted() ? " Mic Off" : " Mic On"}`, 3)
+            if ( track.getType() === "audio" ) {
+                message.info(`${allParticipants[id].name} ${track.isMuted() ? " Mic Off" : " Mic On"}`);
+            } else if ( track.getType() === "video" ) {
+                message.info(`${allParticipants[id].name} ${track.isMuted() ? " Video Off" : " Video On"}`);
+                if ( allParticipants[id].type==="teacher" ) {
+                    document.getElementById("teacher-video-tag").load();
+                } else {
+                    document.getElementById(`video-tag-${allParticipants[id].position}`).load();
+                }
+            }
         }
         console.log('=> => remote track muted', id);
     }
@@ -668,17 +683,16 @@ class Conference extends React.Component {
     leaveRoomBtn = (e) => {
         this.unload();
         this.setState({ isLoggedIn: false, isStopped: true });
-        // window.location.reload();
     }
 
-    toggleAudio = async ( sourceId, isMute ) => {
-        console.log('local track old audio status => =>', isMute)
+    toggleLocalSource = async ( sourceId, isMute, sourceType ) => {
+        console.log('local track old status => =>', sourceType, isMute);
         let tracks = [];
         Object.keys(allParticipants).forEach(id => {
             if ( id === sourceId ) {
                 tracks = allParticipants[id].tracks;
                 tracks.forEach( track=> {
-                    if( track.getType() === 'audio' ) {
+                    if( track.getType() === sourceType ) {
                         if ( isMute ) {
                             track.unmute()
                         } else {
@@ -689,8 +703,6 @@ class Conference extends React.Component {
             }
         })
     }
-    
-//remote user id
 
     swapVideo = ( source, teacherId, remoteUserSwappedId ) => {
         try {
@@ -1003,8 +1015,9 @@ class Conference extends React.Component {
                         <div className="col-md-8 col-sm-12 col-xs-12 w-100 h-100 p-3" id="large-video-container">
                             {currentTeacherToggledView==="video" ? this.teacherViews('video' ) : (currentTeacherToggledView==="board" ? this.teacherViews('board') : this.teacherViews('screen'))}
                             <div id="large-video-actions-box" className="row w-20 h-10" style={{ background: (type==="teacher" ? "rgba(255, 255, 255, 0.301)": "none")}}>
-                                {(allParticipants[id]['type'] === "teacher") && <div onClick={() => this.toggleAudio( id, this.state.isLocalAudioMute )} style={{ backgroundImage: `url(${this.state.isLocalAudioMute?micOff:micOn})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', width: "35px", height: "35px", cursor: "pointer" }} />}
-                                <div onClick={this.leaveRoomBtn.bind(this)} style={{ backgroundImage: `url(${stopIcon})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', marginLeft: "8px", width: "40px", height: "40px", cursor: "pointer" }} />                            
+                                {<div onClick={() => this.toggleLocalSource( id, this.state.isLocalAudioMute, 'audio' )} style={{ backgroundImage: `url(${this.state.isLocalAudioMute?micOff:micOn})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', width: "30px", height: "30px", cursor: "pointer" }} />}
+                                {<div onClick={() => this.toggleLocalSource( id, this.state.isLocalVideoMute, 'video' )} style={{ cursor: "pointer", marginLeft: "8px"  }}><img src={this.state.isLocalVideoMute ? videoSlashIcon : videoSolidIcon} style={{ width: "30px", height:"30px" }} /></div>}
+                                <div onClick={this.leaveRoomBtn.bind(this)} style={{ backgroundImage: `url(${stopIcon})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', marginLeft: "8px", width: "35px", height: "35px", cursor: "pointer" }} />                            
                             </div>
                         </div>
                         <div className="col-md-4 col-sm-4 col-xs-8 container w-100 h-100 p-3" id="teacher-dashboard">
