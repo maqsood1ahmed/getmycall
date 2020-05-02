@@ -216,7 +216,7 @@ class Conference extends React.Component {
                     break;
                 case 'video-swapped-from-server':
                     console.log('video swapped from server', data)
-                    this.swapVideo( data.selectedSource , data.teacherId, data.remoteUserSwappedId );
+                    this.flipVideo( data.selectedSource , data.teacherId, data.remoteUserSwappedId );
                     break;
                 case 'teacher-view-change':
                     this.toggleTeacherView( data.currentTeacherToggledView );
@@ -704,7 +704,7 @@ class Conference extends React.Component {
         })
     }
 
-    swapVideo = ( source, teacherId, remoteUserSwappedId ) => {
+    flipVideo = ( source, teacherId, remoteUserSwappedId ) => {
         try {
             console.log('change this source with teacher video div => => ', this.state.roomData.sources, teacherId, remoteUserSwappedId);
             // *** source id used to swap with teacher div
@@ -993,6 +993,8 @@ class Conference extends React.Component {
         const { isLoggedIn, roomData, currentTeacherToggledView } = this.state;
         const { roomId, id, name, type } = roomData;
  
+        let isFlipEnabled = false;
+
         if ( !id || !roomId || !name || !type ) {
             return <div className="container" style={{ height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "center" }}>
                 <p style={{ fontSize: "35px", color: "#ff4d4f" }}>Please provide room info</p>
@@ -1034,8 +1036,16 @@ class Conference extends React.Component {
                                     return (
                                         <div key={source.position} className="student-small-video" id={`student-box-${source.position}`}>
                                             <div id={`video-box-${source.position}`}>
-                                                <video id={`video-tag-${source.position}`} autoPlay poster="https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTUq71y6yGEk94T1hyj89lV-khy9OMkgZt0Dl1hecguJxUpLU6a&usqp=CAU" width="105" />
-                                                {type==="teacher" && (currentTeacherToggledView === "video") && allParticipants[sourceUserId] && ( !this.state.remoteUserSwappedId || ( sourceUserId===id ) ) && <div className="btn-swap-video" onClick={() => this.swapVideo( source )} style={{ backgroundImage: `url("${iconSwap}")`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', pointerEvents: "all", opacity: "1" }} />}
+                                                {
+                                                    isFlipEnabled = (
+                                                        (type==="teacher") && 
+                                                        (currentTeacherToggledView === "video") && 
+                                                        allParticipants[sourceUserId] && 
+                                                        ( !this.state.remoteUserSwappedId || ( sourceUserId===id ) )
+                                                    )
+                                                }
+                                                <video onClick={() => this.flipVideo( source )} style={{ cursor: isFlipEnabled ? 'pointer' : 'none', pointerEvents: isFlipEnabled? 'auto': 'none' }} id={`video-tag-${source.position}`} autoPlay poster="https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTUq71y6yGEk94T1hyj89lV-khy9OMkgZt0Dl1hecguJxUpLU6a&usqp=CAU" width="105" />
+                                                {/* {&& <div className="btn-swap-video" onClick={() => this.flipVideo( source )} style={{ backgroundImage: `url("${iconSwap}")`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', pointerEvents: "all", opacity: "1" }} />} */}
                                                 {/* <div className="btn-mute-unmute" onClick={() => this.toggleAudio( source, isMute )} style={{ backgroundImage: `url(${isMute?micOff:micOn})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', pointerEvents: "none", opacity: "0.5" }} /> */}
                                                 <audio autoPlay id={`audio-tag-${source.position}`} />
                                             </div>
