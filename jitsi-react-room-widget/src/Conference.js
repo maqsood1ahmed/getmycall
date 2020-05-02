@@ -23,7 +23,7 @@ const staticServerURL = "https://api.getmycall.com";
 
 const options = {
     hosts: {
-        domain: 'dev.getmycall.com',
+        domain: 'dev.getmycall.com', 
         muc: 'conference.dev.getmycall.com' // FIXME: use XEP-0030
     },
     bosh: 'https://dev.getmycall.com/http-bind', // FIXME: use xep-0156 for that
@@ -86,10 +86,10 @@ class Conference extends React.Component {
     async componentDidMount () {
         let roomData = {};
 
-        // let params = this.props.params;
-        // if ( !params ) { //temporary for testing
-            let params= queryString.parse(window.location.search.substring(1));
-        // }
+        let params = this.props.params;
+        // // if ( !params ) { //temporary for testing
+        //     let params= queryString.parse(window.location.search.substring(1));
+        // // }
         console.log('params => =>', params);
 
         if ( params.id && params.type && params.class_id ) {

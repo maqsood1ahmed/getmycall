@@ -9,10 +9,15 @@ const type = el.getAttribute('type');
 const id = el.getAttribute('user_id');
 const class_id = el.getAttribute('class_id');
 const api = el.getAttribute('api') ? el.getAttribute('api') : 'login';
+let params;
 
-console.log('=> => ', id, type, class_id)
-
-let params = { api, type, id, class_id }
+if ( type === 'student' ) {
+    const teacher_id = el.getAttribute('teacher_id');
+    params = { api, type, id, class_id, teacher_id }
+} else {
+    params = { api, type, id, class_id }
+}
+ 
 ReactDOM.render(<Confernece params={params} />, el);
 
 /* uncomment this block to "defer" ReactDOM.render and expose it globaly
