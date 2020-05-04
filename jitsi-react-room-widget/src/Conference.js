@@ -17,18 +17,29 @@ import loadingIcon from './assets/img/loading-icon.gif';
 import swapTeacherSourcesIcon from './assets/img/swap-teacher-sources.png';
 import videoSolidIcon from './assets/img/video-solid.svg';
 import videoSlashIcon from './assets/img/video-slash-solid.svg';
+import raiseHandIcon from './assets/img/hand-point-up-regular.svg';
 
 // import teacherBoardLoader from './assets/img/teacher-board-loader.gif';
 
 const { Option } = Select;
 const staticServerURL = "https://api.getmycall.com";
 
+// const options = {
+//     hosts: {
+//         domain: 'dev.getmycall.com', 
+//         muc: 'conference.dev.getmycall.com' // FIXME: use XEP-0030
+//     },
+//     bosh: 'https://dev.getmycall.com/http-bind', // FIXME: use xep-0156 for that
+
+//     // The name of client node advertised in XEP-0115 'c' stanza
+//     clientNode: 'http://jitsi.org/jitsimeet'
+// };
 const options = {
     hosts: {
-        domain: 'dev.getmycall.com', 
-        muc: 'conference.dev.getmycall.com' // FIXME: use XEP-0030
+        domain: 'beta.meet.jit.si',
+        muc: 'conference.beta.meet.jit.si' // FIXME: use XEP-0030
     },
-    bosh: 'https://dev.getmycall.com/http-bind', // FIXME: use xep-0156 for that
+    bosh: 'https://beta.meet.jit.si/http-bind', // FIXME: use xep-0156 for that
 
     // The name of client node advertised in XEP-0115 'c' stanza
     clientNode: 'http://jitsi.org/jitsimeet'
@@ -221,6 +232,12 @@ class Conference extends React.Component {
                 case 'teacher-view-change':
                     this.toggleTeacherView( data.currentTeacherToggledView );
                     break;
+                case 'board-change':
+                    this.handleChangeBoard(data.boardIndex);
+                    break;
+                case 'hand-raised':
+                    this.remoteStudentHandRaised(data.selectedSource);
+                    break;
                 case 'message-undefined':
                     console.error('socketio server message type undefined!') 
                     break;
@@ -240,7 +257,7 @@ class Conference extends React.Component {
                 let participant = allParticipants[participantId];
                 let participantTracks = participant.tracks;
 
-                if ( isTrackUpdate ) {
+                if ( isTrackUpdate  ) {
                     if ( (participant.position).toString() === "0" && isTrackUpdate ) {
                         for ( let i = 0; i < participantTracks.length ; i++ ) {
                             let largeVideoTag = document.getElementById(`teacher-video-tag`);
@@ -276,7 +293,7 @@ class Conference extends React.Component {
                 }
 
                 let screenTracks = participant.screenTracks;
-                if ( screenTracks[0] && this.state.isScreenTrackUpdate ) {
+                if ( screenTracks[0] && this.state.isScreenTrackUpdate && !isTrackUpdate ) {
                     this.setState({ isScreenTrackUpdate: false });
                     screenTracks.forEach( track => {
                         let screenVideo = $(`#teacher-screen-share-video`)[0];
@@ -450,13 +467,16 @@ class Conference extends React.Component {
             tracks[i].addEventListener(
                 window.JitsiMeetJS.events.track.TRACK_MUTE_CHANGED,
                 (track) => { 
-                    if( track.getType() === "audio") {
-                        console.log('local track new audio status => =>', track.isMuted())
-                        this.setState({ isLocalAudioMute : track.isMuted() });
-                    } else if( track.getType() === "video") {
-                        console.log('local track new video status => =>', track.isMuted())
-                        this.setState({ isLocalVideoMute : track.isMuted() });
-                    }
+                    // if( track.getType() === "audio") {
+                    //     console.log('local track new audio status => =>', track.isMuted())
+                    //     this.setState({ isLocalAudioMute : track.isMuted() });
+                    // } else if( track.getType() === "video") {
+                    //     console.log('local track new video status => =>', track.isMuted())
+                    //     this.setState({ isLocalVideoMute : track.isMuted() });
+                    // }
+                        
+                    let id = this.state.roomData.id;
+                    this.onTrackMute( id, track );
                 }) //use it to show whether teacher muted or not
             tracks[i].addEventListener(
                 window.JitsiMeetJS.events.track.LOCAL_TRACK_STOPPED,
@@ -542,7 +562,7 @@ class Conference extends React.Component {
                 audioLevel => console.log(`Audio Level remote: ${audioLevel}`));
             track.addEventListener(
                 window.JitsiMeetJS.events.track.TRACK_MUTE_CHANGED,
-                () => this.onRemoteTrackMute(id, track));
+                () => this.onTrackMute(id, track));
             track.addEventListener(
                 window.JitsiMeetJS.events.track.LOCAL_TRACK_STOPPED,
                 () => console.log('remote track stoped'));
@@ -554,20 +574,27 @@ class Conference extends React.Component {
         }
     }
 
-    onRemoteTrackMute = ( id, track ) => {
+    onTrackMute = ( id, track ) => {
+        let isLocal = id === this.state.roomData.id;
         if ( allParticipants[id] && allParticipants[id].name ) {
             if ( track.getType() === "audio" ) {
                 message.info(`${allParticipants[id].name} ${track.isMuted() ? " Mic Off" : " Mic On"}`);
+                isLocal && this.setState({ isLocalAudioMute: track.isMuted()});
             } else if ( track.getType() === "video" ) {
                 message.info(`${allParticipants[id].name} ${track.isMuted() ? " Video Off" : " Video On"}`);
+                isLocal && this.setState({ isLocalVideoMute: track.isMuted()});
+                this.setState({ isTrackUpdate: true, isScreenTrackUpdate: true})
                 if ( allParticipants[id].type==="teacher" ) {
-                    document.getElementById("teacher-video-tag").load();
+                    if ( this.state.currentTeacherToggledView === 'screen' ) {
+                        document.getElementById("teacher-screen-share-video").load();
+                    } else {
+                        document.getElementById("teacher-video-tag").load();
+                    }
                 } else {
                     document.getElementById(`video-tag-${allParticipants[id].position}`).load();
                 }
             }
         }
-        console.log('=> => remote track muted', id);
     }
 
     onRemoveTrack (track) {
@@ -603,11 +630,18 @@ class Conference extends React.Component {
         let id = this.state.roomData.id;
         if (allParticipants[id]) {
             let localTracks = allParticipants[id]['tracks'];
+            let screenTracks = allParticipants[id]['screenTracks'];
             for (let i = 0; i < localTracks.length; i++) {
                 localTracks[i].dispose();
             }
+            if ( screenTracks[0] ) {
+                for (let j = 0; j < screenTracks.length; j++) {
+                    screenTracks[j].dispose();
+                }
+                screenConnection.disconnect();
+            }
             room.leave();
-            connection.disconnect();
+            connection.disconnect();     
         }
     }
 
@@ -684,6 +718,37 @@ class Conference extends React.Component {
         this.unload();
         this.setState({ isLoggedIn: false, isStopped: true });
     }
+    raiseHand = ( source ) => {
+        const { roomData } = this.state;
+        let studentHand = document.getElementById(`studenthand-${source.id}`);
+        studentHand.style.backgroundColor = "white";
+
+        let messageObject = { type: 'hand-raised', data: { selectedSource: source, studentId: roomData.id, roomId: roomData.roomId } };
+        socket.emit( 'event', messageObject);
+
+        setTimeout(() => {
+            studentHand.style.backgroundColor = "#d0f543";
+        }, 5000);
+    }
+    remoteStudentHandRaised = ( remoteSource ) => {
+        this.updateHandRaised(remoteSource, true);
+
+        setTimeout(()=>{
+            this.updateHandRaised(remoteSource, false);
+        }, 5000)
+    }
+
+    updateHandRaised = ( remoteSource, isHandRaised ) => {
+        let roomData = this.state.roomData;
+        console.log('room data => => =>',roomData.sources)
+        roomData.sources.forEach( source => {
+            if ( source.id === remoteSource.id ) {
+                source['isHandRaised'] = isHandRaised;
+            }
+            return source;
+        })
+        this.setState({ roomData });
+    }
 
     toggleLocalSource = async ( sourceId, isMute, sourceType ) => {
         console.log('local track old status => =>', sourceType, isMute);
@@ -694,7 +759,8 @@ class Conference extends React.Component {
                 tracks.forEach( track=> {
                     if( track.getType() === sourceType ) {
                         if ( isMute ) {
-                            track.unmute()
+                            console.log('unmuting this track', track)
+                            track.unmute();
                         } else {
                             track.mute();
                         }                        
@@ -771,7 +837,7 @@ class Conference extends React.Component {
         
                     Object.keys(allParticipants).forEach( id => {
                         if ( id === sourceId ) {
-                            allParticipants[sourceId].position = "0";  //change remoted user position to 0 in place of teacher
+                            allParticipants[sourceId].position = "0";  //change remote user position to 0 in place of teacher
                             if ( this.state.roomData.type === "student" && sourceId === this.state.roomData.id ) {
                                 allParticipants[sourceId].tracks.forEach( track => {
                                     if ( track.getType() === 'audio' ) {
@@ -871,15 +937,20 @@ class Conference extends React.Component {
 
     iframe = () => {
         let roomData = this.state.roomData;
-        const htmlSource = this.state.selectedBoard ? this.state.selectedBoard.source : (roomData? (roomData.board_sources ? roomData.board_sources[0].source: "") : "");
+        const htmlSource = this.state.selectedBoard ? this.state.selectedBoard.source : (roomData? (roomData.board_sources ? roomData.board_sources[0].source: "about:blank") : "about:blank");
         console.log('iframe source => => ', htmlSource)
         return {
-          __html: `<iframe src="${htmlSource}" width="100%" height="100%"></iframe>`
+          __html: `<iframe class="teacher-board-iframe" src="${htmlSource}"></iframe>`
         }
     }
 
     handleChangeBoard = ( index ) => {
-        const selectedBoard = this.state.roomData.board_sources[index];
+        const { roomData } = this.state;
+        const selectedBoard = roomData.board_sources[index] ? roomData.board_sources[index] : null;
+        if ( roomData.type === "teacher" && selectedBoard ) {
+            let messageObject = { type: 'board-change', data: { boardIndex: index, teacherId: roomData.id, roomId: roomData.roomId } };
+            socket.emit( 'event', messageObject);
+        }
         this.setState({ selectedBoard })
     } 
 
@@ -900,13 +971,15 @@ class Conference extends React.Component {
         const { currentTeacherToggledView, roomData, isScreenSharing, remoteUserSwappedId } = this.state;
         const { type, bitrate } = roomData;
         const customStyle = {
-            largeVideoPoster: {
-                backgroundImage: "url(" + "https://www.clipartmax.com/png/middle/148-1488113_teachers-icon-teachers-png.png" + ")",
-                backgroundPosition: 'center',
-                backgroundSize: 'cover',
-                backgroundRepeat: 'no-repeat',
-                width: "100%",
-                height: "100%"
+            largeVideoStyle: {
+                // backgroundImage: "url(" + "https://www.clipartmax.com/png/middle/148-1488113_teachers-icon-teachers-png.png" + ")",
+                // backgroundPosition: 'center',
+                // backgroundSize: 'cover',
+                // backgroundRepeat: 'no-repeat',
+                // width: "100%",
+                // height: "100%",
+                backgroundColor: "rgba(0, 0, 0, 0.82)",
+                borderRadius: "8px"
             },
             btnSwapScreen: {
                 backgroundImage: `url(${swapTeacherSourcesIcon})`,//`url("${staticServerURL}/static/media/swap_video.png")`,
@@ -930,6 +1003,11 @@ class Conference extends React.Component {
                 backgroundRepeat: 'no-repeat',
                 pointerEvents: "all",
                 opacity: "1"
+            },
+            screenShareStyle: {
+                width: "100%",
+                height: "100%",
+                borderRadius: "8px"
             }
             // iframeLoader: {
             //     backgroundImage: `url(${this.state.selectedBoard ? "" : teacherBoardLoader})`,
@@ -942,8 +1020,8 @@ class Conference extends React.Component {
         }
         if ( viewType === "video" ){
             return (
-                <div style={{ width: "100%", height: ( currentTeacherToggledView === "video" ) ? "100%" : "50%", position: "relative" }}>
-                    <video id="teacher-video-tag" autoPlay style={ customStyle.largeVideoPoster } /> 
+                <div style={{ width: "100%", height: ( currentTeacherToggledView === "video" ) ? "100%" : "50%", position: "relative", maxHeight: "530px"}}>
+                    <video id="teacher-video-tag" autoPlay style={ customStyle.largeVideoStyle } /> 
                     <audio autoPlay width="0%" height="0%" id="teacher-audio-tag"></audio>
                     { (type === "teacher") &&
                         <Select
@@ -961,25 +1039,28 @@ class Conference extends React.Component {
                 </div>);
         } else if ( viewType === "board" ) {
             return (
-                <div style={{ width: "100%", height: ( currentTeacherToggledView === "board" ? "100%" : "50%" ), position: "relative" }}>
+                <div style={{ backgroundColor: "#000000d1", borderRadius: "8px", width: "100%", height: ( currentTeacherToggledView === "board" ? "100%" : "50%" ), position: "relative" }}>
                     <div style={{ width: "100%", height: "100%" }} dangerouslySetInnerHTML={ this.iframe() } />
                     {/* with loader <div style={ customStyle.iframeLoader} dangerouslySetInnerHTML={ this.iframe() } /> */}
-                    <Select
-                        defaultValue={roomData.board_sources && roomData.board_sources[0].name}
-                        style={{ right: "5%" }}
-                        onChange={(index) => this.handleChangeBoard(index)}
-                    >
-                        {roomData.board_sources.map( ( board, index ) => (
-                        <Option key={index}>{board.name}</Option>
-                        ))}
-                    </Select>
+                    {
+                        type==="teacher" &&
+                            <Select
+                                defaultValue={roomData.board_sources && roomData.board_sources[0].name}
+                                style={{ right: "5%" }}
+                                onChange={(index) => this.handleChangeBoard(index)}
+                            >
+                                {roomData.board_sources.map( ( board, index ) => (
+                                <Option key={index}>{board.name}</Option>
+                                ))}
+                            </Select>
+                    }
                     {(currentTeacherToggledView === "video") && ( type === "teacher" ) && !remoteUserSwappedId && <div className="btn-swap-screen" onClick={() => this.toggleTeacherView( 'board' )} style={ customStyle.btnSwapScreen } />}
                 </div>
             );
         } else if ( viewType === "screen" ) {
             return (
-                <div style={{ width: "100%", height: ( currentTeacherToggledView === "screen" ? "100%" : "50%" ), position: "relative" }}>
-                    <video id="teacher-screen-share-video" autoPlay poster="https://miro.medium.com/max/3200/0*-fWZEh0j_bNfhn2Q" width="100%" height="100%" />
+                <div style={{ backgroundColor: "#000000d1", width: "100%", height: ( currentTeacherToggledView === "screen" ? "100%" : "50%" ), position: "relative", borderRadius: "8px" }}>
+                    <video id="teacher-screen-share-video" autoPlay poster="https://miro.medium.com/max/3200/0*-fWZEh0j_bNfhn2Q" style={ customStyle.screenShareStyle} />
                     {(type === "teacher") &&<div className="btn-start-screen" onClick={() => this.handleScreenShareButton(this.state.isScreenSharing)} style={ customStyle.btnStartScreen} />}
                     {(currentTeacherToggledView === "video") && isScreenSharing && ( type === "teacher" ) && !remoteUserSwappedId && <div className="btn-swap-screen" onClick={() => this.toggleTeacherView( 'screen' )} style={ customStyle.btnSwapScreen } />}
                 </div>
@@ -1006,23 +1087,23 @@ class Conference extends React.Component {
                 //     <img src={loadingIcon} alt="" width="100%" height="100%" />
                 // </div>}
                 <div className="justify-content-center" style= {{ width: "100%", height: "100%", top: "50%", backgroundColor: 'white' }}>
-                    <img src={`${loadingIcon}`} alt="" width="200" height="200" style={{ marginTop: "120px" }} />
+                    <img src={`https://api.getmycall.com/static/media/loading-icon.gif`} alt="" width="200" height="200" style={{ marginTop: "120px" }} />
                 </div>}
                 {/* {this.state.isStopped && <Button onClick={()=> this.joinRoom()} type="primary"> Join Again </Button>} */}
             </div>
         } else {
             return (
-                <div className="container">
-                    <div className="row w-100 h-100 p-3" id="teacher-container">
-                        <div className="col-md-8 col-sm-12 col-xs-12 w-100 h-100 p-3" id="large-video-container">
+                <div>
+                    <div className="row w-100 h-auto p-3" id="teacher-container">
+                        <div className="col-8 col-md-8 col-sm-8 col-xs-8 w-100 h-auto p-3" id="large-video-container">
                             {currentTeacherToggledView==="video" ? this.teacherViews('video' ) : (currentTeacherToggledView==="board" ? this.teacherViews('board') : this.teacherViews('screen'))}
-                            <div id="large-video-actions-box" className="row w-20 h-10" style={{ background: (type==="teacher" ? "rgba(255, 255, 255, 0.301)": "none")}}>
-                                {<div onClick={() => this.toggleLocalSource( id, this.state.isLocalAudioMute, 'audio' )} style={{ backgroundImage: `url(${this.state.isLocalAudioMute?micOff:micOn})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', width: "30px", height: "30px", cursor: "pointer" }} />}
-                                {<div onClick={() => this.toggleLocalSource( id, this.state.isLocalVideoMute, 'video' )} style={{ cursor: "pointer", marginLeft: "8px"  }}><img src={this.state.isLocalVideoMute ? videoSlashIcon : videoSolidIcon} style={{ width: "30px", height:"30px" }} /></div>}
+                            <div id="local-video-actions-box" className="row w-20 h-10">
+                                {<div onClick={() => this.toggleLocalSource( id, this.state.isLocalAudioMute, 'audio' )} style={{ backgroundImage: `url(${this.state.isLocalAudioMute?"http://api.getmycall.com/static/media/mic-off.svg":"http://api.getmycall.com/static/media/mic-on.svg"})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', width: "30px", height: "30px", cursor: "pointer" }} />}
+                                {<div onClick={() => this.toggleLocalSource( id, this.state.isLocalVideoMute, 'video' )} style={{ cursor: "pointer", marginLeft: "8px"  }}><img src={this.state.isLocalVideoMute ? "https://api.getmycall.com/static/media/video-slash-solid.svg" : "https://api.getmycall.com/static/media/video-solid.svg"} style={{ width: "30px", height:"30px" }} /></div>}
                                 <div onClick={this.leaveRoomBtn.bind(this)} style={{ backgroundImage: `url(${stopIcon})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', marginLeft: "8px", width: "35px", height: "35px", cursor: "pointer" }} />                            
                             </div>
                         </div>
-                        <div className="col-md-4 col-sm-4 col-xs-8 container w-100 h-100 p-3" id="teacher-dashboard">
+                        <div className="col-4 col-md-4 col-sm-4 col-xs-4 container w-100 h-auto p-3" id="teacher-dashboard">
                             {(currentTeacherToggledView==="video" || currentTeacherToggledView==="screen") ? this.teacherViews('board' ) : (currentTeacherToggledView==="board" && this.teacherViews('video'))}
                             {(currentTeacherToggledView==="video" || currentTeacherToggledView==="board") ? this.teacherViews('screen' ) : (currentTeacherToggledView==="screen" && this.teacherViews('video'))}
                         </div>
@@ -1032,7 +1113,8 @@ class Conference extends React.Component {
                             this.state.roomData && this.state.roomData.sources && (this.state.roomData.sources.length > 1) &&
                             this.state.roomData.sources.sort(this.sortSources.bind(this)).map(source => {
                                 if( source.position.toString() !== "0" ) {
-                                    let sourceUserId = source.id;
+                                    let sourceUserId = source.id,
+                                        isHandRaised = source.isHandRaised ? source.isHandRaised : false;
                                     return (
                                         <div key={source.position} className="student-small-video" id={`student-box-${source.position}`}>
                                             <div id={`video-box-${source.position}`}>
@@ -1048,6 +1130,12 @@ class Conference extends React.Component {
                                                 {/* {&& <div className="btn-swap-video" onClick={() => this.flipVideo( source )} style={{ backgroundImage: `url("${iconSwap}")`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', pointerEvents: "all", opacity: "1" }} />} */}
                                                 {/* <div className="btn-mute-unmute" onClick={() => this.toggleAudio( source, isMute )} style={{ backgroundImage: `url(${isMute?micOff:micOn})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', pointerEvents: "none", opacity: "0.5" }} /> */}
                                                 <audio autoPlay id={`audio-tag-${source.position}`} />
+                                                <div className="row w-20 h-10 student-video-actions-top">
+                                                    <div className="student-video-actions-top-icon" onClick={this.leaveRoomBtn.bind(this)}><span className="no-of-messages">1</span></div> 
+                                                    { ( sourceUserId===id || isHandRaised ) && <div className="student-video-actions-top-icon" onClick={() => !isHandRaised && this.raiseHand(source)} style={{ cursor: 'pointer' }}><i id={`studenthand-${sourceUserId}`} className="fa fa-hand-point-up"></i></div>} 
+                                                    {/* <div className="student-video-actions-top-icon" onClick={this.leaveRoomBtn.bind(this)}><i className="fa fa-hand-point-up"></i></div>                        
+                                                    <div className="student-video-actions-top-icon" onClick={this.leaveRoomBtn.bind(this)}><i className="fa fa-hand-point-up"></i></div>                                                */}
+                                                </div>
                                             </div>
                                             <div className="student-name" id={`name-box-${source.position}`}>
                                                 <h6 className="student-name-text" align="center">{source.name}</h6>

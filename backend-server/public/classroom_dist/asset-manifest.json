@@ -1,0 +1,18 @@
+{
+  "main.css": "/static/css/react-classroom.css",
+  "main.js": "/static/js/react-classroom.js",
+  "main.js.map": "/static/js/react-classroom.js.map",
+  "static/media/start.png": "/static/media/start.png",
+  "static/media/swap-teacher-sources.png": "/static/media/swap-teacher-sources.png",
+  "static/media/mic-on.svg": "/static/media/mic-on.svg",
+  "static/media/mic-off.svg": "/static/media/mic-off.svg",
+  "static/media/swap_video.png": "/static/media/swap_video.png",
+  "static/media/loading-icon.gif": "/static/media/loading-icon.gif",
+  "static/media/video-solid.svg": "/static/media/video-solid.svg",
+  "static/media/video-slash-solid.svg": "/static/media/video-slash-solid.svg",
+  "static/media/hand-point-up-regular.svg": "/static/media/hand-point-up-regular.svg",
+  "static/css/react-classroom.css.map": "/static/css/react-classroom.css.map",
+  "index.html": "/index.html",
+  "precache-manifest.89d9b97c1ec7d3ac1773ab1b9c5bebcb.js": "/precache-manifest.89d9b97c1ec7d3ac1773ab1b9c5bebcb.js",
+  "service-worker.js": "/service-worker.js"
+}
