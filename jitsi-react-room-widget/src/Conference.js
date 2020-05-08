@@ -1,12 +1,16 @@
 /* eslint-disable */
 import React from 'react';
+import { connect } from 'react-redux';
 import queryString from 'query-string';
 import axios from  'axios';
+import Iframe from 'react-iframe'
 
-import { message, Select  } from 'antd';
+import { message, Select, Button  } from 'antd';
 import socketIOClient from "socket.io-client";
 // import LoadingSpinner from '../../components/UI/Spinner/Spinner';
 import './Conference.css';
+import { addMessages } from './actions';
+
 
 import startIcon from './assets/img/start.png';
 import stopIcon from './assets/img/stop.png';
@@ -18,6 +22,7 @@ import swapTeacherSourcesIcon from './assets/img/swap-teacher-sources.png';
 import videoSolidIcon from './assets/img/video-solid.svg';
 import videoSlashIcon from './assets/img/video-slash-solid.svg';
 import raiseHandIcon from './assets/img/hand-point-up-regular.svg';
+import ChatBox from './ChatBox';
 
 // import teacherBoardLoader from './assets/img/teacher-board-loader.gif';
 
@@ -91,7 +96,9 @@ class Conference extends React.Component {
             isStopped: false,
             selectedBoard: null,
             socketEndpoint: `${staticServerURL}/class-rooms`,
-            currentTeacherToggledView: 'video'  //three types 1=>video(video at center), 2=>screen and 3=>html
+            currentTeacherToggledView: 'video',  //three types 1=>video(video at center), 2=>screen and 3=>html
+            isChatBoxVisible: false,
+            noOfNewMessages: 0
         };
 
         socket = socketIOClient(this.state.socketEndpoint);
@@ -238,6 +245,10 @@ class Conference extends React.Component {
                 case 'hand-raised':
                     this.remoteStudentHandRaised(data.selectedSource);
                     break;
+                case 'chat-message':
+                    console.log('new message => =>', data)
+                    this.onNewMessage(data);
+                    break;    
                 case 'message-undefined':
                     console.error('socketio server message type undefined!') 
                     break;
@@ -248,6 +259,7 @@ class Conference extends React.Component {
             }
         });
     }
+    
 
     componentDidUpdate () {
         let { isTrackUpdate, isScreenTrackUpdate } = this.state;
@@ -424,7 +436,28 @@ class Conference extends React.Component {
     }
 
     getLocalTracks () {
-        window.JitsiMeetJS.createLocalTracks({ devices: ['audio', 'video'] })
+        let options = {
+            devices: ['audio', 'video'],
+            minFps: "15",
+            resolution: 720,
+            constraints: {
+                video: {
+                    aspectRatio: 16 / 9,
+                    height: {
+                        ideal: 720,
+                        max: 720,
+                        min: 720
+                    },
+                    width: {
+                        ideal: 1280,
+                        max: 1280,
+                        min: 1280
+                    }
+        
+                }
+            }
+        }
+        window.JitsiMeetJS.createLocalTracks( options )
             .then((tracks) => {
                 this.onLocalTracks(tracks);
             })
@@ -584,6 +617,8 @@ class Conference extends React.Component {
                 message.info(`${allParticipants[id].name} ${track.isMuted() ? " Video Off" : " Video On"}`);
                 isLocal && this.setState({ isLocalVideoMute: track.isMuted()});
                 this.setState({ isTrackUpdate: true, isScreenTrackUpdate: true})
+
+                
                 if ( allParticipants[id].type==="teacher" ) {
                     if ( this.state.currentTeacherToggledView === 'screen' ) {
                         document.getElementById("teacher-screen-share-video").load();
@@ -888,10 +923,16 @@ class Conference extends React.Component {
                     height: {
                         ideal: 720,
                         max: 720,
-                        min: 180
+                        min: 720
+                    },
+                    width: {
+                        ideal: 1280,
+                        max: 1280,
+                        min: 1280
                     }
+        
                 }
-            },
+            }
         }
         window.JitsiMeetJS.createLocalTracks( options )
             .then((tracks) => {
@@ -935,13 +976,29 @@ class Conference extends React.Component {
         return 0;
     }
 
+    onNewMessage = (message) => {
+        console.log("new chat message => =>", message)
+        this.props.addMessages([message]);
+
+        if ( this.state.isChatBoxVisible ) {
+            let messagesDiv = document.getElementsByClassName("chat-box-messages")[0]
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        } else {
+            this.setState({ noOfNewMessages: this.state.noOfNewMessages+1 })
+        }
+    }
+
     iframe = () => {
         let roomData = this.state.roomData;
         const htmlSource = this.state.selectedBoard ? this.state.selectedBoard.source : (roomData? (roomData.board_sources ? roomData.board_sources[0].source: "about:blank") : "about:blank");
         console.log('iframe source => => ', htmlSource)
-        return {
-          __html: `<iframe class="teacher-board-iframe" src="${htmlSource}"></iframe>`
-        }
+        return (
+            <Iframe url={htmlSource}
+                id="teacher-board-iframe"
+                display="initial"
+                position="relative"
+                frameBorder="0"/>
+        )
     }
 
     handleChangeBoard = ( index ) => {
@@ -971,16 +1028,6 @@ class Conference extends React.Component {
         const { currentTeacherToggledView, roomData, isScreenSharing, remoteUserSwappedId } = this.state;
         const { type, bitrate } = roomData;
         const customStyle = {
-            largeVideoStyle: {
-                // backgroundImage: "url(" + "https://www.clipartmax.com/png/middle/148-1488113_teachers-icon-teachers-png.png" + ")",
-                // backgroundPosition: 'center',
-                // backgroundSize: 'cover',
-                // backgroundRepeat: 'no-repeat',
-                // width: "100%",
-                // height: "100%",
-                backgroundColor: "rgba(0, 0, 0, 0.82)",
-                borderRadius: "8px"
-            },
             btnSwapScreen: {
                 backgroundImage: `url(${swapTeacherSourcesIcon})`,//`url("${staticServerURL}/static/media/swap_video.png")`,
                 backgroundPosition: 'center',
@@ -993,7 +1040,7 @@ class Conference extends React.Component {
                 position: "absolute",
                 zIndex: 1,
                 cursor: "pointer",
-                top: "80%",
+                top: "85%",
                 left: "5%"
             },
             btnStartScreen: {
@@ -1003,25 +1050,12 @@ class Conference extends React.Component {
                 backgroundRepeat: 'no-repeat',
                 pointerEvents: "all",
                 opacity: "1"
-            },
-            screenShareStyle: {
-                width: "100%",
-                height: "100%",
-                borderRadius: "8px"
             }
-            // iframeLoader: {
-            //     backgroundImage: `url(${this.state.selectedBoard ? "" : teacherBoardLoader})`,
-            //     backgroundPosition: 'center',
-            //     backgroundSize: 'cover',
-            //     backgroundRepeat: 'no-repeat',
-            //     width: "100%", 
-            //     height: "100%"
-            // }
         }
         if ( viewType === "video" ){
             return (
-                <div style={{ width: "100%", height: ( currentTeacherToggledView === "video" ) ? "100%" : "50%", position: "relative", maxHeight: "530px"}}>
-                    <video id="teacher-video-tag" autoPlay style={ customStyle.largeVideoStyle } /> 
+                <div className={`w-100 teaher-video-div ${currentTeacherToggledView === "video" ? "teacher-div-large" : "teacher-div-small"}`}>
+                    <video id="teacher-video-tag" autoPlay /> 
                     <audio autoPlay width="0%" height="0%" id="teacher-audio-tag"></audio>
                     { (type === "teacher") &&
                         <Select
@@ -1034,19 +1068,22 @@ class Conference extends React.Component {
                         ))}
                         </Select>
                     }
-                    {(currentTeacherToggledView === "board" || currentTeacherToggledView === "screen") && ( type === "teacher" ) && <div className="btn-swap-screen" onClick={() => this.toggleTeacherView( 'video' )} style={ customStyle.btnSwapScreen } />}
+                    {
+                        (currentTeacherToggledView === "board" || currentTeacherToggledView === "screen") && ( type === "teacher" ) && 
+                            <div className="btn-swap-screen" onClick={() => this.toggleTeacherView( 'video' )} style={ customStyle.btnSwapScreen } />
+                    }
 
                 </div>);
         } else if ( viewType === "board" ) {
             return (
-                <div style={{ backgroundColor: "#000000d1", borderRadius: "8px", width: "100%", height: ( currentTeacherToggledView === "board" ? "100%" : "50%" ), position: "relative" }}>
-                    <div style={{ width: "100%", height: "100%" }} dangerouslySetInnerHTML={ this.iframe() } />
+                <div className={`teacher-board-div ${currentTeacherToggledView === "board" ? "teacher-div-large" : "teacher-div-small"}`}>
+                    <div style={{ width: "100%", height: "100%" }}> { this.iframe() }</div>
                     {/* with loader <div style={ customStyle.iframeLoader} dangerouslySetInnerHTML={ this.iframe() } /> */}
                     {
                         type==="teacher" &&
                             <Select
                                 defaultValue={roomData.board_sources && roomData.board_sources[0].name}
-                                style={{ right: "5%" }}
+                                style={{ right: "5%", width: 120 }}
                                 onChange={(index) => this.handleChangeBoard(index)}
                             >
                                 {roomData.board_sources.map( ( board, index ) => (
@@ -1054,24 +1091,36 @@ class Conference extends React.Component {
                                 ))}
                             </Select>
                     }
-                    {(currentTeacherToggledView === "video") && ( type === "teacher" ) && !remoteUserSwappedId && <div className="btn-swap-screen" onClick={() => this.toggleTeacherView( 'board' )} style={ customStyle.btnSwapScreen } />}
+                    {
+                        (currentTeacherToggledView === "video") && ( type === "teacher" ) && !remoteUserSwappedId && 
+                            <div className="btn-swap-screen" onClick={() => this.toggleTeacherView( 'board' )} style={ customStyle.btnSwapScreen } />
+                    }
                 </div>
             );
         } else if ( viewType === "screen" ) {
             return (
-                <div style={{ backgroundColor: "#000000d1", width: "100%", height: ( currentTeacherToggledView === "screen" ? "100%" : "50%" ), position: "relative", borderRadius: "8px" }}>
-                    <video id="teacher-screen-share-video" autoPlay poster="https://miro.medium.com/max/3200/0*-fWZEh0j_bNfhn2Q" style={ customStyle.screenShareStyle} />
+                <div className={`teacher-screen-share-div ${currentTeacherToggledView === "screen" ? "teacher-div-large" : "teacher-div-small"}`}>
+                    <video id="teacher-screen-share-video" autoPlay poster="https://miro.medium.com/max/3200/0*-fWZEh0j_bNfhn2Q" />
                     {(type === "teacher") &&<div className="btn-start-screen" onClick={() => this.handleScreenShareButton(this.state.isScreenSharing)} style={ customStyle.btnStartScreen} />}
-                    {(currentTeacherToggledView === "video") && isScreenSharing && ( type === "teacher" ) && !remoteUserSwappedId && <div className="btn-swap-screen" onClick={() => this.toggleTeacherView( 'screen' )} style={ customStyle.btnSwapScreen } />}
+                    {
+                        (currentTeacherToggledView === "video") && isScreenSharing && ( type === "teacher" ) && !remoteUserSwappedId && 
+                            <div className="btn-swap-screen" onClick={() => this.toggleTeacherView( 'screen' )} style={ customStyle.btnSwapScreen } />
+                    }
                 </div>
             );
         }
     }
     
+    toggleChatBox = () => {
+        this.setState({isChatBoxVisible: !this.state.isChatBoxVisible });
+    }
+
+    clearNoOfNewMessages = () => {
+        this.setState({ noOfNewMessages: 0 });
+    }
 
     render () {
-        console.log('all participant => => ', allParticipants, this.state.roomData)
-        const { isLoggedIn, roomData, currentTeacherToggledView } = this.state;
+        const { isLoggedIn, roomData, currentTeacherToggledView, noOfNewMessages, isChatBoxVisible } = this.state;
         const { roomId, id, name, type } = roomData;
  
         let isFlipEnabled = false;
@@ -1091,11 +1140,53 @@ class Conference extends React.Component {
                 </div>}
                 {/* {this.state.isStopped && <Button onClick={()=> this.joinRoom()} type="primary"> Join Again </Button>} */}
             </div>
-        } else {
+        } else
+         {
             return (
-                <div>
-                    <div className="row w-100 h-auto p-3" id="teacher-container">
-                        <div className="col-8 col-md-8 col-sm-8 col-xs-8 w-100 h-auto p-3" id="large-video-container">
+                <div className="w-100 h-100">
+                    <div className="row classroom-header w-100 d-flex justify-content-between">
+                        <div className="time-box-container w-10 d-flex flex-column justify-content-start">
+                            <div className="time-box-info">
+                                <span className="time-start">08:30</span>  -  <span className="time-end">09:15</span>
+                            </div>
+                        </div>
+                        <div className="class-room-header-info w-30 d-flex flex-column justify-content-center">
+                            <div>
+                                <span style={{ fontWeight: "700", color: "#757575b5"}}>History Class</span><span id='class-header-teacher-name'> with {roomData.teacher_name ? roomData.teacher_name: (type==="teacher" ? roomData.name : 'teacher name')}</span>
+                            </div>
+                        </div>
+                        <div className="chat-button w-20 d-flex flex-column justify-content-start">
+                            <div className="chat-button-container">
+                                <button onClick={()=>this.toggleChatBox()} type="button" class="btn btn-primary chat-button">
+                                    <div className="d-flex flex-row justify-content-center">
+                                        <div className="btn-chat-inner-text d-flex justify-content-end w-70">Class Chat</div>
+                                        <div className="chat-button-icon d-flex justify-content-start w-30">
+                                            <i className={`${isChatBoxVisible ? "far fa-times-circle" : "fas fa-comment"} btn-chat-icon`} />
+                                        </div>
+                                    </div>
+                                </button>
+                                {
+                                    (noOfNewMessages !== 0) && 
+                                        <div className="chat-messages-count">
+                                            <span className="chat-messages-count-text">{noOfNewMessages}</span>
+                                        </div>
+                                }
+                            </div>
+                            <ChatBox 
+                                isChatBoxVisible={isChatBoxVisible}
+                                profile={{
+                                    userId:roomData.id,
+                                    name: roomData.name,
+                                    roomId: roomData.roomId
+                                }}
+                                socket={socket}
+                                noOfNewMessages={noOfNewMessages}
+                                clearNoOfNewMessages={this.clearNoOfNewMessages.bind(this)}
+                            />
+                        </div>
+                    </div>
+                    <div className="row w-100" id="teacher-container">
+                        <div className="col-md-8 col-sm-8 col-xs-12 w-100" id="large-video-container">
                             {currentTeacherToggledView==="video" ? this.teacherViews('video' ) : (currentTeacherToggledView==="board" ? this.teacherViews('board') : this.teacherViews('screen'))}
                             <div id="local-video-actions-box" className="row w-20 h-10">
                                 {<div onClick={() => this.toggleLocalSource( id, this.state.isLocalAudioMute, 'audio' )} style={{ backgroundImage: `url(${this.state.isLocalAudioMute?"http://api.getmycall.com/static/media/mic-off.svg":"http://api.getmycall.com/static/media/mic-on.svg"})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', width: "30px", height: "30px", cursor: "pointer" }} />}
@@ -1103,12 +1194,12 @@ class Conference extends React.Component {
                                 <div onClick={this.leaveRoomBtn.bind(this)} style={{ backgroundImage: `url(${stopIcon})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', marginLeft: "8px", width: "35px", height: "35px", cursor: "pointer" }} />                            
                             </div>
                         </div>
-                        <div className="col-4 col-md-4 col-sm-4 col-xs-4 container w-100 h-auto p-3" id="teacher-dashboard">
+                        <div className="col-md-4 col-sm-4 col-xs-12 w-100" id="teacher-dashboard">
                             {(currentTeacherToggledView==="video" || currentTeacherToggledView==="screen") ? this.teacherViews('board' ) : (currentTeacherToggledView==="board" && this.teacherViews('video'))}
                             {(currentTeacherToggledView==="video" || currentTeacherToggledView==="board") ? this.teacherViews('screen' ) : (currentTeacherToggledView==="screen" && this.teacherViews('video'))}
                         </div>
                     </div>
-                    <div className="row w-100 p-3 justify-content-start" id="small-videos-box">
+                    <div className="row w-100 p-3 justify-content-center" id="small-videos-box">
                         {
                             this.state.roomData && this.state.roomData.sources && (this.state.roomData.sources.length > 1) &&
                             this.state.roomData.sources.sort(this.sortSources.bind(this)).map(source => {
@@ -1126,12 +1217,12 @@ class Conference extends React.Component {
                                                         ( !this.state.remoteUserSwappedId || ( sourceUserId===id ) )
                                                     )
                                                 }
-                                                <video onClick={() => this.flipVideo( source )} style={{ cursor: isFlipEnabled ? 'pointer' : 'none', pointerEvents: isFlipEnabled? 'auto': 'none' }} id={`video-tag-${source.position}`} autoPlay poster="https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTUq71y6yGEk94T1hyj89lV-khy9OMkgZt0Dl1hecguJxUpLU6a&usqp=CAU" width="105" />
+                                                <video className="student-video-tag" onClick={() => this.flipVideo( source )} style={{ background: "white", cursor: isFlipEnabled ? 'pointer' : 'none', pointerEvents: isFlipEnabled? 'auto': 'none' }} id={`video-tag-${source.position}`} autoPlay poster="" width="105" />
                                                 {/* {&& <div className="btn-swap-video" onClick={() => this.flipVideo( source )} style={{ backgroundImage: `url("${iconSwap}")`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', pointerEvents: "all", opacity: "1" }} />} */}
                                                 {/* <div className="btn-mute-unmute" onClick={() => this.toggleAudio( source, isMute )} style={{ backgroundImage: `url(${isMute?micOff:micOn})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', pointerEvents: "none", opacity: "0.5" }} /> */}
                                                 <audio autoPlay id={`audio-tag-${source.position}`} />
                                                 <div className="row w-20 h-10 student-video-actions-top">
-                                                    <div className="student-video-actions-top-icon" onClick={this.leaveRoomBtn.bind(this)}><span className="no-of-messages">1</span></div> 
+                                                    {/* check what is this? <div className="student-video-actions-top-icon" onClick={this.leaveRoomBtn.bind(this)}><span className="no-of-messages">1</span></div>  */}
                                                     { ( sourceUserId===id || isHandRaised ) && <div className="student-video-actions-top-icon" onClick={() => !isHandRaised && this.raiseHand(source)} style={{ cursor: 'pointer' }}><i id={`studenthand-${sourceUserId}`} className="fa fa-hand-point-up"></i></div>} 
                                                     {/* <div className="student-video-actions-top-icon" onClick={this.leaveRoomBtn.bind(this)}><i className="fa fa-hand-point-up"></i></div>                        
                                                     <div className="student-video-actions-top-icon" onClick={this.leaveRoomBtn.bind(this)}><i className="fa fa-hand-point-up"></i></div>                                                */}
@@ -1152,13 +1243,17 @@ class Conference extends React.Component {
     }
 }
 
-export default Conference;
+const mapDispatchToProps = dispatch => {
+    return {
+      addMessages: (message) => dispatch(addMessages(message))
+    }
+}
 
-
+export default connect( null , mapDispatchToProps )(Conference);
 
 // Hj8G9gVgEV9MRq
 
 
 //things to note
 //only one teacher for specific room
-//student roll no should must be unique
+//student position should must be unique

@@ -40,6 +40,7 @@ ioClassRoom.on('connection', (socket) => {
                 case 'teacher-view-change':
                 case 'board-change':
                 case 'hand-raised':
+                case 'chat-message':
                     socket.broadcast.to(data.roomId).emit('event', messageObj ); //send swapped videos info to all users
                     break;
                 default:

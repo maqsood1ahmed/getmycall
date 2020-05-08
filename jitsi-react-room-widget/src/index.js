@@ -1,7 +1,19 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import Confernece from './Conference';
+import { createStore, applyMiddleware, compose } from 'redux';
+import {Provider} from "react-redux";
+import thunk from "redux-thunk";
 import 'antd/dist/antd.css';
+
+import Confernece from './Conference';
+import messagesReducer from "./reducers";
+
+const composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
+const enhancer = composeEnhancers(
+    applyMiddleware(thunk),
+  );
+
+let store = createStore(messagesReducer, enhancer);
 
 // comment this lines when you dont want to auto run ReactDOM.render
 const el = document.getElementById('conference-container');
@@ -18,7 +30,9 @@ if ( type === 'student' ) {
     params = { api, type, id, class_id }
 }
  
-ReactDOM.render(<Confernece params={params} />, el);
+ReactDOM.render(<Provider store={store}>
+    <Confernece params={params} />
+</Provider>, el);
 
 /* uncomment this block to "defer" ReactDOM.render and expose it globaly
 window.ReactCounter = {
