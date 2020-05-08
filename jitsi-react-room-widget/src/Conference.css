@@ -381,6 +381,22 @@ audio {
     width: 5rem;
 }
 
+.notification-user-name {
+    font-weight: 500;
+    color: #6343AE;
+}
+
+.ant-notification-notice, .ant-notification-notice-closable {
+    border-radius: 0.7rem;
+    opacity: 0.9;
+}
+.ant-notification-notice-message {
+    display: none;
+}
+.ant-notification-notice-close {
+    display: none;
+}
+
 /* scroll bar design */
 /* width */
 ::-webkit-scrollbar {

@@ -5,7 +5,7 @@ import queryString from 'query-string';
 import axios from  'axios';
 import Iframe from 'react-iframe'
 
-import { message, Select, Button  } from 'antd';
+import { message, Select, Button, notification  } from 'antd';
 import socketIOClient from "socket.io-client";
 // import LoadingSpinner from '../../components/UI/Spinner/Spinner';
 import './Conference.css';
@@ -976,7 +976,16 @@ class Conference extends React.Component {
         return 0;
     }
 
-    onNewMessage = (message) => {
+    createNotificationMessage = (message) => {
+        let text = message.messageText;
+        return (
+            <div>
+                <span className="notification-user-name">{message.name}</span>{` said "${text.length > 21 ? text.substring(0,21) + "..." : text}"`}
+            </div>
+        );
+    }
+
+    onNewMessage = ( message ) => {
         console.log("new chat message => =>", message)
         this.props.addMessages([message]);
 
@@ -984,6 +993,11 @@ class Conference extends React.Component {
             let messagesDiv = document.getElementsByClassName("chat-box-messages")[0]
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
         } else {
+            notification.open({
+                description: this.createNotificationMessage(message),
+                duration: 3,
+                top: 63
+            });
             this.setState({ noOfNewMessages: this.state.noOfNewMessages+1 })
         }
     }
