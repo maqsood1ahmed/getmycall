@@ -8,7 +8,7 @@ export const ChatMessage = (props) => {
                 float: author==="me"? "right" : "left"
             },
             chatMessageContent: {
-                backgroundColor: author==="me"? "white" : "#f6edb0",
+                backgroundColor: author==="me"? "#b398ec" : "#d5c8f4",
                 borderRadius: author==="me"? "1.5rem 1.5rem 0rem 1.5rem" : "1.5rem 1.5rem 1.5rem 0rem"
             },
             chatMessageTime: {

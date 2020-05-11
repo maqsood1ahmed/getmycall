@@ -167,10 +167,10 @@ class Conference extends React.Component {
                     };
                     socket.emit('event', messageObj);
         
-                    window.JitsiMeetJS.init(jitsiInitOptions);
-                    connection = new window.JitsiMeetJS.JitsiConnection(null, null, options);
-                    this.setConnectionListeners();
-                    connection.connect();
+                    // window.JitsiMeetJS.init(jitsiInitOptions);
+                    // connection = new window.JitsiMeetJS.JitsiConnection(null, null, options);
+                    // this.setConnectionListeners();
+                    // connection.connect();
             
                     // window.addEventListener(window.JitsiMeetJS.errors.conference.PASSWORD_REQUIRED, function () { message.error('Please provide room password'); });
                     this.setState({ roomData });
@@ -1139,22 +1139,22 @@ class Conference extends React.Component {
  
         let isFlipEnabled = false;
 
-        if ( !id || !roomId || !name || !type ) {
-            return <div className="container" style={{ height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "center" }}>
-                <p style={{ fontSize: "35px", color: "#ff4d4f" }}>Please provide room info</p>
-            </div>
-        } else if ( !isLoggedIn ) {
-            return <div className="container" style={{ paddingLeft: "0px", paddingRight: "0px", height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "center" }}>
-                {this.state.isStopped ? <p style={{ fontSize: "35px", color: this.state.isStopped? "red" : "black" }}> Stopped! </p> : 
-                // <div style={{ width: "100%" }}>
-                //     <img src={loadingIcon} alt="" width="100%" height="100%" />
-                // </div>}
-                <div className="justify-content-center" style= {{ width: "100%", height: "100%", top: "50%", backgroundColor: 'white' }}>
-                    <img src={`https://api.getmycall.com/static/media/loading-icon.gif`} alt="" width="200" height="200" style={{ marginTop: "120px" }} />
-                </div>}
-                {/* {this.state.isStopped && <Button onClick={()=> this.joinRoom()} type="primary"> Join Again </Button>} */}
-            </div>
-        } else
+        // if ( !id || !roomId || !name || !type ) {
+        //     return <div className="container" style={{ height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "center" }}>
+        //         <p style={{ fontSize: "35px", color: "#ff4d4f" }}>Please provide room info</p>
+        //     </div>
+        // } else if ( !isLoggedIn ) {
+        //     return <div className="container" style={{ paddingLeft: "0px", paddingRight: "0px", height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "center" }}>
+        //         {this.state.isStopped ? <p style={{ fontSize: "35px", color: this.state.isStopped? "red" : "black" }}> Stopped! </p> : 
+        //         // <div style={{ width: "100%" }}>
+        //         //     <img src={loadingIcon} alt="" width="100%" height="100%" />
+        //         // </div>}
+        //         <div className="justify-content-center" style= {{ width: "100%", height: "100%", top: "50%", backgroundColor: 'white' }}>
+        //             <img src={`https://api.getmycall.com/static/media/loading-icon.gif`} alt="" width="200" height="200" style={{ marginTop: "120px" }} />
+        //         </div>}
+        //         {/* {this.state.isStopped && <Button onClick={()=> this.joinRoom()} type="primary"> Join Again </Button>} */}
+        //     </div>
+        // } else
          {
             return (
                 <div className="w-100 h-100">
@@ -1165,8 +1165,8 @@ class Conference extends React.Component {
                             </div>
                         </div>
                         <div className="class-room-header-info w-30 d-flex flex-column justify-content-center">
-                            <div>
-                                <span style={{ fontWeight: "700", color: "#757575b5"}}>History Class</span><span id='class-header-teacher-name'> with {roomData.teacher_name ? roomData.teacher_name: (type==="teacher" ? roomData.name : 'teacher name')}</span>
+                            <div className="class-room-header-content">
+                                <span style={{ fontWeight: "700", color: "#757575b5"}}>History Class</span><span id='class-header-teacher-name'> <span className="class-room-header-content-placeholder">with </span>{roomData.teacher_name ? roomData.teacher_name: (type==="teacher" ? roomData.name : 'teacher name')}</span>
                             </div>
                         </div>
                         <div className="chat-button w-20 d-flex flex-column justify-content-start">
@@ -1199,21 +1199,23 @@ class Conference extends React.Component {
                             />
                         </div>
                     </div>
-                    <div className="row w-100" id="teacher-container">
-                        <div className="col-md-8 col-sm-8 col-xs-12 w-100" id="large-video-container">
-                            {currentTeacherToggledView==="video" ? this.teacherViews('video' ) : (currentTeacherToggledView==="board" ? this.teacherViews('board') : this.teacherViews('screen'))}
-                            <div id="local-video-actions-box" className="row w-20 h-10">
-                                {<div onClick={() => this.toggleLocalSource( id, this.state.isLocalAudioMute, 'audio' )} style={{ backgroundImage: `url(${this.state.isLocalAudioMute?"http://api.getmycall.com/static/media/mic-off.svg":"http://api.getmycall.com/static/media/mic-on.svg"})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', width: "30px", height: "30px", cursor: "pointer" }} />}
-                                {<div onClick={() => this.toggleLocalSource( id, this.state.isLocalVideoMute, 'video' )} style={{ cursor: "pointer", marginLeft: "8px"  }}><img src={this.state.isLocalVideoMute ? "https://api.getmycall.com/static/media/video-slash-solid.svg" : "https://api.getmycall.com/static/media/video-solid.svg"} style={{ width: "30px", height:"30px" }} /></div>}
-                                <div onClick={this.leaveRoomBtn.bind(this)} style={{ backgroundImage: `url(${stopIcon})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', marginLeft: "8px", width: "35px", height: "35px", cursor: "pointer" }} />                            
+                    <div>
+                        <div>
+                            <div className="row w-100" id="teacher-container">
+                                <div className="col-md-8 col-sm-8 col-xs-12 w-100" id="large-video-container">
+                                    {currentTeacherToggledView==="video" ? this.teacherViews('video' ) : (currentTeacherToggledView==="board" ? this.teacherViews('board') : this.teacherViews('screen'))}
+                                    <div id="local-video-actions-box" className="row w-20 h-10">
+                                        {<div onClick={() => this.toggleLocalSource( id, this.state.isLocalAudioMute, 'audio' )} style={{ backgroundImage: `url(${this.state.isLocalAudioMute?"http://api.getmycall.com/static/media/mic-off.svg":"http://api.getmycall.com/static/media/mic-on.svg"})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', width: "30px", height: "30px", cursor: "pointer" }} />}
+                                        {<div onClick={() => this.toggleLocalSource( id, this.state.isLocalVideoMute, 'video' )} style={{ cursor: "pointer", marginLeft: "8px"  }}><img src={this.state.isLocalVideoMute ? "https://api.getmycall.com/static/media/video-slash-solid.svg" : "https://api.getmycall.com/static/media/video-solid.svg"} style={{ width: "30px", height:"30px" }} /></div>}
+                                        <div onClick={this.leaveRoomBtn.bind(this)} style={{ backgroundImage: `url(${stopIcon})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', marginLeft: "8px", width: "35px", height: "35px", cursor: "pointer" }} />                            
+                                    </div>
+                                </div>
+                                <div className="col-md-4 col-sm-4 col-xs-12 w-100" id="teacher-dashboard">
+                                    {(currentTeacherToggledView==="video" || currentTeacherToggledView==="screen") ? this.teacherViews('board' ) : (currentTeacherToggledView==="board" && this.teacherViews('video'))}
+                                    {(currentTeacherToggledView==="video" || currentTeacherToggledView==="board") ? this.teacherViews('screen' ) : (currentTeacherToggledView==="screen" && this.teacherViews('video'))}
+                                </div>
                             </div>
-                        </div>
-                        <div className="col-md-4 col-sm-4 col-xs-12 w-100" id="teacher-dashboard">
-                            {(currentTeacherToggledView==="video" || currentTeacherToggledView==="screen") ? this.teacherViews('board' ) : (currentTeacherToggledView==="board" && this.teacherViews('video'))}
-                            {(currentTeacherToggledView==="video" || currentTeacherToggledView==="board") ? this.teacherViews('screen' ) : (currentTeacherToggledView==="screen" && this.teacherViews('video'))}
-                        </div>
-                    </div>
-                    <div className="row w-100 p-3 justify-content-center" id="small-videos-box">
+                            <div className="row w-100 p-3 justify-content-center" id="small-videos-box">
                         {
                             this.state.roomData && this.state.roomData.sources && (this.state.roomData.sources.length > 1) &&
                             this.state.roomData.sources.sort(this.sortSources.bind(this)).map(source => {
@@ -1251,6 +1253,12 @@ class Conference extends React.Component {
                             })
                         }
                     </div>
+                        </div>
+                        <div>
+
+                        </div>
+                    </div>
+
                 </div>
             );
         }

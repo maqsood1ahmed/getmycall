@@ -301,17 +301,20 @@ audio {
 /* chat box */
 .ant-popover {
     top: 2.5rem !important;
+    height: 96vh !important;
 }
 .ant-popover-inner {
-    background-color: #e0ca0c !important;
-    height: 34rem !important;
-    border-radius: 1.3rem 0rem 0rem 1.3rem;
+    /* height: 34rem !important; */
+    height: 88vh !important;
+    border-radius: 1.3rem 0rem 0rem 1.3rem !important;
 }
 .ant-popover-content {
-    width: 25rem;
+    width: 24rem;
 }
 .ant-popover-title {
     border-bottom: none;
+    background-color: #9670e3;
+    border-radius: 1rem 0rem 0rem 0rem;
 }
 .ant-popover-arrow {
     /* left: 55% !important; */
@@ -331,7 +334,10 @@ audio {
 .chat-box-icon {
     width: 30px;
     height: 30px;
-    margin-right: .2rem;
+    /* margin-right: .2rem; */
+    font-size: 17px;
+    margin-left: 0.5rem;
+    color: white;
 }
 .chat-header-text {
     font-size: 18px;
@@ -339,12 +345,15 @@ audio {
 }
 .ant-popover-inner-content{
     height: 100% !important;
+    background-color: white;
 }
 .chat-box-body {
-    height: 93%;
+    /* height: 93%; */
+    height: 100%;
 }
 .chat-box-messages {
-    height: 78%;
+    /* height: 78%; */
+    height: 83%;
     overflow: auto;
 }
 .chat-message {
@@ -367,7 +376,8 @@ audio {
     font-weight: 600;
 }
 .chat-send-message {
-    height: 22%;
+    /* height: 22%; */
+    height: 17%;
 }
 .chat-input>textarea {
     height: 4rem !important;
@@ -471,13 +481,38 @@ audio {
         font-size: 16px;
         margin-left: 0rem;
     }
+    .classroom-header {
+        height: 44px;
+    }
+
+    .class-room-header-content {
+        display: flex;
+        flex-direction: column;
+    }
+    .class-room-header-content-placeholder {
+        display: none;
+    }
+    #class-header-teacher-name {
+        margin-top: -7px;
+    }
+    .ant-popover-content {
+        width: 20rem;
+        /* padding: 0.5rem 1.3rem 0.5rem 1.3rem; */
+    }
+    .ant-popover-placement-bottom {
+        background-color: white;
+    }
+    .ant-popover {
+        border-radius: 1.3rem 0rem 0rem 1.3rem;
+        padding-top: 0px;
+    }
 }
 
 /* Extra small devices (phones, 575px and down) */
 @media only screen and (max-width: 575px) {
     /* dynamic height change from React */
     .teacher-div-large {
-        height: 400px;
+        height: 300px;
     }
     .teacher-div-small {
         height: 175px;

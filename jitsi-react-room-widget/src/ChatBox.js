@@ -3,7 +3,6 @@ import { connect } from 'react-redux';
 import { Popover, Input } from 'antd';
 import uid from 'uid';
 
-import chatIcon from './assets/img/chat-box-icon.png';
 import arrowSend from './assets/img/arrow-send.png';
 import { ChatMessages } from './components/ChatMessages';
 import { addMessages } from './actions';
@@ -42,8 +41,7 @@ class ChatBox extends React.Component {
     chatBoxTitle = () => {
         return(
             <div className="chat-box-title d-flex flex-direction-row justify-content-center">
-                <span><img src={chatIcon} className="chat-box-icon" alt="" /></span> 
-                <span className='chat-header-text'>CHAT</span>
+                <span className='chat-header-text'>Close Chat <i className="fas fa-comment chat-box-icon"></i></span>
             </div>
         )
     };
@@ -97,7 +95,18 @@ class ChatBox extends React.Component {
     render () {
         const { isChatBoxVisible } = this.props;
         return (
-            <Popover placement="bottom" visible={isChatBoxVisible} title={this.chatBoxTitle()} content={this.chatBoxContent()} trigger="click" />        )
+            <Popover 
+                placement="bottom" 
+                visible={isChatBoxVisible} 
+                title={this.chatBoxTitle()} 
+                content={this.chatBoxContent()} 
+                trigger="click" 
+                overlayStyle={{
+                    // background: "rgba(0,0,0,1)",
+                    height: "100vh"
+                  }}
+            />      
+        )
     }
 }
 
