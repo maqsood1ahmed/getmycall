@@ -5,7 +5,7 @@ import {Provider} from "react-redux";
 import thunk from "redux-thunk";
 import 'antd/dist/antd.css';
 
-import Confernece from './Conference';
+import Confernece from './containers/Conference';
 import messagesReducer from "./reducers";
 
 const composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;

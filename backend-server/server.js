@@ -43,6 +43,9 @@ ioClassRoom.on('connection', (socket) => {
                 case 'chat-message':
                     socket.broadcast.to(data.roomId).emit('event', messageObj ); //send swapped videos info to all users
                     break;
+                case "private-chat-message": 
+                    sendPrivateMessage( data, socket );
+                    break;
                 default:
                     let newMessageObj = { type: 'message-undefined', data: { status: false, message: 'message type undefined.'} }
                     socket.emit('event', newMessageObj);
@@ -74,6 +77,7 @@ function joinRoom( data, socket ) {
         user.name = data.name;
         user.type = data.type;
         user.socketId = socket.id;
+        user.socket = socket;
         
         rooms[roomId]["users"].push(user);
 
@@ -81,7 +85,7 @@ function joinRoom( data, socket ) {
             type: "roomJoinResponse",
             data: {
                 status: true,
-                roomUsers: rooms[roomId]["users"],
+                // roomUsers: rooms[roomId]["users"],
                 message: "room joined successfully"
             }
         };
@@ -89,7 +93,6 @@ function joinRoom( data, socket ) {
         socket.emit('event', messageObj); //response
     }
 }
-
 function leaveRoom( socket ) {
     Object.keys(rooms).forEach(roomId => {
         if ( rooms[roomId]["users"] ) {
@@ -97,7 +100,31 @@ function leaveRoom( socket ) {
             if (index > -1) {
                 rooms[roomId]["users"].splice(index, 1);
             }
+            // console.log(`users in room ${roomId} => `,rooms[roomId]["users"]);
             socket.leave(roomId);
         }
     })
+}
+
+function sendPrivateMessage ( data, socket ) {
+    try {
+        let room = rooms[data.roomId];
+        let student = room["users"].filter( user => user.id === data.studentId );
+        console.log('student => ', student)
+        if ( student[0] && student[0]['id'] && student[0]['socket'] ) {
+            student[0]['socket'].emit('event', { type: 'private-chat-message', data });
+        } else {
+            let messageObj = {
+                type: "private-chat-response",
+                data: {
+                    status: false,
+                    message: "student seems offline!"
+                }
+            };
+            socket.emit( 'event', messageObj )
+        }
+    }catch (err) {
+        console.log('something went wrong when sending private message => ', err)
+    }
+    
 }
