@@ -82,10 +82,6 @@ class SendChatMessage extends React.Component {
                 content={this.chatBoxContent()} 
                 trigger="click" 
                 overlayClassName="inputPopover"
-                overlayStyle={{
-                    // background: "rgba(0,0,0,1)",
-                    height: "200px"
-                  }}
             />    
         )
     }

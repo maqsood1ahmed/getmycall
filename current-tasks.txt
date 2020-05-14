@@ -3,7 +3,7 @@ on teacher view, on each student we have :
 2. mute/unmute (default mute) (done)
 3 stop/start video (default on) (done)
 4. note. (open input send to server api) (done)
-5. chat (open input send message) (left)
+5. chat (open input send message) (done)
 6. ring (will send short audio ping) (left)
 7. see if user hanged his hand (just view) (done)
 
@@ -28,7 +28,10 @@ in full screen working mode. teacher can talk video + voice with one student onl
 
 
 
-5. chat (open input send message) (left)
 6. ring (will send short audio ping) (left)
 4. start\stop recording. (left)
 5. close \ open all students area (default open) (left)
+
+
+Extras:-
+1=>   

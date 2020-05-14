@@ -20,7 +20,7 @@ class InputNote extends React.Component {
         }
     }
 
-    chatBoxContent = () => {
+    noteJSXContent = () => {
         return (
             <div className="note-input-div">
                 <div className="note-input">
@@ -42,14 +42,22 @@ class InputNote extends React.Component {
         const { student_id, class_id, teacher_id } = this.props;
         
         try {
-          let params = { student_id, class_id, teacher_id, note: "test note1 from teacher" }; 
+          let params = { 
+              api: "notes",
+              student_id, 
+              class_id, 
+              teacher_id, 
+              note: this.state.noteText
+            }; 
 
-          const response = await axios.post("https://wfh.wnets.net/api.php?api=notes&student_id=91&class_id=1&teacher_id=11&note=somenote");
+          const response = await axios.post("https://wfh.wnets.net/api.php", null, { params });
           console.log('note api response => =>', response);
-          if ( response.status ) {
-            message.error('Note saved successfully.');
+          if ( response.data && response.data.status && response.data.message ) {
+            message.success(response.data.message);
+            this.props.hideInputNote();
+          } else if(response.data && response.data.message ) {
+              message.error(response.data.message);
           }
-          this.props.hideInputNote()
         } catch (error) {
             message.error('something went wrong when saving note.');
             console.error('something went wrong when saving note. => ', error);
@@ -64,13 +72,9 @@ class InputNote extends React.Component {
                 placement="top" 
                 visible={isInputNoteVisible} 
                 // title={this.chatBoxTitle()} 
-                content={this.chatBoxContent()} 
+                content={this.noteJSXContent()} 
                 trigger="click" 
                 overlayClassName="inputPopover"
-                overlayStyle={{
-                    // background: "rgba(0,0,0,1)",
-                    height: "200px"
-                  }}
             />    
         )
     }

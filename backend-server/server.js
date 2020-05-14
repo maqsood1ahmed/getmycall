@@ -37,11 +37,32 @@ ioClassRoom.on('connection', (socket) => {
                     console.log('data => ', data)
                     socket.broadcast.to(data.roomId).emit('event', { type: 'video-swapped-from-server', data: data }); //send swapped videos info to all users
                     break;
-                case 'teacher-view-change':
-                case 'board-change':
                 case 'hand-raised':
                 case 'chat-message':
+                case 'teacher-joined-room':
                     socket.broadcast.to(data.roomId).emit('event', messageObj ); //send swapped videos info to all users
+                    break;
+                case 'mute-student-video':
+                    sendStudentToggleVideoEvent(messageObj);
+                    break;
+                case 'mute-all-students-audio':
+                    rooms[data.roomId]['isGlobalAudioMute'] = messageObj;
+                    socket.broadcast.to(data.roomId).emit('event', messageObj );
+                    break;
+                case 'is-chat-public':
+                    rooms[data.roomId]['isChatPublic'] = messageObj;
+                    socket.broadcast.to(data.roomId).emit('event', messageObj );
+                    break;
+                case 'teacher-view-change':
+                    rooms[data.roomId]['currentTeacherToggledView'] = messageObj;
+                    socket.broadcast.to(data.roomId).emit('event', messageObj );
+                    break;
+                case 'board-change': 
+                    rooms[data.roomId]['selectedBoard'] = messageObj;
+                    socket.broadcast.to(data.roomId).emit('event', messageObj );
+                    break;
+                case 'screen-share-stop':
+                    socket.broadcast.to(data.roomId).emit('event', messageObj );
                     break;
                 case "private-chat-message": 
                     sendPrivateMessage( data, socket );
@@ -62,6 +83,15 @@ ioClassRoom.on('connection', (socket) => {
       });
 });
 
+function sendStudentToggleVideoEvent ( messageObj ) {
+    let room = rooms[messageObj.data.roomId];
+    let student = room["users"].filter( user => user.id === messageObj.data.studentId );
+    
+    if ( student[0] && student[0]['id'] && student[0]['socket'] ) {
+        student[0]['socket'].emit('event', messageObj);
+    }
+}
+
 function joinRoom( data, socket ) {
     let roomId = data.roomId;
     if ( data.id && roomId) {
@@ -71,9 +101,15 @@ function joinRoom( data, socket ) {
                 users: []
             };
         }
-            
-        let user = {};
-        user.id = data.id;
+
+        let user = rooms[roomId] && rooms[roomId]["users"].filter( el => el.id === data.id )[0];
+        
+        if ( !user || !user['id'] ) {
+            user = {};
+            user.id = data.id;
+        }
+
+        console.log('new user => ', user)
         user.name = data.name;
         user.type = data.type;
         user.socketId = socket.id;
@@ -91,6 +127,20 @@ function joinRoom( data, socket ) {
         };
         socket.broadcast.to(roomId).emit('event', { type: 'newUser', data: messageObj.data }); //send to all other room users except self
         socket.emit('event', messageObj); //response
+
+        //send all previous actions taken by teacher if student recent join the room
+        if ( rooms[roomId]['isGlobalAudioMute'] ) {
+            socket.emit('event', rooms[roomId]['isGlobalAudioMute'] );
+        }
+        if ( rooms[roomId]['isChatPublic'] ) {
+            socket.emit('event', rooms[roomId]['isChatPublic'] );
+        }
+        if ( rooms[roomId]['currentTeacherToggledView'] ) {
+            socket.emit('event', rooms[roomId]['currentTeacherToggledView'] );
+        }
+        if ( rooms[roomId]['selectedBoard'] ) {
+            socket.emit('event', rooms[roomId]['selectedBoard'] );
+        }
     }
 }
 function leaveRoom( socket ) {
@@ -110,7 +160,6 @@ function sendPrivateMessage ( data, socket ) {
     try {
         let room = rooms[data.roomId];
         let student = room["users"].filter( user => user.id === data.studentId );
-        console.log('student => ', student)
         if ( student[0] && student[0]['id'] && student[0]['socket'] ) {
             student[0]['socket'].emit('event', { type: 'private-chat-message', data });
         } else {
