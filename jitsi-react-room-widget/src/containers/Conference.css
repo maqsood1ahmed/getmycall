@@ -44,6 +44,10 @@ html, body {
     font-size: 22px;
     margin-left: -2rem;
 }
+.class-room-header-content {
+    /* cursor: pointer; */
+}
+
 .chat-button-container {
     margin-right: 2rem;
     position: relative;
@@ -116,7 +120,7 @@ html, body {
 #local-video-actions-box {
     z-index: 1;
     border-radius: 10px;
-    width: 160px;
+    width: 13rem;
     height: 50px;
     line-height: 50%;
     align-items: center;

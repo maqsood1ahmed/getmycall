@@ -40,6 +40,7 @@ ioClassRoom.on('connection', (socket) => {
                 case 'hand-raised':
                 case 'chat-message':
                 case 'teacher-joined-room':
+                case 'new-announcment':
                     socket.broadcast.to(data.roomId).emit('event', messageObj ); //send swapped videos info to all users
                     break;
                 case 'mute-student-video':
@@ -110,8 +111,8 @@ function joinRoom( data, socket ) {
         }
 
         console.log('new user => ', user)
-        user.name = data.name;
-        user.type = data.type;
+        user.name = data.name ? data.name : null;
+        user.type = data.type ? data.type : null;
         user.socketId = socket.id;
         user.socket = socket;
         

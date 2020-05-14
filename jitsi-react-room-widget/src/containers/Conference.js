@@ -24,6 +24,7 @@ import raiseHandIcon from '../assets/img/hand-point-up-regular.svg';
 import ChatBox from '../containers/ChatBox';
 import InputNote from '../containers/InputNote';
 import SendChatMessage from './SendChatMessage';
+import RoomAnnouncement from './RoomAnnouncement';
 
 
 import bellRing from '../assets/mesg_ting.mp3';
@@ -33,26 +34,26 @@ import bellRing from '../assets/mesg_ting.mp3';
 const { Option } = Select;
 const staticServerURL = "https://api.getmycall.com";
 
-// const options = {
-//     hosts: {
-//         domain: 'dev.getmycall.com', 
-//         muc: 'conference.dev.getmycall.com' // FIXME: use XEP-0030
-//     },
-//     bosh: 'https://dev.getmycall.com/http-bind', // FIXME: use xep-0156 for that
-
-//     // The name of client node advertised in XEP-0115 'c' stanza
-//     clientNode: 'http://jitsi.org/jitsimeet'
-// };
 const options = {
     hosts: {
-        domain: 'beta.meet.jit.si',
-        muc: 'conference.beta.meet.jit.si' // FIXME: use XEP-0030
+        domain: 'dev.getmycall.com', 
+        muc: 'conference.dev.getmycall.com' // FIXME: use XEP-0030
     },
-    bosh: 'https://beta.meet.jit.si/http-bind', // FIXME: use xep-0156 for that
+    bosh: 'https://dev.getmycall.com/http-bind', // FIXME: use xep-0156 for that
 
     // The name of client node advertised in XEP-0115 'c' stanza
     clientNode: 'http://jitsi.org/jitsimeet'
 };
+// const options = {
+//     hosts: {
+//         domain: 'beta.meet.jit.si',
+//         muc: 'conference.beta.meet.jit.si' // FIXME: use XEP-0030
+//     },
+//     bosh: 'https://beta.meet.jit.si/http-bind', // FIXME: use xep-0156 for that
+
+//     // The name of client node advertised in XEP-0115 'c' stanza
+//     clientNode: 'http://jitsi.org/jitsimeet'
+// };
 
 const jitsiInitOptions = {
     disableAudioLevels: true,
@@ -106,7 +107,8 @@ class Conference extends React.Component {
             isChatPublic: false,
             params: null,
             isGlobalAudioMute: false,
-            isVideoMuteByTeacher: false
+            isVideoMuteByTeacher: false,
+            isRecording: false
         };
 
         //get page params and initialize socket
@@ -281,6 +283,9 @@ class Conference extends React.Component {
                     break;
                 case 'hand-raised':
                     this.remoteStudentHandRaised(data.selectedSource);
+                    break;
+                case 'new-announcment':
+                    this.handleChangeAnnouncement(null, data.newAnnouncement);
                     break;
                 case 'is-chat-public':
                     this.setState({ isChatPublic: data.isChatPublic });
@@ -852,6 +857,17 @@ class Conference extends React.Component {
         }, 5000)
     }
 
+    handleRecordVideo = () => {
+        let { isRecording, roomData } = this.state;
+        if ( !isRecording ) {
+            // room.startRecording({ mode: "file" }); 
+            this.setState({ isRecording: true })
+        } else {
+            // room.stopRecording(); 
+            this.setState({ isRecording: false })
+        }
+    }
+
     updateHandRaised = ( remoteSource, isHandRaised ) => {
         let roomData = this.state.roomData;
         console.log('room data => => =>',roomData.sources)
@@ -861,6 +877,16 @@ class Conference extends React.Component {
             }
             return source;
         })
+        this.setState({ roomData });
+    }
+
+    handleChangeAnnouncement = (e, announcment) => {
+        let { roomData } = this.state;
+        if ( e && e.target && e.target.name && e.target.name === "announcment" ) {
+            roomData.announcment = e.target.value;
+        } else if ( announcment ) {
+            roomData.announcment = announcment;
+        }
         this.setState({ roomData });
     }
 
@@ -1143,10 +1169,6 @@ class Conference extends React.Component {
         this.setState({ isScreenSharing: false, isTrackUpdate: true, isScreenTrackUpdate: true });
     }
 
-    handleStudentScreenShare = ( data ) => {
-
-    }
-
     //jitsi supports only one video track at a time so we creating new connection for screen share separately
     handleScreenShareButton = ( isScreenSharing ) => {
         if ( !isScreenSharing ) { 
@@ -1401,7 +1423,7 @@ class Conference extends React.Component {
             currentTeacherToggledView, noOfNewMessages, 
             isChatBoxVisible, isInputNoteVisible, selectedSource, 
             isSendMessageBoxVisible, isGlobalAudioMute,
-            isScreenSharing, remoteUserSwappedId } = this.state;
+            isScreenSharing, remoteUserSwappedId, isRecording } = this.state;
         const { roomId, id, name, type } = roomData;
         console.log('all participant => => ', allParticipants, this.state.isScreenSharing);
  
@@ -1436,9 +1458,14 @@ class Conference extends React.Component {
                             </div>
                         </div>
                         <div className="class-room-header-info w-30 d-flex flex-column justify-content-center">
-                            <div className="class-room-header-content">
-                                <span style={{ fontWeight: "700", color: "#757575b5"}}>History Class</span><span id='class-header-teacher-name'> <span className="class-room-header-content-placeholder">with </span>{roomData.teacher_name ? roomData.teacher_name: (type==="teacher" ? roomData.name : 'teacher name')}</span>
-                            </div>
+                            <RoomAnnouncement 
+                                id={roomData}
+                                roomId={roomData.roomId}
+                                announcment={roomData.announcment}
+                                type={roomData.type}
+                                socket={socket}
+                                handleChangeAnnouncement={(e) => this.handleChangeAnnouncement(e)}
+                            />
                         </div>
                         <div className="chat-button w-20 d-flex flex-column justify-content-start">
                             <div className="chat-button-container">
@@ -1494,7 +1521,7 @@ class Conference extends React.Component {
                                                             opacity: isScreenSharing?0.8:1,
                                                             marginRight: ".4rem"
                                                         }}>
-                                                        <i className="fas fa-desktop"></i>
+                                                        <i className="fas fa-desktop" />
                                                     </div>
                                                 </Tooltip>
                                             }
@@ -1520,6 +1547,20 @@ class Conference extends React.Component {
                                                     height:"30px",
                                                     opacity: `${(this.state.isVideoMuteByTeacher && type === "student")? 0.5 : 1}` 
                                                 }} /></div>}
+
+                                                    {/* {
+                                                      type==="teacher" &&
+                                                        <div 
+                                                            onClick={() => this.handleRecordVideo()}
+                                                            style={{
+                                                                fontSize: "1.8rem",
+                                                                cursor: "pointer",
+                                                                color: isRecording?"red": "black",
+                                                                marginLeft: ".5rem"
+                                                            }}>
+                                                                <i className="fas fa-circle" />
+                                                            </div>
+                                                    } */}
                                             <div onClick={this.leaveRoomBtn.bind(this)} style={{ backgroundImage: `url(${stopIcon})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', marginLeft: "8px", width: "35px", height: "35px", cursor: "pointer" }} />                            
                                         </div>
                                     </div>
