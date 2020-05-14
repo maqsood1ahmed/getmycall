@@ -108,14 +108,15 @@ class Conference extends React.Component {
             params: null,
             isGlobalAudioMute: false,
             isVideoMuteByTeacher: false,
-            isRecording: false
+            isRecording: false,
+            isStudentsVisible: false
         };
 
         //get page params and initialize socket
         socket = socketIOClient(this.state.socketEndpoint);
         this.addSocketEvents();
 
-        let params = null;//this.props.params;
+        let params = null//this.props.params;
         if ( !params ) { //temporary for testing
             params= queryString.parse(window.location.search.substring(1));
         }
@@ -1423,7 +1424,8 @@ class Conference extends React.Component {
             currentTeacherToggledView, noOfNewMessages, 
             isChatBoxVisible, isInputNoteVisible, selectedSource, 
             isSendMessageBoxVisible, isGlobalAudioMute,
-            isScreenSharing, remoteUserSwappedId, isRecording } = this.state;
+            isScreenSharing, remoteUserSwappedId, isRecording,
+            isStudentsVisible } = this.state;
         const { roomId, id, name, type } = roomData;
         console.log('all participant => => ', allParticipants, this.state.isScreenSharing);
  
@@ -1548,7 +1550,7 @@ class Conference extends React.Component {
                                                     opacity: `${(this.state.isVideoMuteByTeacher && type === "student")? 0.5 : 1}` 
                                                 }} /></div>}
 
-                                                    {/* {
+                                                    {
                                                       type==="teacher" &&
                                                         <div 
                                                             onClick={() => this.handleRecordVideo()}
@@ -1560,7 +1562,7 @@ class Conference extends React.Component {
                                                             }}>
                                                                 <i className="fas fa-circle" />
                                                             </div>
-                                                    } */}
+                                                    }
                                             <div onClick={this.leaveRoomBtn.bind(this)} style={{ backgroundImage: `url(${stopIcon})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', marginLeft: "8px", width: "35px", height: "35px", cursor: "pointer" }} />                            
                                         </div>
                                     </div>
@@ -1570,35 +1572,43 @@ class Conference extends React.Component {
                                     {(currentTeacherToggledView==="video" || currentTeacherToggledView==="screen") ? this.teacherViews('board' ) : (currentTeacherToggledView==="board" && this.teacherViews('video'))}
                                 </div>
                             </div>
-                            {roomData.type=="teacher" && 
-                                <div className="row w-100 room-global-actions-div">
-                                    <div className="global-actions-button-container">
-                                        <button onClick={() => this.toggleGlobalSources( id, "mute-all-students-audio" )} type="button" class="btn btn-primary teacher-actions-button">
-                                            <div className="d-flex flex-row justify-content-center" style={{ marginTop: ".1rem"}}>
-                                                <div className="btn-chat-inner-text d-flex justify-content-end w-70">Mute All</div>
-                                                <div className="global-action-button-icon d-flex justify-content-start w-30">
-                                                    {<div style={{cursor: "pointer" }}>
-                                                        <i class={`fas ${this.state.isGlobalAudioMute ? "fa-microphone-slash" : "fa-microphone"}`}></i>
-                                                    </div>}
-                                                </div>
+                            {
+                                <div className="row w-100 room-global-actions-div d-flex mb-3">
+                                    {/* <div className="d-flex mb-3"> */}
+                                        {roomData.type=="teacher" && 
+                                            <div className="global-actions-button-container">
+                                                <button onClick={() => this.toggleGlobalSources( id, "mute-all-students-audio" )} type="button" class="btn btn-primary teacher-actions-button">
+                                                    <div className="d-flex flex-row justify-content-center" style={{ marginTop: ".1rem"}}>
+                                                        <div className="btn-chat-inner-text d-flex justify-content-end w-70">Mute All</div>
+                                                        <div className="global-action-button-icon d-flex justify-content-start w-30">
+                                                            {<div style={{cursor: "pointer" }}>
+                                                                <i class={`fas ${this.state.isGlobalAudioMute ? "fa-microphone-slash" : "fa-microphone"}`}></i>
+                                                            </div>}
+                                                        </div>
+                                                    </div>
+                                                </button>
+                                            </div>}
+                                        {roomData.type=="teacher" && 
+                                            <div className="global-actions-button-container">
+                                                <button type="button" className="btn btn-primary teacher-actions-button">
+                                                    <div className="d-flex flex-row justify-content-center" style={{ marginTop: ".1rem"}}>
+                                                        <div className="btn-chat-inner-text d-flex justify-content-end w-70">Work Time</div>
+                                                        <div className="global-action-button-icon d-flex justify-content-start w-30">
+                                                            {<div style={{ cursor: "pointer" }} >
+                                                                <i class="fas fa-history"></i>    
+                                                            </div>}
+                                                        </div>
+                                                    </div>
+                                                </button>
                                             </div>
-                                        </button>
-                                    </div>
-                                    <div className="global-actions-button-container">
-                                        <button type="button" class="btn btn-primary teacher-actions-button">
-                                            <div className="d-flex flex-row justify-content-center" style={{ marginTop: ".1rem"}}>
-                                                <div className="btn-chat-inner-text d-flex justify-content-end w-70">Work Time</div>
-                                                <div className="global-action-button-icon d-flex justify-content-start w-30">
-                                                    {<div style={{ cursor: "pointer" }} >
-                                                        <i class="fas fa-history"></i>    
-                                                    </div>}
-                                                </div>
-                                            </div>
-                                        </button>
+                                        }
+                                    {/* </div> */}
+                                    <div className="studentsToggleDiv ml-auto" onClick={()=>this.setState({ isStudentsVisible: !isStudentsVisible})}>
+                                        <i class={`${isStudentsVisible? "fas fa-arrow-up":"fas fa-arrow-down" }`}></i>
                                     </div>
                                 </div>
                             }
-                            <div className="row w-100 justify-content-start" id="small-videos-box">
+                            <div style={{ display: isStudentsVisible? "none" : "flex", paddingTop: type==="student"?"0":"1rem"}} className="row w-100 justify-content-start" id="small-videos-box">
                                 {
                                     this.state.roomData && this.state.roomData.sources && (this.state.roomData.sources.length > 1) &&
                                     this.state.roomData.sources.sort(this.sortSources.bind(this)).map(source => {
@@ -1640,7 +1650,7 @@ class Conference extends React.Component {
                                                         <audio autoPlay id={`audio-tag-${source.position}`} />
                                                         <div className="row w-20 h-10 student-video-actions-top">
                                                             {/* check what is this? <div className="student-video-actions-top-icon" onClick={this.leaveRoomBtn.bind(this)}><span className="no-of-messages">1</span></div>  */}
-                                                            { ( (sourceUserId===id || isHandRaised) && type !== "teacher" ) && <div className="student-video-actions-top-icon" onClick={() => !isHandRaised && this.raiseHand(source)} style={{ cursor: 'pointer' }}><i id={`studenthand-${sourceUserId}`} className="fa fa-hand-point-up"></i></div>} 
+                                                            { ( (sourceUserId===id || isHandRaised) ) && <div className="student-video-actions-top-icon" onClick={() => !isHandRaised && this.raiseHand(source)} style={{ cursor: 'pointer' }}><i id={`studenthand-${sourceUserId}`} className="fa fa-hand-point-up"></i></div>} 
                                                             {/* <div className="student-video-actions-top-icon" onClick={this.leaveRoomBtn.bind(this)}><i className="fa fa-hand-point-up"></i></div>                        
                                                             <div className="student-video-actions-top-icon" onClick={this.leaveRoomBtn.bind(this)}><i className="fa fa-hand-point-up"></i></div>                                                */}
                                                         </div>

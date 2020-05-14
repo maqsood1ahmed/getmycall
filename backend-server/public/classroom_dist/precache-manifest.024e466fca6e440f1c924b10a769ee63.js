@@ -1,19 +1,23 @@
 self.__precacheManifest = [
   {
-    "revision": "5caa4dc3cb8367f7d01d",
+    "revision": "a7cbb85828ba03297897",
     "url": "/static/css/react-classroom.css"
   },
   {
-    "revision": "5caa4dc3cb8367f7d01d",
+    "revision": "a7cbb85828ba03297897",
     "url": "/static/js/react-classroom.js"
-  },
-  {
-    "revision": "bac931ff73235129f88569d351d9a942",
-    "url": "/static/media/start.png"
   },
   {
     "revision": "abf7852a9c078fc8c831efe9cee6541b",
     "url": "/static/media/swap-teacher-sources.png"
+  },
+  {
+    "revision": "e6a7d8756ec99e851b12a0b004b24a31",
+    "url": "/static/media/mesg_ting.mp3"
+  },
+  {
+    "revision": "bac931ff73235129f88569d351d9a942",
+    "url": "/static/media/start.png"
   },
   {
     "revision": "67b3f36f22f4673af65f595407c50789",

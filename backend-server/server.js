@@ -62,6 +62,10 @@ ioClassRoom.on('connection', (socket) => {
                     rooms[data.roomId]['selectedBoard'] = messageObj;
                     socket.broadcast.to(data.roomId).emit('event', messageObj );
                     break;
+                case 'new-announcment':
+                    rooms[data.roomId]['currentAnnouncement'] = messageObj;
+                    socket.broadcast.to(data.roomId).emit('event', messageObj );
+                    break;
                 case 'screen-share-stop':
                     socket.broadcast.to(data.roomId).emit('event', messageObj );
                     break;
@@ -142,12 +146,21 @@ function joinRoom( data, socket ) {
         if ( rooms[roomId]['selectedBoard'] ) {
             socket.emit('event', rooms[roomId]['selectedBoard'] );
         }
+        if ( rooms[roomId]['currentAnnouncement'] ) {
+            socket.emit('event', rooms[roomId]['currentAnnouncement'] );
+        }
     }
 }
 function leaveRoom( socket ) {
     Object.keys(rooms).forEach(roomId => {
         if ( rooms[roomId]["users"] ) {
             const index = rooms[roomId]["users"].findIndex(user => user.socketId === socket.id);
+            let user = rooms[roomId]["users"][index];
+            if ( user['type'] === "teacher" ) {
+                // clean resources here if teacher left room
+                // rooms[roomId]['currentAnnouncement'] = '';
+                // rooms[roomId]['isGlobalAudioMute'] = false;
+            }
             if (index > -1) {
                 rooms[roomId]["users"].splice(index, 1);
             }

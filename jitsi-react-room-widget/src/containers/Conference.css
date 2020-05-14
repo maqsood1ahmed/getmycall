@@ -128,6 +128,13 @@ html, body {
     background: #9873e863;
 }
 
+.studentsToggleDiv {
+    cursor: pointer;
+    font-size: 24px;
+    margin-right: 1rem;
+    color: #6243ad;
+}
+
 .student-video-actions-top {
     /* top: -12%; */
     top: -.7rem;
@@ -213,10 +220,11 @@ html, body {
 }
 
 .room-global-actions-div {
-    /* height: 4rem;     */
+    height: 3rem;    
     padding-left: 4.5rem;
     background-color: #9772E8;
     border-radius: 0rem 1rem 0rem 0rem;
+    margin-bottom: 0rem !important;
 }
 
 .global-action-button-icon {
@@ -241,7 +249,7 @@ html, body {
     /* margin-right: auto;
     padding-right: 15px;
     padding-left: 0px; */
-    padding-top: 1rem;
+    /* padding-top: 1rem; */
     padding-bottom: 2rem;
     padding-left: 2.3rem;
     padding-right: 2.3rem;
@@ -408,7 +416,7 @@ audio {
     position: absolute;
     top: 80%;
     left: -2%; /* because of scrollbar */
-    color: black;
+    color: #6243ad;
 }
 .change-board-left {
     cursor: pointer;
@@ -730,7 +738,7 @@ audio {
         height: 8rem;
     }
     .student-name {
-        margin: 0rem;
+        /* margin: 0rem; */
     }
     .student-small-video {
         width: 33%;

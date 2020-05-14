@@ -2,8 +2,9 @@
   "main.css": "/static/css/react-classroom.css",
   "main.js": "/static/js/react-classroom.js",
   "main.js.map": "/static/js/react-classroom.js.map",
-  "static/media/start.png": "/static/media/start.png",
   "static/media/swap-teacher-sources.png": "/static/media/swap-teacher-sources.png",
+  "static/media/mesg_ting.mp3": "/static/media/mesg_ting.mp3",
+  "static/media/start.png": "/static/media/start.png",
   "static/media/mic-on.svg": "/static/media/mic-on.svg",
   "static/media/mic-off.svg": "/static/media/mic-off.svg",
   "static/media/swap_video.png": "/static/media/swap_video.png",
@@ -13,6 +14,6 @@
   "static/media/hand-point-up-regular.svg": "/static/media/hand-point-up-regular.svg",
   "static/css/react-classroom.css.map": "/static/css/react-classroom.css.map",
   "index.html": "/index.html",
-  "precache-manifest.a23a60bbfc7b4f8e6f6ee8cc3688d875.js": "/precache-manifest.a23a60bbfc7b4f8e6f6ee8cc3688d875.js",
+  "precache-manifest.024e466fca6e440f1c924b10a769ee63.js": "/precache-manifest.024e466fca6e440f1c924b10a769ee63.js",
   "service-worker.js": "/service-worker.js"
 }
