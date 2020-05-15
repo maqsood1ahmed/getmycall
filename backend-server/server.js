@@ -34,7 +34,7 @@ ioClassRoom.on('connection', (socket) => {
                     joinRoom( data, socket );
                     break;
                 case 'videos-swapped':
-                    console.log('data => ', data)
+                    rooms[data.roomId]['videoSwapped'] = messageObj;
                     socket.broadcast.to(data.roomId).emit('event', { type: 'video-swapped-from-server', data: data }); //send swapped videos info to all users
                     break;
                 case 'hand-raised':
@@ -149,18 +149,21 @@ function joinRoom( data, socket ) {
         if ( rooms[roomId]['currentAnnouncement'] ) {
             socket.emit('event', rooms[roomId]['currentAnnouncement'] );
         }
+        if ( rooms[data.roomId]['videoSwapped'] ) {
+            socket.emit('event', rooms[roomId]['videoSwapped'] );
+        }
     }
 }
 function leaveRoom( socket ) {
     Object.keys(rooms).forEach(roomId => {
         if ( rooms[roomId]["users"] ) {
             const index = rooms[roomId]["users"].findIndex(user => user.socketId === socket.id);
-            let user = rooms[roomId]["users"][index];
-            if ( user['type'] === "teacher" ) {
+            // let user = rooms[roomId]["users"][index];
+            // if ( user['type'] && user['type'] === "teacher" ) {
                 // clean resources here if teacher left room
                 // rooms[roomId]['currentAnnouncement'] = '';
                 // rooms[roomId]['isGlobalAudioMute'] = false;
-            }
+            // }
             if (index > -1) {
                 rooms[roomId]["users"].splice(index, 1);
             }

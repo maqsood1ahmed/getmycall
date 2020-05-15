@@ -138,11 +138,12 @@ class Conference extends React.Component {
                 roomData.roomId = roomId;
                 roomData.type = type;
                 roomData.class_id = params.class_id;
+                roomData.teacher_id = params.teacher_id;
                 
                 if ( roomId && roomData.id && roomData.name && roomData.type && 
                     roomData.sources && ( roomData.sources.length > 0 ) && 
                     this.handleDataValidation( roomData ) ) {
-                        
+                    
                     let userSession = {
                         name: roomData.name,
                         roomId: roomData.roomId,
@@ -330,7 +331,7 @@ class Conference extends React.Component {
     
 
     componentDidUpdate () {
-        let { isTrackUpdate, isScreenTrackUpdate } = this.state;
+        let { isTrackUpdate, isScreenTrackUpdate, roomData } = this.state;
         if ( isTrackUpdate || isScreenTrackUpdate ) {
             console.log('track update => => ', isTrackUpdate, isScreenTrackUpdate);
             let allParticipantsIds = Object.keys( allParticipants );
@@ -356,19 +357,26 @@ class Conference extends React.Component {
                     } else { //if position not zero then map all other as small videos 
                         for ( let i = 0; i < participantTracks.length ; i++ ) {
                             if (participantTracks[i].getType() === 'video') {
-                                participantTracks[i].attach($(`#video-tag-${participant.position}`)[0]);
-                                // ($(`#video-tag-${participant.position}`)[0]).style.background = ""; //there was small video not filling from right side so when we have video remove background color
-                                
-                                let name = participant.name;
-                                // if ( name === this.state.roomData.name ) {
-                                //     name = name + "(me)"
-                                // }
-                                if ( name ) {
-                                    $(`#name-box-${participant.position} h6`).text(name);
+                                if ( this.state.remoteUserSwappedId && participant.type === "teacher" ) { //if remoteUserSwappedId means flip Enabled and also if participant in loop is teacher then map to screen div
+                                    console.log('mapping onto teacher screen share div => =>', participant, this.state.remoteUserSwappedId, allParticipants)
+                                    participantTracks[i].attach($(`#teacher-screen-share-video`)[0]);
+                                    participantTracks[i].detach($(`#video-tag-${participant.position}`)[0]); //also detach from small div
+                                    // if ( roomData.teacher_id ) {
+                                    //     $(`#name-box-${allParticipants[participant.teacher_id].position} h6`).text(roomData.sources.filter(source=>source.position==="0")[0].name);
+                                    //     //on flip there is student at index 0 in sources so get name from that
+                                    //     //and get position to map name from teacher obj
+                                    // }
+                                } else {
+                                    participantTracks[i].attach($(`#video-tag-${participant.position}`)[0]);
+                                    !this.state.remoteUserSwappedId && participantTracks[i].detach($(`#teacher-screen-share-video`)[0]); //also detach from screen share div if it was before
+                                    // let name = participant.name;
+                                    // if ( name ) {
+                                    //     $(`#name-box-${participant.position} h6`).text(name);
+                                    // }
                                 }
                             } else {
-                                // console.log('is this remote track mute? => => ', participantTracks[i].isMuted());
                                 participantTracks[i].attach($(`#audio-tag-${participant.position}`)[0]);
+                                //for teacher audio mapped on small div no need to map on screen share div
                             }
                         }
                     }
@@ -745,7 +753,7 @@ class Conference extends React.Component {
                     } else {
                         track.detach($(`#audio-tag-${position}`));
                     }
-                    delete allParticipants[id][index];
+                    delete allParticipants[id][tracks][index];
                 })
             }
         }
@@ -1612,6 +1620,7 @@ class Conference extends React.Component {
                                 {
                                     this.state.roomData && this.state.roomData.sources && (this.state.roomData.sources.length > 1) &&
                                     this.state.roomData.sources.sort(this.sortSources.bind(this)).map(source => {
+                                        console.log('sources roomData teacher_id => =>', source, roomData.teacher_id)
                                         if( source.position.toString() !== "0" ) {
                                             let sourceUserId = source.id,
                                                 isHandRaised = source.isHandRaised ? source.isHandRaised : false;
@@ -1650,7 +1659,7 @@ class Conference extends React.Component {
                                                         <audio autoPlay id={`audio-tag-${source.position}`} />
                                                         <div className="row w-20 h-10 student-video-actions-top">
                                                             {/* check what is this? <div className="student-video-actions-top-icon" onClick={this.leaveRoomBtn.bind(this)}><span className="no-of-messages">1</span></div>  */}
-                                                            { ( (sourceUserId===id || isHandRaised) ) && <div className="student-video-actions-top-icon" onClick={() => !isHandRaised && this.raiseHand(source)} style={{ cursor: 'pointer' }}><i id={`studenthand-${sourceUserId}`} className="fa fa-hand-point-up"></i></div>} 
+                                                            { ( (sourceUserId===id || isHandRaised) && !remoteUserSwappedId ) && <div className="student-video-actions-top-icon" onClick={() => !isHandRaised && this.raiseHand(source)} style={{ cursor: 'pointer' }}><i id={`studenthand-${sourceUserId}`} className="fa fa-hand-point-up"></i></div>} 
                                                             {/* <div className="student-video-actions-top-icon" onClick={this.leaveRoomBtn.bind(this)}><i className="fa fa-hand-point-up"></i></div>                        
                                                             <div className="student-video-actions-top-icon" onClick={this.leaveRoomBtn.bind(this)}><i className="fa fa-hand-point-up"></i></div>                                                */}
                                                         </div>
@@ -1687,7 +1696,7 @@ class Conference extends React.Component {
                                                         }
                                                     </div>
                                                     <div className="student-name" id={`name-box-${source.position}`}>
-                                                        <h6 className="student-name-text" align="center">{source.name}</h6>
+                                                        <h6 className="student-name-text" align="center">{(remoteUserSwappedId && ((source.id===roomData.teacher_id && type==="student") || (source.id===roomData.id && roomData.type==="teacher" ))) ? allParticipants[remoteUserSwappedId].name : source.name}</h6>
                                                     </div>
                                                 </div>
                                             )
