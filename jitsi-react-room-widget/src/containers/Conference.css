@@ -44,6 +44,17 @@ html, body {
     font-size: 22px;
     margin-left: -2rem;
 }
+
+.ant-modal-confirm-btns .ant-btn-primary {
+    background-color: #9772E8 !important;
+    width: 6rem !important;
+    height: 3rem !important;
+    margin-top: 0rem !important;
+}
+.ant-modal-confirm-btns .ant-btn-primary:hover {
+    background-color: rgb(99, 67, 174) !important;
+}
+
 .class-room-header-content {
     /* cursor: pointer; */
 }
@@ -64,12 +75,35 @@ html, body {
     top: 1rem;
     left: -1rem;
 }
+
 .chat-messages-count-text {
     display: inline-block;
     border-radius: 60px;
     box-shadow: 0px 0px 2px #888;
     padding: 0.1em 0.6em;
     background-color: #b399e9;
+    font-size: 13px;
+}
+.inputPopover .ant-popover-title{
+    padding: 0rem !important;
+}
+.inputPopover .ant-popover-inner {
+    border-radius: 1rem 1rem 0rem 0rem !important;
+}
+.send-private-message-box-title {
+    border-bottom: none;
+    background-color: #9670e3;
+    border-radius: 1rem 1rem 0rem 0rem;
+    height: 2.5rem;
+    /* padding-top: .2rem; */
+    color: white;
+}
+.private-chat-messages-count-text {
+    display: inline-block;
+    border-radius: 60px;
+    box-shadow: 0px 0px 2px rgb(250, 190, 17);
+    padding: 0.1em 0.6em;
+    background-color: rgb(250, 190, 17);
     font-size: 13px;
 }
 
@@ -117,6 +151,24 @@ html, body {
     position: absolute;
     top: 87%;
 }
+.teacher-student-actions-right {
+    margin: .2rem .3rem 0.2rem 0rem;
+    width: 20px;
+    position: absolute;
+    top: 0rem;
+    right: 2rem;
+    font-size: 1.2rem;
+}
+.teacher-student-action-right-icon-div {
+    background-color: white;
+    width: 2rem;
+    height: 2rem;
+    margin-bottom: .2rem;
+    color: #fdf6fd;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
 #local-video-actions-box {
     z-index: 1;
     border-radius: 10px;
@@ -514,7 +566,7 @@ audio {
 }
 .chat-box-messages {
     /* height: 78%; */
-    height: 78%;
+    /* height: 78%;78%; */
     overflow: auto;
     padding: 0.5rem;
 }
@@ -529,6 +581,7 @@ audio {
     border-radius: 0rem 1.3rem 0rem 1.3rem;
     padding: 1.3rem;
 }
+
 .chat-participant-name {
     font-weight: 600;
     font-size: 12px;

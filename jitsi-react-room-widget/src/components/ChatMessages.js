@@ -2,16 +2,29 @@ import React from 'react';
 import { ChatMessage } from './ChatMessage';
 
 export const ChatMessages = (props) => {
+    const { isPrivate, receiverId, userId } = props;
+    let filteredMessages = props.messages.map(message => {
+        if ( isPrivate && ( message.studentId === receiverId || message.studentId === userId ) ) {
+            return message;
+        } else if (!isPrivate && (!message.studentId) ){
+            return message
+        }
+    })
     return (
-        <div className="chat-box-messages">
+        <div className="chat-box-messages" 
+            style={{
+                height: isPrivate?"15rem" : "78%"
+            }}>
             {
-                props.messages.map(message => {
-                    return(
-                        <ChatMessage
-                            key={message.messageId}
-                            message={message}
-                        />
-                    )
+                filteredMessages.map(message => {
+                    if ( message && message.messageId ) {
+                        return(
+                            <ChatMessage
+                                key={message.messageId}
+                                message={message}
+                            />
+                        )
+                    }
                 })
             }
         </div>    

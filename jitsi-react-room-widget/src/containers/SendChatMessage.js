@@ -5,6 +5,7 @@ import uid from 'uid';
 
 import arrowSend from '../assets/img/arrow-send.png';
 import { addMessages } from '../actions';
+import { ChatMessages } from '../components/ChatMessages';
 
 const { TextArea } = Input;
 
@@ -24,9 +25,25 @@ class SendChatMessage extends React.Component {
         }
     }
 
+    chatBoxTitle = () => {
+        return(
+            <div className="send-private-message-box-title d-flex flex-direction-row justify-content-around">
+                <span className="chat-box-close-icon d-flex flex-row justify-content-start" style={{ width: "35%" }}>
+                    <i onClick={()=>this.props.hideMessageBox()} className="fas fa-times"></i>
+                </span>
+                <span className='p-1 chat-box-close-icon d-flex flex-row justify-content-start chat-header-text' style={{ width: "65%" }}>Private Chat <i className="fas fa-comment chat-box-icon"></i></span>
+            </div>
+        )
+    };
+
     chatBoxContent = () => {
         return (
             <div className="chat-box-body d-flex flex-column justify-content-between">
+                <ChatMessages 
+                    isPrivate={true} 
+                    receiverId={this.props.studentId}
+                    userId={this.props.roomData.id} 
+                    messages={this.props.messages} />
                 <div className="chat-send-message">
                     <div className="chat-input">
                         <TextArea name="messageText" value={this.state.messageText} onChange={this.handleChange.bind(this)} rows={3} />
@@ -55,7 +72,7 @@ class SendChatMessage extends React.Component {
         let messageObj = {
             type: 'private-chat-message',
             data: {
-                userId: roomData.userId,
+                userId: roomData.id,
                 name: roomData.name,
                 roomId: roomData.roomId,
                 messageId,
@@ -67,6 +84,7 @@ class SendChatMessage extends React.Component {
                 studentName
             }
         };
+        console.log('send message object => => ', messageObj)
         socket.emit('event', messageObj);
 
         messageObj.data['author'] = "me"; //for local its me
@@ -78,7 +96,7 @@ class SendChatMessage extends React.Component {
             <Popover 
                 placement="top" 
                 visible={isSendMessageBoxVisible} 
-                // title={this.chatBoxTitle()} 
+                title={this.chatBoxTitle()} 
                 content={this.chatBoxContent()} 
                 trigger="click" 
                 overlayClassName="inputPopover"
@@ -86,9 +104,9 @@ class SendChatMessage extends React.Component {
         )
     }
 }
-// const mapStateToProps = state => ({
-//     messages: state.messages,
-// })
+const mapStateToProps = state => ({
+    messages: state.messages,
+})
 
 const mapDispatchToProps = dispatch => {
     return {
@@ -96,4 +114,4 @@ const mapDispatchToProps = dispatch => {
     }
 }
 
-export default connect( null , mapDispatchToProps )(SendChatMessage);
+export default connect( mapStateToProps , mapDispatchToProps )(SendChatMessage);

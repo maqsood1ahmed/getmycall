@@ -3,7 +3,8 @@ import React from 'react';
 import { connect } from 'react-redux';
 import queryString from 'query-string';
 import axios from  'axios';
-import Iframe from 'react-iframe'
+import Iframe from 'react-iframe';
+import { Modal } from 'antd';
 
 import { message, Select, Button, notification, Tooltip  } from 'antd';
 import socketIOClient from "socket.io-client";
@@ -104,6 +105,7 @@ class Conference extends React.Component {
             currentTeacherToggledView: 'video',  //three types 1=>video(video at center), 2=>screen and 3=>html
             isChatBoxVisible: false,
             noOfNewMessages: 0,
+            noOfNewPrivateMessages: 0,
             isChatPublic: false,
             params: null,
             isGlobalAudioMute: false,
@@ -298,7 +300,7 @@ class Conference extends React.Component {
                     this.onNewMessage(data);
                     break;    
                 case 'private-chat-response':
-                    message.error('Student seems offline!');
+                    message.error("Can't Send message seems offline!");
                     break;
                 case 'mute-all-students-audio':
                     if (this.state.roomData.type === "student"){this.toggleLocalAudioByTeacher(data)}
@@ -895,6 +897,15 @@ class Conference extends React.Component {
             roomData.announcment = e.target.value;
         } else if ( announcment ) {
             roomData.announcment = announcment;
+            Modal.info({
+                title: 'Announcement',
+                content: (
+                  <div>
+                    <p>{announcment}</p>
+                  </div>
+                ),
+                onOk() {},
+            });
         }
         this.setState({ roomData });
     }
@@ -1208,19 +1219,43 @@ class Conference extends React.Component {
     }
 
     onNewMessage = ( message ) => {
+        let { roomData } = this.state;
         console.log("new chat message => =>", message)
         this.props.addMessages([message]);
 
-        if ( this.state.isChatBoxVisible ) {
-            let messagesDiv = document.getElementsByClassName("chat-box-messages")[0]
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        if ( message.studentId ) {
+            if ( roomData.type === "student" ) {
+                this.setState({ noOfNewPrivateMessages: this.state.noOfNewPrivateMessages+1 })
+            } else {
+                roomData.sources = roomData.sources.map(sourceElement => { // update souces for both student and teacher
+                    if ( sourceElement.id === message.userId ) {
+                        if ( sourceElement['noOfNewPrivateMessages'] ) {
+                            sourceElement['noOfNewPrivateMessages'] = sourceElement['noOfNewPrivateMessages'] + 1;
+                        } else {
+                            sourceElement['noOfNewPrivateMessages'] = 1; //if not areadly exist means very first message
+                        }
+                    }
+                    return sourceElement;
+                });
+                console.log('sources mapping => =>' , roomData.sources) 
+
+                this.setState({ roomData });
+            }
         } else {
+            this.setState({ noOfNewMessages: this.state.noOfNewMessages+1 })
+        }
+
+
+        let messagesDiv = document.getElementsByClassName("chat-box-messages")[0]
+        if ( messagesDiv ) {
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+        if ( !this.state.isChatBoxVisible ) {
             notification.open({
                 description: this.createNotificationMessage(message),
                 duration: 3,
                 top: 63
             });
-            this.setState({ noOfNewMessages: this.state.noOfNewMessages+1 })
         }
     }
 
@@ -1417,7 +1452,20 @@ class Conference extends React.Component {
         this.setState({ selectedSource: null, isInputNoteVisible: false});
     }
     showSendMessageBox = (source) => {
-        this.setState({ selectedSource: source, isSendMessageBoxVisible: true, isInputNoteVisible: false });
+        let { roomData } = this.state;
+        console.log('prev no of new meessages => =>', source)
+        if ( this.state.roomData.type === "student" ) {
+            this.setState({ noOfNewPrivateMessages: 0, selectedSource: source, isSendMessageBoxVisible: true, isInputNoteVisible: false });
+        } else {
+            roomData.sources.forEach(el=> {
+                if ( el.id === source.id ) {
+                    if ( source['noOfNewPrivateMessages'] ) {
+                        source['noOfNewPrivateMessages'] = 0;
+                    }
+                }
+            })
+            this.setState({ selectedSource: source, isSendMessageBoxVisible: true, isInputNoteVisible: false });
+        }
     }
     hideSendMessageBox = () => {
         this.setState({ selectedSource: null, isSendMessageBoxVisible: false });
@@ -1433,31 +1481,31 @@ class Conference extends React.Component {
             isChatBoxVisible, isInputNoteVisible, selectedSource, 
             isSendMessageBoxVisible, isGlobalAudioMute,
             isScreenSharing, remoteUserSwappedId, isRecording,
-            isStudentsVisible } = this.state;
+            isStudentsVisible, noOfNewPrivateMessages } = this.state;
         const { roomId, id, name, type } = roomData;
-        console.log('all participant => => ', allParticipants, this.state.isScreenSharing);
+        console.log('all participant => => ', roomData.sources);
  
         let isFlipEnabled = false;
 
         console.log('isglobalaudio mute => =>', isGlobalAudioMute)
 
-        if ( !params.id || !params.type || !params.class_id ) {
-            return <div className="container" style={{ height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "center" }}>
-                <p style={{ fontSize: "35px", color: "#ff4d4f" }}>Please provide room info</p>
-            </div>
-        } else if ( !isLoggedIn ) {
-            return (<div style={{ paddingLeft: "0px", paddingRight: "0px", width: "100vw", height: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "center" }}>
-                {this.state.isStopped ? <p style={{ fontSize: "35px", color: this.state.isStopped? "red" : "black" }}> Stopped! </p> : 
-                // <div style={{ width: "100%" }}>
-                //     <img src={loadingIcon} alt="" width="100%" height="100%" />
-                // </div>}
-                <div className="justify-content-center" style= {{ width: "100%", height: "100%", top: "50%", backgroundColor: 'white' }}>
-                    <img src={`https://api.getmycall.com/static/media/loading-icon.gif`} alt="" width="200" height="200" style={{ marginTop: "120px" }} />
-                </div>}
-                {/* {this.state.isStopped && <Button onClick={()=> this.joinRoom()} type="primary"> Join Again </Button>} */}
-            </div>)
-        } 
-        else
+        // if ( !params.id || !params.type || !params.class_id ) {
+        //     return <div className="container" style={{ height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "center" }}>
+        //         <p style={{ fontSize: "35px", color: "#ff4d4f" }}>Please provide room info</p>
+        //     </div>
+        // } else if ( !isLoggedIn ) {
+        //     return (<div style={{ paddingLeft: "0px", paddingRight: "0px", width: "100vw", height: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "center" }}>
+        //         {this.state.isStopped ? <p style={{ fontSize: "35px", color: this.state.isStopped? "red" : "black" }}> Stopped! </p> : 
+        //         // <div style={{ width: "100%" }}>
+        //         //     <img src={loadingIcon} alt="" width="100%" height="100%" />
+        //         // </div>}
+        //         <div className="justify-content-center" style= {{ width: "100%", height: "100%", top: "50%", backgroundColor: 'white' }}>
+        //             <img src={`https://api.getmycall.com/static/media/loading-icon.gif`} alt="" width="200" height="200" style={{ marginTop: "120px" }} />
+        //         </div>}
+        //         {/* {this.state.isStopped && <Button onClick={()=> this.joinRoom()} type="primary"> Join Again </Button>} */}
+        //     </div>)
+        // } 
+        // else
          {
             return (
                 <div className="w-100 h-100">
@@ -1518,6 +1566,30 @@ class Conference extends React.Component {
                             <div className="row w-100" id="teacher-container">
                                 <div className="col-md-8 col-sm-8 col-xs-12 w-100" id="large-video-container">
                                     {currentTeacherToggledView==="video" ? this.teacherViews('video' ) : (currentTeacherToggledView==="board" ? this.teacherViews('board') : this.teacherViews('screen'))}
+                                    {type === "student" &&
+                                        <div className="teacher-student-actions-right d-flex flex-column justify-content-start">
+                                            <div onClick={() => this.showSendMessageBox(roomData.sources[0])} 
+                                                className="teacher-student-action-right-icon-div d-flex flex-row justify-content-center" 
+                                                style={{ backgroundColor: "#fabe11",  }}>
+                                                <i className="fas fa-comment student-action-right-icon"></i>
+                                            </div>
+                                            {
+                                                (noOfNewPrivateMessages !== 0) && 
+                                                    <div className="chat-messages-count">
+                                                        <span className="private-chat-messages-count-text">{noOfNewPrivateMessages}</span>
+                                                    </div>
+                                            }
+                                            <SendChatMessage
+                                                isSendMessageBoxVisible={isSendMessageBoxVisible ? true : false} 
+                                                selectedSource={selectedSource}
+                                                hideMessageBox={this.hideSendMessageBox.bind(this)}
+                                                roomData={roomData}
+                                                socket= {socket}
+                                                studentId={roomData.teacher_id} //now its teacher
+                                                studentName={roomData.sources[0].name}
+                                            />
+                                        </div>
+                                    }
                                     <div className="row w-100 d-flex justify-content-center teacher-actions-button-container">
                                         <div id="local-video-actions-box" className="row w-20 h-10">
                                             {
@@ -1658,14 +1730,23 @@ class Conference extends React.Component {
                                                         {/* <div className="btn-mute-unmute" onClick={() => this.toggleAudio( source, isMute )} style={{ backgroundImage: `url(${isMute?micOff:micOn})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', pointerEvents: "none", opacity: "0.5" }} /> */}
                                                         <audio autoPlay id={`audio-tag-${source.position}`} />
                                                         <div className="row w-20 h-10 student-video-actions-top">
-                                                            {/* check what is this? <div className="student-video-actions-top-icon" onClick={this.leaveRoomBtn.bind(this)}><span className="no-of-messages">1</span></div>  */}
                                                             { ( (sourceUserId===id || isHandRaised) && !remoteUserSwappedId ) && <div className="student-video-actions-top-icon" onClick={() => !isHandRaised && this.raiseHand(source)} style={{ cursor: 'pointer' }}><i id={`studenthand-${sourceUserId}`} className="fa fa-hand-point-up"></i></div>} 
+                                                            {(source.noOfNewPrivateMessages>0)&&(<div className="student-video-actions-top-icon"><span className="no-of-messages">{source.noOfNewPrivateMessages}</span></div>)}
                                                             {/* <div className="student-video-actions-top-icon" onClick={this.leaveRoomBtn.bind(this)}><i className="fa fa-hand-point-up"></i></div>                        
                                                             <div className="student-video-actions-top-icon" onClick={this.leaveRoomBtn.bind(this)}><i className="fa fa-hand-point-up"></i></div>                                                */}
                                                         </div>
-                                                        {type === "teacher" &&
-                                                            <div className="student-video-actions-right d-flex flex-column justify-content-start">
-                                                                <div onClick={() => this.showSendMessageBox(source)} className="student-action-right-icon-div d-flex flex-row justify-content-center" style={{ backgroundColor: "#fabe11" }}>
+                                                        {( type === "teacher" ) &&
+                                                            <div className="student-video-actions-right d-flex flex-column justify-content-start" 
+                                                                style={{ 
+                                                                    coursor: allParticipants[source.id] ? "pointer" : "default",
+                                                                    opacity: allParticipants[source.id] ? "1" : "0.5"
+                                                                }}
+                                                                >
+                                                                <div onClick={() => this.showSendMessageBox(source)} className="student-action-right-icon-div d-flex flex-row justify-content-center" 
+                                                                    style={{ 
+                                                                        backgroundColor: "#fabe11",
+                                                                        cursor: allParticipants[source.id] ? "pointer" : "default"
+                                                                     }}>
                                                                     <i className="fas fa-comment student-action-right-icon"></i>
                                                                 </div>
                                                                 <SendChatMessage
@@ -1677,7 +1758,11 @@ class Conference extends React.Component {
                                                                     studentId={source.id}
                                                                     studentName={source.name}
                                                                 />
-                                                                <div onClick={() => this.showInputNote(source)} className="student-action-right-icon-div d-flex flex-row justify-content-center" style={{ backgroundColor: "#6343AE" }}>
+                                                                <div onClick={() => this.showInputNote(source)} className="student-action-right-icon-div d-flex flex-row justify-content-center" 
+                                                                    style={{ 
+                                                                        backgroundColor: "#6343AE",
+                                                                        cursor: allParticipants[source.id] ? "pointer" : "default"
+                                                                    }}>
                                                                     <i class="fas fa-pencil-alt student-action-right-icon"></i>
                                                                 </div>
                                                                 <InputNote
@@ -1689,7 +1774,11 @@ class Conference extends React.Component {
                                                                     teacher_id={roomData.id}
                                                                     roomData={roomData}
                                                                 />
-                                                                <div onClick={() => (source.id !== id) && this.toggleGlobalSources( source.id, "mute-student-video" )} className="student-action-right-icon-div d-flex flex-row justify-content-center" style={{ backgroundColor: "#eb4d20" }}>
+                                                                <div onClick={() => (source.id !== id) && this.toggleGlobalSources( source.id, "mute-student-video" )} className="student-action-right-icon-div d-flex flex-row justify-content-center" 
+                                                                    style={{ 
+                                                                        backgroundColor: "#eb4d20",
+                                                                        cursor: allParticipants[source.id] ? "pointer" : "default"
+                                                                    }}>
                                                                     <i class="fas fa-times student-action-right-icon"></i>
                                                                 </div>
                                                             </div>

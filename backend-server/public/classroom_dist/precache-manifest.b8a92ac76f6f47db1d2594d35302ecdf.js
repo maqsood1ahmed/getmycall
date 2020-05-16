@@ -1,10 +1,10 @@
 self.__precacheManifest = [
   {
-    "revision": "a7cbb85828ba03297897",
+    "revision": "7dc472a4dd71e140e71b",
     "url": "/static/css/react-classroom.css"
   },
   {
-    "revision": "a7cbb85828ba03297897",
+    "revision": "7dc472a4dd71e140e71b",
     "url": "/static/js/react-classroom.js"
   },
   {

@@ -25,7 +25,7 @@ ioClassRoom.on('connection', (socket) => {
 
     try {
         socket.on('event', function(messageObj) {
-            console.log('socketio message =>', messageObj)
+            console.log('socketio message =>', messageObj.type)
             
             let type = messageObj.type;
             let data = messageObj.data;
@@ -114,7 +114,6 @@ function joinRoom( data, socket ) {
             user.id = data.id;
         }
 
-        console.log('new user => ', user)
         user.name = data.name ? data.name : null;
         user.type = data.type ? data.type : null;
         user.socketId = socket.id;
@@ -158,19 +157,36 @@ function leaveRoom( socket ) {
     Object.keys(rooms).forEach(roomId => {
         if ( rooms[roomId]["users"] ) {
             const index = rooms[roomId]["users"].findIndex(user => user.socketId === socket.id);
-            // let user = rooms[roomId]["users"][index];
-            // if ( user['type'] && user['type'] === "teacher" ) {
-                // clean resources here if teacher left room
-                // rooms[roomId]['currentAnnouncement'] = '';
-                // rooms[roomId]['isGlobalAudioMute'] = false;
-            // }
+
             if (index > -1) {
                 rooms[roomId]["users"].splice(index, 1);
-            }
-            // console.log(`users in room ${roomId} => `,rooms[roomId]["users"]);
-            socket.leave(roomId);
+                clearTeacherActions( roomId )
+                socket.broadcast.to(roomId).emit('event', { type: "teacherLeaveRoom", data: { message: "Cleared all room actions taken by teacher." } });
+                socket.leave(roomId);
+            }            
         }
     })
+}
+
+function clearTeacherActions ( roomId ) {
+    if ( rooms[roomId]['isGlobalAudioMute'] ) {
+        delete rooms[roomId]['isGlobalAudioMute']    
+    }
+    if ( rooms[roomId]['isChatPublic'] ) {
+        delete rooms[roomId]['isChatPublic']
+    }
+    if ( rooms[roomId]['currentTeacherToggledView'] ) {
+        delete rooms[roomId]['currentTeacherToggledView'];
+    }
+    if ( rooms[roomId]['selectedBoard'] ) {
+        delete rooms[roomId]['selectedBoard']
+    }
+    if ( rooms[roomId]['currentAnnouncement'] ) {
+        delete rooms[roomId]['currentAnnouncement'];
+    }
+    if ( rooms[roomId]['videoSwapped'] ) {
+        delete rooms[roomId]['videoSwapped']
+    }
 }
 
 function sendPrivateMessage ( data, socket ) {

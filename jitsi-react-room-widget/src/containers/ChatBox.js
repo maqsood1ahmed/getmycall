@@ -33,7 +33,7 @@ class ChatBox extends React.Component {
 
         if ( prevProps.messages.length !== this.props.messages.length && this.state.messageText ) {
             let messagesDiv = document.getElementsByClassName("chat-box-messages")[0]
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            messagesDiv.scrollTop = messagesDiv && messagesDiv.scrollHeight;
 
             this.setState({ messageText: '' })
         }
@@ -78,7 +78,10 @@ class ChatBox extends React.Component {
     chatBoxContent = () => {
         return (
             <div className="chat-box-body d-flex flex-column justify-content-between">
-              <ChatMessages messages={this.props.messages} />
+              <ChatMessages 
+                isPrivate={false} 
+                messages={this.props.messages}
+             />
               {
                   this.props.isChatAllowed ? 
                     <div className="chat-send-message">
@@ -91,7 +94,7 @@ class ChatBox extends React.Component {
                     </div> :
                     <div className="chat-send-message">
                         <div className="alert alert-warning">
-                            Chat Disabled by Teacher!
+                            Chat Disabled!
                         </div>
                     </div>
               }

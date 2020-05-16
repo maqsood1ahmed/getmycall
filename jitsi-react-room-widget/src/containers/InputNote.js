@@ -19,6 +19,16 @@ class InputNote extends React.Component {
             this.setState({ noteText: e.target.value })
         }
     }
+    inputNoteBoxTitle = () => {
+        return(
+            <div className="send-private-message-box-title d-flex flex-direction-row justify-content-around">
+                <span className="chat-box-close-icon d-flex flex-row justify-content-start" style={{ width: "35%" }}>
+                    <i onClick={()=>this.props.hideInputNote()} className="fas fa-times"></i>
+                </span>
+                <span className='p-1 chat-box-close-icon d-flex flex-row justify-content-start chat-header-text' style={{ width: "65%" }}>Save Note <i className="fas fa-comment chat-box-icon"></i></span>
+            </div>
+        )
+    };
 
     noteJSXContent = () => {
         return (
@@ -71,7 +81,7 @@ class InputNote extends React.Component {
             <Popover 
                 placement="top" 
                 visible={isInputNoteVisible} 
-                // title={this.chatBoxTitle()} 
+                title={this.inputNoteBoxTitle()} 
                 content={this.noteJSXContent()} 
                 trigger="click" 
                 overlayClassName="inputPopover"
