@@ -17,6 +17,33 @@ class SendChatMessage extends React.Component {
             messageText: ''
         }
     }
+
+    componentDidUpdate( prevProps, prevState ) {
+        let { roomData, selectedSource, noOfNewPrivateMessages } = this.props;
+        let filteredMessages = this.props.messages.map(message => {
+            // if ( message.studentId === selectedSource.id  || roomData.id === message.id ) { 
+                return message;
+            // }
+        })
+        let messageId = (filteredMessages.length > 0) && filteredMessages.slice(-noOfNewPrivateMessages)[0].messageId;  //get of of old unread message
+        if ( noOfNewPrivateMessages > 0 && this.props.isSendMessageBoxVisible ) { //only update when message box open
+            this.props.clearNoOfNewPrivateMessages(selectedSource);
+            setTimeout(()=>{
+                let messageDiv = document.getElementById(messageId);
+                if ( messageDiv ) {
+                    messageDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' })
+                }
+            }, 800);
+        }
+
+        if ( prevProps.messages.length !== this.props.messages.length || prevProps.isSendMessageBoxVisible !== this.props.isSendMessageBoxVisible ) {
+            let messagesDiv = document.getElementById("private-chat-messages");
+            if ( messagesDiv ) {
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }
+            this.setState({ messageText: '' })
+        }
+    }
     
 
     handleChange = ( e ) => {
@@ -43,7 +70,8 @@ class SendChatMessage extends React.Component {
                     isPrivate={true} 
                     receiverId={this.props.studentId}
                     userId={this.props.roomData.id} 
-                    messages={this.props.messages} />
+                    messages={this.props.messages}
+                    divID="private-chat-messages" />
                 <div className="chat-send-message">
                     <div className="chat-input">
                         <TextArea name="messageText" value={this.state.messageText} onChange={this.handleChange.bind(this)} rows={3} />
@@ -89,6 +117,10 @@ class SendChatMessage extends React.Component {
 
         messageObj.data['author'] = "me"; //for local its me
         this.props.addMessages([messageObj.data]);
+        // let messagesDiv = document.getElementsByClassName("chat-box-messages")[0]
+        // if ( messagesDiv ) {
+        //     messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        // }
     }
     render () {
         const { isSendMessageBoxVisible } = this.props;

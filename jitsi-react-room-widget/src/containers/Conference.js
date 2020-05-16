@@ -118,10 +118,10 @@ class Conference extends React.Component {
         socket = socketIOClient(this.state.socketEndpoint);
         this.addSocketEvents();
 
-        let params = null//this.props.params;
-        if ( !params ) { //temporary for testing
-            params= queryString.parse(window.location.search.substring(1));
-        }
+        let params = this.props.params;
+            if ( !params ) { //temporary for testing
+                params= queryString.parse(window.location.search.substring(1));
+            }
         this.state.params = params;
     }
     async componentDidMount () {
@@ -332,7 +332,7 @@ class Conference extends React.Component {
     }
     
 
-    componentDidUpdate () {
+    componentDidUpdate ( prevProps, prevState ) {
         let { isTrackUpdate, isScreenTrackUpdate, roomData } = this.state;
         if ( isTrackUpdate || isScreenTrackUpdate ) {
             console.log('track update => => ', isTrackUpdate, isScreenTrackUpdate);
@@ -410,6 +410,23 @@ class Conference extends React.Component {
                     }
                 }
             });
+        }
+
+        if ( prevState.isScreenSharing !== this.state.isScreenSharing ) {
+            let ids= Object.keys(allParticipants);
+            try {
+                ids.forEach(id => {
+                    if (allParticipants[id].screenTracks[0]) {
+                        screenTracks.forEach( track => {
+                            let screenVideo = $(`#teacher-screen-share-video`)[0];
+                            track.detach(screenVideo)
+                        })
+                    }
+                })
+            } catch(error) {
+                console.log('something went wrong when detaching screen share tag.')
+            }
+            
         }
     }
 
@@ -1457,13 +1474,7 @@ class Conference extends React.Component {
         if ( this.state.roomData.type === "student" ) {
             this.setState({ noOfNewPrivateMessages: 0, selectedSource: source, isSendMessageBoxVisible: true, isInputNoteVisible: false });
         } else {
-            roomData.sources.forEach(el=> {
-                if ( el.id === source.id ) {
-                    if ( source['noOfNewPrivateMessages'] ) {
-                        source['noOfNewPrivateMessages'] = 0;
-                    }
-                }
-            })
+            this.clearNoOfNewPrivateMessages( source );
             this.setState({ selectedSource: source, isSendMessageBoxVisible: true, isInputNoteVisible: false });
         }
     }
@@ -1473,6 +1484,19 @@ class Conference extends React.Component {
 
     clearNoOfNewMessages = () => {
         this.setState({ noOfNewMessages: 0 });
+    }
+    clearNoOfNewPrivateMessages = ( source ) => {
+        let { roomData } = this.state;
+        if ( source ) {
+            roomData.sources.forEach(el=> {
+                if ( el.id === source.id ) {
+                    if ( source['noOfNewPrivateMessages'] ) {
+                        source['noOfNewPrivateMessages'] = 0;
+                    }
+                }
+            })
+            this.setState({ roomData, noOfNewPrivateMessages: 0 })
+        }
     }
 
     render () {
@@ -1489,23 +1513,23 @@ class Conference extends React.Component {
 
         console.log('isglobalaudio mute => =>', isGlobalAudioMute)
 
-        // if ( !params.id || !params.type || !params.class_id ) {
-        //     return <div className="container" style={{ height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "center" }}>
-        //         <p style={{ fontSize: "35px", color: "#ff4d4f" }}>Please provide room info</p>
-        //     </div>
-        // } else if ( !isLoggedIn ) {
-        //     return (<div style={{ paddingLeft: "0px", paddingRight: "0px", width: "100vw", height: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "center" }}>
-        //         {this.state.isStopped ? <p style={{ fontSize: "35px", color: this.state.isStopped? "red" : "black" }}> Stopped! </p> : 
-        //         // <div style={{ width: "100%" }}>
-        //         //     <img src={loadingIcon} alt="" width="100%" height="100%" />
-        //         // </div>}
-        //         <div className="justify-content-center" style= {{ width: "100%", height: "100%", top: "50%", backgroundColor: 'white' }}>
-        //             <img src={`https://api.getmycall.com/static/media/loading-icon.gif`} alt="" width="200" height="200" style={{ marginTop: "120px" }} />
-        //         </div>}
-        //         {/* {this.state.isStopped && <Button onClick={()=> this.joinRoom()} type="primary"> Join Again </Button>} */}
-        //     </div>)
-        // } 
-        // else
+        if ( !params.id || !params.type || !params.class_id ) {
+            return <div className="container" style={{ height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "center" }}>
+                <p style={{ fontSize: "35px", color: "#ff4d4f" }}>Please provide room info</p>
+            </div>
+        } else if ( !isLoggedIn ) {
+            return (<div style={{ paddingLeft: "0px", paddingRight: "0px", width: "100vw", height: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "center" }}>
+                {this.state.isStopped ? <p style={{ fontSize: "35px", color: this.state.isStopped? "red" : "black" }}> Stopped! </p> : 
+                // <div style={{ width: "100%" }}>
+                //     <img src={loadingIcon} alt="" width="100%" height="100%" />
+                // </div>}
+                <div className="justify-content-center" style= {{ width: "100%", height: "100%", top: "50%", backgroundColor: 'white' }}>
+                    <img src={`https://api.getmycall.com/static/media/loading-icon.gif`} alt="" width="200" height="200" style={{ marginTop: "120px" }} />
+                </div>}
+                {/* {this.state.isStopped && <Button onClick={()=> this.joinRoom()} type="primary"> Join Again </Button>} */}
+            </div>)
+        } 
+        else
          {
             return (
                 <div className="w-100 h-100">
@@ -1587,6 +1611,8 @@ class Conference extends React.Component {
                                                 socket= {socket}
                                                 studentId={roomData.teacher_id} //now its teacher
                                                 studentName={roomData.sources[0].name}
+                                                noOfNewPrivateMessages={noOfNewPrivateMessages}
+                                                clearNoOfNewPrivateMessages={this.clearNoOfNewPrivateMessages.bind(this)}
                                             />
                                         </div>
                                     }
@@ -1757,6 +1783,8 @@ class Conference extends React.Component {
                                                                     socket= {socket}
                                                                     studentId={source.id}
                                                                     studentName={source.name}
+                                                                    noOfNewPrivateMessages={source.noOfNewPrivateMessages}
+                                                                    clearNoOfNewPrivateMessages={this.clearNoOfNewPrivateMessages.bind(this)}
                                                                 />
                                                                 <div onClick={() => this.showInputNote(source)} className="student-action-right-icon-div d-flex flex-row justify-content-center" 
                                                                     style={{ 

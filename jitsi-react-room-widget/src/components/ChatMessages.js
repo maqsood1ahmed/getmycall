@@ -11,7 +11,8 @@ export const ChatMessages = (props) => {
         }
     })
     return (
-        <div className="chat-box-messages" 
+        <div id={props.divID} 
+            className="chat-box-messages"
             style={{
                 height: isPrivate?"15rem" : "78%"
             }}>
