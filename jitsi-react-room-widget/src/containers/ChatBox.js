@@ -1,6 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { Popover, Input, Switch } from 'antd';
+import { Input, Switch } from 'antd';
 import uid from 'uid';
 
 import arrowSend from '../assets/img/arrow-send.png';
@@ -30,12 +30,11 @@ class ChatBox extends React.Component {
                 }
             }, 800);
         }
-
-        if ( prevProps.messages.length !== this.props.messages.length && this.state.messageText ) {
-            let messagesDiv = document.getElementsByClassName("chat-box-messages")[0]
-            messagesDiv.scrollTop = messagesDiv && messagesDiv.scrollHeight;
-
-            this.setState({ messageText: '' })
+        if ( prevProps.messages.length !== this.props.messages.length ) {
+            let messagesDiv = document.getElementsByClassName("chat-box-messages");
+            if ( messagesDiv ) {
+                messagesDiv[0].scrollTop = messagesDiv[0].scrollHeight;
+            }
         }
     }
 
@@ -86,7 +85,7 @@ class ChatBox extends React.Component {
                   this.props.isChatAllowed ? 
                     <div className="chat-send-message">
                         <div className="chat-input">
-                            <TextArea name="messageText" value={this.state.messageText} onChange={this.handleChange.bind(this)} rows={3} />
+                            <TextArea name="messageText" value={this.state.messageText} onPressEnter={this.sendMessage.bind(this)} onChange={this.handleChange.bind(this)} rows={3} />
                         </div>
                         <div className="chat-send-button d-flex flex-row justify-content-end">
                             <button disabled={!this.state.messageText ? true : false} onClick={this.sendMessage.bind(this)} type="button" class="btn"><img width="20px" height="20px" src={arrowSend} alt="Send" /></button>
@@ -102,7 +101,8 @@ class ChatBox extends React.Component {
           );
     };
 
-    sendMessage = () => {
+    sendMessage = (e) => {
+        e.preventDefault();
         let { profile, socket } = this.props;
         let { messageText } = this.state;
         let messageId = uid();
@@ -124,6 +124,7 @@ class ChatBox extends React.Component {
 
         messageObj.data['author'] = "me"; //for local its me
         this.props.addMessages([messageObj.data]);
+        this.setState({ messageText: "" })
     }
     render () {
         const { isChatBoxVisible } = this.props;

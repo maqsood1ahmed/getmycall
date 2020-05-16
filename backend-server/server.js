@@ -66,6 +66,10 @@ ioClassRoom.on('connection', (socket) => {
                     rooms[data.roomId]['currentAnnouncement'] = messageObj;
                     socket.broadcast.to(data.roomId).emit('event', messageObj );
                     break;
+                case 'switch-global-working-mode':
+                    rooms[data.roomId]['switchGlobalWorkingMode'] = messageObj;
+                    socket.broadcast.to(data.roomId).emit('event', messageObj );
+                    break;
                 case 'screen-share-stop':
                     socket.broadcast.to(data.roomId).emit('event', messageObj );
                     break;
@@ -151,6 +155,9 @@ function joinRoom( data, socket ) {
         if ( rooms[data.roomId]['videoSwapped'] ) {
             socket.emit('event', rooms[roomId]['videoSwapped'] );
         }
+        if ( rooms[data.roomId]['switchGlobalWorkingMode'] ) {
+            socket.emit('event', rooms[roomId]['switchGlobalWorkingMode'] );
+        }
     }
 }
 function leaveRoom( socket ) {
@@ -186,6 +193,9 @@ function clearTeacherActions ( roomId ) {
     }
     if ( rooms[roomId]['videoSwapped'] ) {
         delete rooms[roomId]['videoSwapped']
+    }
+    if ( rooms[roomId]['switchGlobalWorkingMode'] ) {
+        delete rooms[roomId]['switchGlobalWorkingMode']
     }
 }
 

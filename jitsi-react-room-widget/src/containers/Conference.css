@@ -639,6 +639,46 @@ audio {
     height: 100% !important;
 }
 
+.teacher-board-div-working-mode {
+    background-color: #fbf4fd;
+    width: 100vw !important;
+    height: 100vh !important;
+}
+.teacher-video-div-working-mode{
+    width: 15rem !important;
+    height: 13rem !important;
+    position: absolute;
+    top: 0.5rem;
+    right: 1rem;
+}
+.teacher-student-actions-right-working-mode {
+    margin: .2rem .3rem 0.2rem 0rem;
+    width: 20px;
+    position: absolute;
+    top: 0rem;
+    left: .2rem;
+    font-size: 1.2rem;
+}
+
+.board-source-container {
+    position: absolute;
+    z-index: 9;
+    background-color: #f1f1f1;
+    text-align: center;
+    border: 1px solid #d3d3d3;
+  }
+  
+#teacher-video-div-working-mode {
+    padding: 10px;
+    cursor: move;
+    z-index: 10;
+    background-color: #2196F3;
+    color: #fff;
+}
+.input-popover-working-mode .ant-popover-arrow {
+    display: none;
+}
+
 /* scroll bar design */
 /* width */
 ::-webkit-scrollbar {

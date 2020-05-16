@@ -74,7 +74,7 @@ class SendChatMessage extends React.Component {
                     divID="private-chat-messages" />
                 <div className="chat-send-message">
                     <div className="chat-input">
-                        <TextArea name="messageText" value={this.state.messageText} onChange={this.handleChange.bind(this)} rows={3} />
+                        <TextArea name="messageText" value={this.state.messageText} onPressEnter={this.sendMessage.bind(this)} onChange={this.handleChange.bind(this)} rows={3} />
                     </div>
                     <div className="chat-send-button d-flex flex-row justify-content-end">
                     </div>
@@ -91,7 +91,8 @@ class SendChatMessage extends React.Component {
           );
     };
 
-    sendMessage = () => {
+    sendMessage = (e) => {
+        e.preventDefault();
         let socket = this.props.socket;
         let messageId = uid();
         let roomData= this.props.roomData;
@@ -121,6 +122,7 @@ class SendChatMessage extends React.Component {
         // if ( messagesDiv ) {
         //     messagesDiv.scrollTop = messagesDiv.scrollHeight;
         // }
+        this.setState({ messageText: "" })
     }
     render () {
         const { isSendMessageBoxVisible } = this.props;
@@ -131,7 +133,7 @@ class SendChatMessage extends React.Component {
                 title={this.chatBoxTitle()} 
                 content={this.chatBoxContent()} 
                 trigger="click" 
-                overlayClassName="inputPopover"
+                overlayClassName={`${this.props.isWorkingMode ? 'input-popover-working-mode inputPopover' : 'inputPopover'} `}
             />    
         )
     }

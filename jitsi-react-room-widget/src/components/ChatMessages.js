@@ -6,7 +6,7 @@ export const ChatMessages = (props) => {
     let filteredMessages = props.messages.map(message => {
         if ( isPrivate && ( message.studentId === receiverId || message.studentId === userId ) ) {
             return message;
-        } else if (!isPrivate && (!message.studentId) ){
+        } else if (!isPrivate ){
             return message
         }
     })
@@ -23,9 +23,11 @@ export const ChatMessages = (props) => {
                             <ChatMessage
                                 key={message.messageId}
                                 message={message}
+                                isPrivateMessage={message.studentId?true: false}
                             />
                         )
                     }
+                    return '';
                 })
             }
         </div>    
