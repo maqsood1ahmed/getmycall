@@ -279,7 +279,7 @@ class Conference extends React.Component {
                     break;
                 case 'videos-swapped':
                     let that=this;
-                    if ( data.isRoomJoinResponse ) {
+                    if ( data.isRoomJoinResponse && data.remoteUserSwappedId && data.selectedSource && (data.selectedSource.id === data.remoteUserSwappedId) ) {
                         function waitForParticipant(){
                             console.log('interval running to check value', allParticipants, data)
                             if( allParticipants[data.remoteUserSwappedId] && allParticipants[data.teacherId] &&
@@ -1469,7 +1469,7 @@ class Conference extends React.Component {
                     <Tooltip title={( ( currentTeacherToggledView === "screen") && ( type === "teacher" ) )? "Flip Back to Center." : ""}>
                         <video
                             style = {{
-                                pointerEvents: ( (currentTeacherToggledView === "screen") && ( type === "teacher" ) )?"auto":"none",
+                                pointerEvents: ( ( currentTeacherToggledView === "screen" ) && ( type === "teacher" ) )?"auto":"none",
                                 cursor: ( ( currentTeacherToggledView === "screen" ) && ( type === "teacher" ) )?"pointer":"default",
                             }}
                             onClick={() => this.toggleTeacherView( 'video' )}
