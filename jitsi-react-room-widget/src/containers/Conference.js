@@ -386,8 +386,9 @@ class Conference extends React.Component {
 
     mapTracksOnTags = ( isTrackUpdate, isScreenTrackUpdate, participantId ) => {
         let participant = allParticipants[participantId];
-
+        let { roomData } = this.state;
         let participantTracks = participant.tracks;
+
         if ( isTrackUpdate  ) {
             if ( (participant.position).toString() === "0" && isTrackUpdate ) {
                 for ( let i = 0; i < participantTracks.length ; i++ ) {
@@ -401,6 +402,13 @@ class Conference extends React.Component {
                     } else if ( largeAudioTag ) {
                         // console.log('is teacher mute? => => ', participantTracks[i].isMuted());
                         participantTracks[i].attach($(`#teacher-audio-tag`)[0]);
+
+                        if ( participantId === roomData.id && largeAudioTag ) {
+                            largeAudioTag.muted = true;
+                        } else {
+                            largeAudioTag.muted = false;
+                        }
+                        
                     }
                 }
             } else { //if position not zero then map all other as small videos 
@@ -417,6 +425,12 @@ class Conference extends React.Component {
                     } else {
                         participantTracks[i].attach($(`#audio-tag-${participant.position}`)[0]);
                         //for teacher audio mapped on small div no need to map on screen share div
+                        let audioTag = document.getElementById(`audio-tag-${participant.position}`);
+                        if ( participantId === roomData.id ) {
+                            audioTag.muted = true;
+                        } else {
+                            audioTag.muted = false;
+                        }
                     }
                 }
             }
@@ -1575,7 +1589,7 @@ class Conference extends React.Component {
  
         let isFlipEnabled = false;
 
-        console.log('isglobalaudio mute => =>', isGlobalAudioMute)
+        console.log('allparticipants => =>', allParticipants)
 
         // if ( !params.id || !params.type || !params.class_id ) {
         //     return <div className="container" style={{ height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "center" }}>
