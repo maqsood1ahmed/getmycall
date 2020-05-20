@@ -286,6 +286,7 @@ class Conference extends React.Component {
                                 allParticipants[data.remoteUserSwappedId].tracks && allParticipants[data.teacherId].tracks
                             ){
                                 that.flipVideo( data.selectedSource , data.teacherId, data.remoteUserSwappedId );
+                                message.info(`Student ${data.remoteUserSwappedId} flipped to middle`);
                             }
                             else{
                                 console.log('interval running to check value', allParticipants)
@@ -295,6 +296,7 @@ class Conference extends React.Component {
                         waitForParticipant();
                     } else {
                         this.flipVideo( data.selectedSource , data.teacherId, data.remoteUserSwappedId );
+                        message.info(`Student ${data.remoteUserSwappedId} flipped to middle`);
                     }
                     break;
                 case 'teacher-view-change':
@@ -1117,7 +1119,7 @@ class Conference extends React.Component {
                 roomData.sources = roomData.sources.map(sourceElement => { // update souces for both student and teacher
                     if ( sourceElement.id === remoteUserSwappedId ) {
                         sourceElement.position = sourcePosition;  //revert student position back       
-                        if ( roomData.type === "student" ) {
+                        if ( roomData.type === "student" && remoteUserSwappedId === roomData.id ) {
                             allParticipants[remoteUserSwappedId].tracks.forEach( track => {
                                 if ( track.getType() === 'audio' ) {
                                     console.log('current swap track => =>', track)
@@ -1171,7 +1173,7 @@ class Conference extends React.Component {
                     Object.keys(allParticipants).forEach( id => {
                         if ( id === sourceId ) {
                             allParticipants[sourceId].position = "0";  //change remote user position to 0 in place of teacher
-                            if ( this.state.roomData.type === "student" && sourceId === this.state.roomData.id ) {
+                            if ( this.state.roomData.type === "student" && remoteUserSwappedId === roomData.id ) {
                                 allParticipants[sourceId].tracks.forEach( track => {
                                     if ( track.getType() === 'audio' ) {
                                         track.unmute();
@@ -1585,11 +1587,9 @@ class Conference extends React.Component {
             isStudentsVisible, noOfNewPrivateMessages, isWorkingMode,
             isLocalAudioMute, isLocalVideoMute } = this.state;
         const { roomId, id, name, type } = roomData;
-        console.log('all participant => => ', roomData.sources);
+        console.log('remote user swapped id => => ', remoteUserSwappedId);
  
         let isFlipEnabled = false;
-
-        console.log('allparticipants => =>', allParticipants)
 
         // if ( !params.id || !params.type || !params.class_id ) {
         //     return <div className="container" style={{ height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "center" }}>
@@ -1794,11 +1794,14 @@ class Conference extends React.Component {
                                                         if ( isWorkingMode ) {
                                                             this.switchToGlobalWorkingMode( !isWorkingMode, true )
                                                         }
-                                                    } } 
+                                                    }} 
                                                     type="button"
                                                     className="btn btn-primary teacher-actions-button"
                                                     style={{
-                                                        backgroundColor: currentTeacherToggledView==="board"?"#6343AE":""
+                                                        backgroundColor: currentTeacherToggledView==="board"?"#6343AE":"",
+                                                        pointerEvents: !remoteUserSwappedId?"auto":"none",
+                                                        cursor: !remoteUserSwappedId?"pointer":"default",
+                                                        opacity: !remoteUserSwappedId?"1":"0.5"
                                                     }}
                                                 >
                                                     <div className="d-flex flex-row justify-content-center" style={{ marginTop: ".1rem"}}>
@@ -1858,16 +1861,16 @@ class Conference extends React.Component {
                                                         >
                                                     <div id={`video-box-${source.position}`}>
                                                         {
-                                                            isFlipEnabled = (
+                                                            isFlipEnabled = ( //only for teacher
                                                                 (type==="teacher") && 
                                                                 (currentTeacherToggledView === "video") && 
                                                                 allParticipants[sourceUserId] && 
-                                                                ( !this.state.remoteUserSwappedId || ( sourceUserId===id ) )
+                                                                ( !remoteUserSwappedId || ( sourceUserId===id ) )
                                                             )
                                                         }
                                                         <video className="student-video-tag" onClick={() => this.flipVideo( source )} 
                                                             style={{ 
-                                                                background: "white", 
+                                                                background: ( isFlipEnabled || sourceUserId === roomData.teacher_id )?"#4b3684":"white", 
                                                                 cursor: isFlipEnabled ? 'pointer' : 'none', 
                                                                 pointerEvents: isFlipEnabled? 'auto': 'none',
                                                                 // width: isChatBoxVisible? "85" : "100",
