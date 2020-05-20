@@ -90,3 +90,52 @@ add_header 'Access-Control-Allow-Headers' 'Authorization,Content-Type,Accept,Ori
 add_header Access-Control-Allow-Origin *; 
 
 ref => https://community.jitsi.org/t/development-setup-cross-domain/14093/6
+
+
+
+
+
+Milestone3=> bugs
+
+Hi Maqsood.
+Bug list that we need to figure before we can go on:
+
+Important parts is the back to positions.
+1=>After student back to his place from center he is suddenly unmuted. and also others.
+
+2=> back from work mode not works for students.
+
+3=> working time need to be only if working mode on.
+
+Rest we can do later but bugs with mute\unmute move between states must work well. Tell me when we will check them together.
+
+
+Bugs:-
+Ok Eli let me first do three things
+1=> work mode only when work time (resolved)
+2=> mute audio not video of student when work mode (*** when switch off working mode audio will be previous state of student) (resolved)
+3=> testing why Student not get video
+
+great. 1 point important: when student is muted he will stay muted even if mode changed.
+Only way to unmute is by active unmute by teacher or by moving him to middle.
+
+
+
+Bugs and Changes:-
+1. replacing between share to vid to work - need to be with fixed places.
+2. !important. user must not hear him self. teacher + student. now he hear him self too. its dupliacte channel i think.
+3. share button to put down.
+4. click on lall div of share to move to midlle \ back
+
+bug - on working mode if teacher press on share - all get screen purple and stuck on student side.
+
+5. if teacher put student on middle - and that refresh - both are stuck on middle.
+6. bug in middle - go down. stuck now some times.
+
+if teacher back to middle he is muted - no way to back
+
+. if one moved middle - need someway to know.
+
+maybe other color
+
+teacher missing

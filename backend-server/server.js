@@ -35,7 +35,7 @@ ioClassRoom.on('connection', (socket) => {
                     break;
                 case 'videos-swapped':
                     rooms[data.roomId]['videoSwapped'] = messageObj;
-                    socket.broadcast.to(data.roomId).emit('event', { type: 'video-swapped-from-server', data: data }); //send swapped videos info to all users
+                    socket.broadcast.to(data.roomId).emit('event', messageObj ); //send swapped videos info to all users
                     break;
                 case 'hand-raised':
                 case 'chat-message':
@@ -152,11 +152,13 @@ function joinRoom( data, socket ) {
         if ( rooms[roomId]['currentAnnouncement'] ) {
             socket.emit('event', rooms[roomId]['currentAnnouncement'] );
         }
-        if ( rooms[data.roomId]['videoSwapped'] ) {
-            socket.emit('event', rooms[roomId]['videoSwapped'] );
-        }
         if ( rooms[data.roomId]['switchGlobalWorkingMode'] ) {
             socket.emit('event', rooms[roomId]['switchGlobalWorkingMode'] );
+        }
+        if ( rooms[data.roomId]['videoSwapped'] ) {
+            let messageObj = rooms[roomId]['videoSwapped'];
+            messageObj['data']['isRoomJoinResponse'] = true;
+            socket.emit('event', messageObj );
         }
     }
 }
@@ -191,11 +193,11 @@ function clearTeacherActions ( roomId ) {
     if ( rooms[roomId]['currentAnnouncement'] ) {
         delete rooms[roomId]['currentAnnouncement'];
     }
-    if ( rooms[roomId]['videoSwapped'] ) {
-        delete rooms[roomId]['videoSwapped']
-    }
     if ( rooms[roomId]['switchGlobalWorkingMode'] ) {
         delete rooms[roomId]['switchGlobalWorkingMode']
+    }
+    if ( rooms[roomId]['videoSwapped'] ) {
+        delete rooms[roomId]['videoSwapped']
     }
 }
 
