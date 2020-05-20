@@ -1466,7 +1466,15 @@ class Conference extends React.Component {
         if ( viewType === "video" ){
             return (
                 <div className={`${(this.state.isWorkingMode && type === "student") ? "teacher-video-div-working-mode" : "w-100 teaher-video-div teaher-video-div"} ${(currentTeacherToggledView === "video") ? (isChatBoxVisible? "teacher-div-large-with-chat" : "teacher-div-large") : (isChatBoxVisible? "teacher-div-small-with-chat": "teacher-div-small")}`}>
-                    <video id="teacher-video-tag" autoPlay />
+                    <Tooltip title={( (currentTeacherToggledView === "board" || currentTeacherToggledView === "screen") && ( type === "teacher" ) )? "Flip Back to Center." : ""}>
+                        <video
+                            style = {{
+                                pointerEvents: ( (currentTeacherToggledView === "board" || currentTeacherToggledView === "screen") && ( type === "teacher" ) )?"auto":"none",
+                                cursor: ( (currentTeacherToggledView === "board" || currentTeacherToggledView === "screen") && ( type === "teacher" ) )?"pointer":"default",
+                            }}
+                            onClick={() => this.toggleTeacherView( 'video' )}
+                            id="teacher-video-tag" autoPlay />
+                    </Tooltip>
                     <audio autoPlay width="0%" height="0%" id="teacher-audio-tag"></audio>
                     { (type === "teacher") &&
                         <Select
@@ -1479,10 +1487,10 @@ class Conference extends React.Component {
                         ))}
                         </Select>
                     }
-                    {
+                    {/* {
                         (currentTeacherToggledView === "board" || currentTeacherToggledView === "screen") && ( type === "teacher" ) && 
                             <div className="btn-swap-screen" onClick={() => this.toggleTeacherView( 'video' )} style={ customStyle.btnSwapScreen } />
-                    }
+                    } */}
                 </div>);
         } else if ( viewType === "board" ) {
             return (
@@ -1525,12 +1533,22 @@ class Conference extends React.Component {
         } else if ( viewType === "screen" ) {
             return (
                 <div className={`teacher-screen-share-div ${currentTeacherToggledView === "screen" ? (isChatBoxVisible? "teacher-div-large-with-chat" : "teacher-div-large") : (isChatBoxVisible? "teacher-div-small-with-chat": "teacher-div-small")}`}>
-                    <video id="teacher-screen-share-video" autoPlay poster="https://miro.medium.com/max/3200/0*-fWZEh0j_bNfhn2Q" />
-                    {(type === "teacher") &&<div className="btn-start-screen" onClick={() => this.handleScreenShareButton(this.state.isScreenSharing)} style={ customStyle.btnStartScreen} />}
-                    {
-                        (currentTeacherToggledView === "video") && isScreenSharing && ( type === "teacher" ) && !remoteUserSwappedId && 
-                            <div className="btn-swap-screen" onClick={() => this.toggleTeacherView( 'screen' )} style={ customStyle.btnSwapScreen } />
-                    }
+                    <Tooltip title={( (currentTeacherToggledView === "video") && isScreenSharing && ( type === "teacher" ) && !remoteUserSwappedId )? "Flip to Center." : ""}>
+                        <video id="teacher-screen-share-video"
+                            style = {{
+                                pointerEvents: ( (currentTeacherToggledView === "video") && isScreenSharing && ( type === "teacher" ) && !remoteUserSwappedId )?"auto":"none",
+                                cursor: ((currentTeacherToggledView === "video") && isScreenSharing && ( type === "teacher" ) && !remoteUserSwappedId )?"pointer":"default",
+                            }}
+                            onClick={() => this.toggleTeacherView( 'screen' )}
+                            autoPlay 
+                            poster="https://miro.medium.com/max/3200/0*-fWZEh0j_bNfhn2Q" />
+                        {/* {(type === "teacher") &&<div className="btn-start-screen" onClick={() => this.handleScreenShareButton(this.state.isScreenSharing)} style={ customStyle.btnStartScreen} />} */}
+                        {/* {
+                            (currentTeacherToggledView === "video") && isScreenSharing && ( type === "teacher" ) && !remoteUserSwappedId && 
+                                <div className="btn-swap-screen" onClick={() => this.toggleTeacherView( 'screen' )} style={ customStyle.btnSwapScreen } />
+                        } */}
+                    </Tooltip>
+
                 </div>
             );
         }
