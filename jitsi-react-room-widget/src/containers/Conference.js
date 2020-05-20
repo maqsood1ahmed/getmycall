@@ -1466,11 +1466,11 @@ class Conference extends React.Component {
         if ( viewType === "video" ){
             return (
                 <div className={`${(this.state.isWorkingMode && type === "student") ? "teacher-video-div-working-mode" : "w-100 teaher-video-div teaher-video-div"} ${(currentTeacherToggledView === "video") ? (isChatBoxVisible? "teacher-div-large-with-chat" : "teacher-div-large") : (isChatBoxVisible? "teacher-div-small-with-chat": "teacher-div-small")}`}>
-                    <Tooltip title={( (currentTeacherToggledView === "board" || currentTeacherToggledView === "screen") && ( type === "teacher" ) )? "Flip Back to Center." : ""}>
+                    <Tooltip title={( ( currentTeacherToggledView === "screen") && ( type === "teacher" ) )? "Flip Back to Center." : ""}>
                         <video
                             style = {{
-                                pointerEvents: ( (currentTeacherToggledView === "board" || currentTeacherToggledView === "screen") && ( type === "teacher" ) )?"auto":"none",
-                                cursor: ( (currentTeacherToggledView === "board" || currentTeacherToggledView === "screen") && ( type === "teacher" ) )?"pointer":"default",
+                                pointerEvents: ( (currentTeacherToggledView === "screen") && ( type === "teacher" ) )?"auto":"none",
+                                cursor: ( ( currentTeacherToggledView === "screen" ) && ( type === "teacher" ) )?"pointer":"default",
                             }}
                             onClick={() => this.toggleTeacherView( 'video' )}
                             id="teacher-video-tag" autoPlay />
