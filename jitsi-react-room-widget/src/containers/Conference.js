@@ -279,11 +279,13 @@ class Conference extends React.Component {
                     break;
                 case 'videos-swapped':
                     let that=this;
-                    if ( data.isRoomJoinResponse && data.remoteUserSwappedId && data.selectedSource && (data.selectedSource.id === data.remoteUserSwappedId) ) {
+                    let { roomData } = this.state;
+                    if ( data.isRoomJoinResponse && data.remoteUserSwappedId && data.selectedSource ) {
                         function waitForParticipant(){
                             console.log('interval running to check value', allParticipants, data)
                             if( allParticipants[data.remoteUserSwappedId] && allParticipants[data.teacherId] &&
-                                allParticipants[data.remoteUserSwappedId].tracks && allParticipants[data.teacherId].tracks
+                                ( allParticipants[data.remoteUserSwappedId].tracks || allParticipants[data.remoteUserSwappedId].screenTracks ) && 
+                                allParticipants[data.teacherId].tracks
                             ){
                                 that.flipVideo( data.selectedSource , data.teacherId, data.remoteUserSwappedId );
                                 message.info(`Student ${data.remoteUserSwappedId} flipped to middle`);
@@ -293,7 +295,9 @@ class Conference extends React.Component {
                                 setTimeout(waitForParticipant, 250);
                             }
                         }
-                        waitForParticipant();
+                        if ( data.selectedSource.id !== data.teacherId ) {
+                            waitForParticipant();
+                        }
                     } else {
                         this.flipVideo( data.selectedSource , data.teacherId, data.remoteUserSwappedId );
                         message.info(`Student ${data.remoteUserSwappedId} flipped to middle`);
@@ -329,9 +333,9 @@ class Conference extends React.Component {
                 case 'mute-student-video':
                     this.toggleLocalVideoByTeacher(data.mute);
                     break;
-                case 'student-screen-share-on':
-                    this.handleStudentScreenShare(data);
-                    break;
+                // case 'student-screen-share-on':
+                //     this.handleStudentScreenShare(data);
+                //     break;
                 case 'screen-share-stop':
                     this.handleScreenShareStop(false, data.id);
                     break;
@@ -1097,6 +1101,9 @@ class Conference extends React.Component {
     
 
     flipVideo = ( source, teacherId, remoteUserSwappedId ) => {
+        if ( this.state.isScreenSharing ) {
+            return;
+        }
         try {
             console.log('change this source with teacher video div => => ', this.state.roomData.sources, source, teacherId, remoteUserSwappedId);
             // *** source id used to swap with teacher div
@@ -1147,7 +1154,11 @@ class Conference extends React.Component {
                     }
                     return sourceElement;
                 });
-                this.setState({ roomData, isTrackUpdate: true, remoteUserSwappedId: null });
+                if ( this.state.isScreenSharing ) {
+                    this.setState({ roomData, isTrackUpdate: true, isScreenTrackUpdate: true, remoteUserSwappedId: null });
+                } else {
+                    this.setState({ roomData, isTrackUpdate: true, remoteUserSwappedId: null });
+                }
             } else { //when click on student
                 if ( allParticipants[sourceId] ) {
                     roomData.sources = roomData.sources.map(sourceElement => {
@@ -1237,7 +1248,7 @@ class Conference extends React.Component {
         window.JitsiMeetJS.createLocalTracks( options )
             .then((tracks) => {
                 this.onScreenTracks(tracks);
-                this.setState({ isScreenSharing: true })
+                this.setState({ isScreenSharing: true });
             })
             .catch(error => {
                 console.log('user canceled screen share => ', error);
@@ -1282,12 +1293,14 @@ class Conference extends React.Component {
                 allParticipants[remoteScrenUserId].screenTracks = [];
             }
         }
+        this.toggleTeacherView( 'video' ); //after screen share stop move teacher back to center
         this.setState({ isScreenSharing: false, isTrackUpdate: true, isScreenTrackUpdate: true });
     }
 
     //jitsi supports only one video track at a time so we creating new connection for screen share separately
     handleScreenShareButton = ( isScreenSharing ) => {
-        if ( !isScreenSharing ) { 
+        let { type } = this.state.roomData;
+        if ( !isScreenSharing && ( (type === "teacher" && !this.state.remoteUserSwappedId) || type==="student") ) { 
             screenConnection = new window.JitsiMeetJS.JitsiConnection(null, null, options);
 
             this.setConnectionListeners( true );
@@ -1718,13 +1731,13 @@ class Conference extends React.Component {
                                             <div id="local-video-actions-box" className="row w-20 h-10">
                                                 {
                                                     (type === "teacher" || remoteUserSwappedId === id) &&
-                                                    <Tooltip title={isScreenSharing? "First Stop Screen Share." : ""}>
+                                                    <Tooltip title={isScreenSharing? "First Stop Screen Share." : ((remoteUserSwappedId && type==="teacher")?"First move teacher to center.":"")}>
                                                         <div 
                                                             onClick={() => this.handleScreenShareButton(isScreenSharing)}
                                                             style={{
                                                                 fontSize: "1.8rem",
                                                                 cursor: "pointer",
-                                                                opacity: isScreenSharing?0.8:1,
+                                                                opacity: ( isScreenSharing || (remoteUserSwappedId && type === "teacher") )?0.8:1,
                                                                 marginRight: ".4rem"
                                                             }}>
                                                             <i className="fas fa-desktop" />
@@ -1877,7 +1890,8 @@ class Conference extends React.Component {
                                                         className="student-small-video" 
                                                         id={`student-box-${source.position}`}
                                                         >
-                                                    <div id={`video-box-${source.position}`}>
+                                                    <Tooltip title={(isScreenSharing && allParticipants[sourceUserId])? "First Stop Screen Share." : ((type==="teacher" && currentTeacherToggledView !== "video"&&allParticipants[sourceUserId])?"Move Teacher to center": "")}>
+                                                        <div id={`video-box-${source.position}`}>
                                                         {
                                                             isFlipEnabled = ( //only for teacher
                                                                 (type==="teacher") && 
@@ -1886,19 +1900,19 @@ class Conference extends React.Component {
                                                                 ( !remoteUserSwappedId || ( sourceUserId===id ) )
                                                             )
                                                         }
-                                                        <video className="student-video-tag" onClick={() => this.flipVideo( source )} 
-                                                            style={{ 
-                                                                background: ( isFlipEnabled || sourceUserId === roomData.teacher_id )?"#4b3684":"white", 
-                                                                cursor: isFlipEnabled ? 'pointer' : 'none', 
-                                                                pointerEvents: isFlipEnabled? 'auto': 'none',
-                                                                // width: isChatBoxVisible? "85" : "100",
-                                                                // height: "5rem"
-                                                            }} 
-                                                            id={`video-tag-${source.position}`} 
-                                                            autoPlay 
-                                                            poster="" 
-                                                            // width="105" 
-                                                            />
+                                                            <video className="student-video-tag" onClick={() => this.flipVideo( source )} 
+                                                                style={{ 
+                                                                    background: ( isFlipEnabled || sourceUserId === roomData.teacher_id )?"#4b3684":"white", 
+                                                                    cursor: isFlipEnabled ? 'pointer' : 'none', 
+                                                                    pointerEvents: isFlipEnabled? 'auto': 'none',
+                                                                    // width: isChatBoxVisible? "85" : "100",
+                                                                    // height: "5rem"
+                                                                }} 
+                                                                id={`video-tag-${source.position}`} 
+                                                                autoPlay 
+                                                                poster="" 
+                                                                // width="105" 
+                                                                />
                                                         {/* {&& <div className="btn-swap-video" onClick={() => this.flipVideo( source )} style={{ backgroundImage: `url("${iconSwap}")`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', pointerEvents: "all", opacity: "1" }} />} */}
                                                         {/* <div className="btn-mute-unmute" onClick={() => this.toggleAudio( source, isMute )} style={{ backgroundImage: `url(${isMute?micOff:micOn})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', pointerEvents: "none", opacity: "0.5" }} /> */}
                                                         <audio autoPlay id={`audio-tag-${source.position}`} />
@@ -1962,6 +1976,7 @@ class Conference extends React.Component {
                                                             </div>
                                                         }
                                                     </div>
+                                                    </Tooltip>
                                                     <div className="student-name" id={`name-box-${source.position}`}>
                                                         <h6 className="student-name-text" align="center">{(remoteUserSwappedId && ((source.id===roomData.teacher_id && type==="student") || (source.id===roomData.id && roomData.type==="teacher" ))) ? allParticipants[remoteUserSwappedId].name : source.name}</h6>
                                                     </div>
@@ -2039,22 +2054,22 @@ class Conference extends React.Component {
                                         </Tooltip>
                                     }
                                     {<div 
-                                                    onClick={() => { this.toggleLocalSource( id, isLocalAudioMute, 'audio' )}} 
-                                                    style={{ 
-                                                        cursor: "pointer", 
-                                                        marginLeft: "8px"  
-                                                    }}>
-                                                    <img 
-                                                        src={((isGlobalAudioMute && type==="student" ) || isLocalAudioMute) ? 
-                                                            "http://api.getmycall.com/static/media/mic-off.svg" : 
-                                                            "http://api.getmycall.com/static/media/mic-on.svg"
-                                                        } 
-                                                        style={{
-                                                            width: "30px", 
-                                                            height:"30px",
-                                                            opacity: `${(isGlobalAudioMute && type === "student")? 0.5 : 1}` 
-                                                    }} />
-                                                </div>}
+                                        onClick={() => { this.toggleLocalSource( id, isLocalAudioMute, 'audio' )}} 
+                                        style={{ 
+                                            cursor: "pointer", 
+                                            marginLeft: "8px"  
+                                        }}>
+                                        <img 
+                                            src={((isGlobalAudioMute && type==="student" ) || isLocalAudioMute) ? 
+                                                "http://api.getmycall.com/static/media/mic-off.svg" : 
+                                                "http://api.getmycall.com/static/media/mic-on.svg"
+                                            } 
+                                            style={{
+                                                width: "30px", 
+                                                height:"30px",
+                                                opacity: `${(isGlobalAudioMute && type === "student")? 0.5 : 1}` 
+                                        }} />
+                                    </div>}
                                     {<div 
                                         onClick={() => this.toggleLocalSource( id, this.state.isLocalVideoMute, 'video' )} 
                                         style={{ 

@@ -679,6 +679,10 @@ audio {
     display: none;
 }
 
+.ant-tooltip-inner {
+    background-color: ;
+}
+
 /* scroll bar design */
 /* width */
 ::-webkit-scrollbar {
