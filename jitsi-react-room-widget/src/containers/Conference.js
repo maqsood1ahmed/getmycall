@@ -1080,23 +1080,28 @@ class Conference extends React.Component {
     }
 
     switchToGlobalWorkingMode = ( isWorkingMode, isLocal = true ) => {
-        if ( isLocal ) {
-            let messageObject = { 
-                type: 'switch-global-working-mode', 
-                data: { 
-                    id: this.state.roomData.id, 
-                    roomId: this.state.roomData.roomId,
-                    isWorkingMode
-                } 
-            };
-            socket.emit( 'event', messageObject);
-            this.setState({ isWorkingMode, isGlobalAudioMute: isWorkingMode });  //mute all audios button have no importance when working mode
-        } else if(this.state.roomData.type === "student") {
-            this.setState({ isWorkingMode, isTrackUpdate: true }); //adding this line before toggle so it will not affect toggle local audio
-
-            this.toggleLocalAudioByTeacher(isWorkingMode);
-            // this.toggleLocalVideoByTeacher(isWorkingMode);
+        try {
+            if ( isLocal ) {
+                let messageObject = { 
+                    type: 'switch-global-working-mode', 
+                    data: { 
+                        id: this.state.roomData.id, 
+                        roomId: this.state.roomData.roomId,
+                        isWorkingMode
+                    } 
+                };
+                // this.handleScreenShareStop(true); //stop screen share before starting working mode
+                socket.emit( 'event', messageObject);
+                this.setState({ isWorkingMode, isGlobalAudioMute: isWorkingMode });  //mute all audios button have no importance when working mode
+            } else if(this.state.roomData.type === "student") {
+                this.setState({ isWorkingMode, isTrackUpdate: true }); //adding this line before toggle so it will not affect toggle local audio
+                this.toggleLocalAudioByTeacher(isWorkingMode);
+                // this.toggleLocalVideoByTeacher(isWorkingMode);
+            }
+        } catch(error){
+            console.error('error when switching to global mode.', error)
         }
+
     }
     
 
@@ -1437,11 +1442,11 @@ class Conference extends React.Component {
     toggleTeacherView = ( view ) => {
         console.log('update view => ', view)
         let { roomData } = this.state;
-        if ( view === "board" || this.state.currentTeacherToggledView === "board" ) {  //incase of screen toggle update both screen and video tracks
-            this.setState({ isTrackUpdate: true, isScreenTrackUpdate: false, currentTeacherToggledView: view})
-        } else {
-            this.setState({ isTrackUpdate: true, isScreenTrackUpdate: true, currentTeacherToggledView: view })
-        }
+        // if ( view === "board" || this.state.currentTeacherToggledView === "board" ) {  //incase of screen toggle update both screen and video tracks
+        //     this.setState({ isTrackUpdate: true, isScreenTrackUpdate: true, currentTeacherToggledView: view})
+        // } else {
+        this.setState({ isTrackUpdate: true, isScreenTrackUpdate: true, currentTeacherToggledView: view })
+        // }
         if ( roomData.type === "teacher" ) {
             let messageObject = { type: 'teacher-view-change', data: { currentTeacherToggledView: view, teacherId: roomData.id, roomId: roomData.roomId } };
             socket.emit( 'event', messageObject);
@@ -1821,10 +1826,10 @@ class Conference extends React.Component {
                                             <div className="global-actions-button-container">
                                                 <button 
                                                     onClick={() => {
-                                                        this.toggleTeacherView((currentTeacherToggledView=== 'board')?'video':'board' );
                                                         if ( isWorkingMode ) {
                                                             this.switchToGlobalWorkingMode( !isWorkingMode, true )
                                                         }
+                                                        this.toggleTeacherView((currentTeacherToggledView=== 'board')?'video':'board' );
                                                     }} 
                                                     type="button"
                                                     className="btn btn-primary teacher-actions-button"
