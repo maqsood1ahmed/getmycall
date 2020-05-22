@@ -896,6 +896,7 @@ class Conference extends React.Component {
 
     leaveRoomBtn = (e) => {
         this.unload();
+        socket.disconnect();
         this.setState({ isLoggedIn: false, isStopped: true });
     }
 
