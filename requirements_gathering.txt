@@ -139,3 +139,12 @@ if teacher back to middle he is muted - no way to back
 maybe other color
 
 teacher missing
+
+
+Hi Eli I have checked as you mentioned in https://github.com/elisom/devgetmycall/issues/1
+
+1=> "share screen always in one position. up or middle." --> done
+2=>"teacher always: up or middle." --> possible scenario is ->  upRight(when screenshare/student) and downRight(when work time.)
+3=> "work always down right or middle." --> done
+4=> "if work on middle. we auto close share." --> done
+5=> "now if share open - teacher disappears."

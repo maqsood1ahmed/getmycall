@@ -390,12 +390,12 @@ class Conference extends React.Component {
         }
     }
 
-    mapTracksOnTags = ( isTrackUpdate, isScreenTrackUpdate, participantId ) => {
+    mapTracksOnTags = ( isTrackUpdate=true, isScreenTrackUpdate=false, participantId ) => {
         let participant = allParticipants[participantId];
         let { roomData } = this.state;
-        let participantTracks = participant.tracks;
 
         if ( isTrackUpdate  ) {
+            let participantTracks = participant.tracks;
             if ( (participant.position).toString() === "0" && isTrackUpdate ) {
                 for ( let i = 0; i < participantTracks.length ; i++ ) {
                     let largeVideoTag = document.getElementById(`teacher-video-tag`);
@@ -425,8 +425,9 @@ class Conference extends React.Component {
                             participantTracks[i].attach($(`#teacher-screen-share-video`)[0]);
                             participantTracks[i].detach($(`#video-tag-${participant.position}`)[0]); //also detach from small div
                         } else {
+                            console.log('attaching participant => =>', participant)
                             participantTracks[i].attach($(`#video-tag-${participant.position}`)[0]);
-                            !this.state.remoteUserSwappedId && participantTracks[i].detach($(`#teacher-screen-share-video`)[0]); //also detach from screen share div if it was before
+                            !this.state.remoteUserSwappedId && !this.state.isScreenSharing && participantTracks[i].detach($(`#teacher-screen-share-video`)[0]); //also detach from screen share div if it was before
                         }
                     } else {
                         participantTracks[i].attach($(`#audio-tag-${participant.position}`)[0]);
@@ -443,8 +444,8 @@ class Conference extends React.Component {
             this.setState({ isTrackUpdate: false });
         } else if ( isScreenTrackUpdate ) {
             let screenTracks = participant.screenTracks;
-            if ( screenTracks[0] && this.state.isScreenTrackUpdate ) {
-                this.setState({ isScreenTrackUpdate: false });
+            if ( screenTracks[0] ) {
+                this.setState({ isScreenTrackUpdate: false, isScreenSharing: true });
                 
                 screenTracks.forEach( track => {
                     if ( participant.type === "student" ) {
@@ -630,28 +631,39 @@ class Conference extends React.Component {
                 console.error("local tracks error => ", error);
             });
     }
-    onUserLeft (participantId) {
-        let roomParticipant = room.getParticipantById(participantId)
-        let userInfo = roomParticipant ? (roomParticipant._displayName ? roomParticipant._displayName.split('###') : null) : null;
-        console.log('user left => =>', participantId, userInfo)
-        if ( userInfo ) {
-            let id = userInfo[0];
-            let position = userInfo[3];
-            let tracks = allParticipants[id].tracks;
-            if ( tracks[0] ) {
-                for( let i; i< tracks.length ; i++){
-                    let track = tracks[i];
-                    if (track.getType() === 'video') {
-                        track.detach($(`#video-tag-${position}`));
-                        $(`#video-tag-${position}`).attr('poster', 'https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTUq71y6yGEk94T1hyj89lV-khy9OMkgZt0Dl1hecguJxUpLU6a&usqp=CAU');
-                    } else {
-                        track.detach($(`#audio-tag-${position}`));
-                    }
+    onUserLeft ( ownerEndpointId ) {
+        try {
+            let participantId = Object.keys(allParticipants).filter( participant => {
+                return allParticipants[participant]['ownerEndpointId'] === ownerEndpointId 
+            });
+            let participant = allParticipants[participantId];
+            if ( participant ) {
+                let position = participant.position;
+                let tracks = participant['tracks'];
+                let screenTracks = participant['screenTracks']; 
+                console.log('user left => =>', tracks, screenTracks)
+                let $ = window.jQuery;
+                if ( tracks && tracks[0] ) {
+                    tracks.forEach(( track ) => {
+                        track.dispose();
+                    });
                 }
+                if ( screenTracks && screenTracks.length>0 ) {
+                    screenTracks.forEach(( screenTrack ) => {
+                        let screenVideoTag = $(`#teacher-screen-share-video`)[0];
+                        screenVideoTag && screenTrack.detach(screenVideoTag)
+                        screenVideoTag && screenTrack.dispose();
+                    });
+                }
+                console.log('allparticipants before user left => => ', Object.keys(allParticipants))
+                delete allParticipants[participantId];
+                console.log('allparticipants after user left => => ', Object.keys(allParticipants)) 
+                this.setState({ isTrackUpdate: true })   
             }
-            delete allParticipants[id];
-            this.setState({ isTrackUpdate: true })
+        } catch (error) {
+            console.log('something went wrong when clearing remote user sources --->', error);
         }
+
     }
 
     onLocalTracks (tracks) {
@@ -737,13 +749,17 @@ class Conference extends React.Component {
 
         if ( position === "9999") {
             allParticipants[id] && allParticipants[id]['screenTracks'].push(track);
-            this.setState({ isScreenTrackUpdate: true, isScreenSharing: true })
+            // if ( !this.state.isWorkingMode || this.state.roomData.type === "teacher" ) {
+                this.mapTracksOnTags( false, true, id ); 
+                console.log('remote track received. => =>',track );
+            // }
         } else {
             if ( !allParticipants[id] ) {
                 let newParticipant = {};
                 newParticipant['name'] = name;
                 newParticipant['type'] = type;
                 newParticipant['position'] = position.toString();
+                newParticipant['ownerEndpointId'] = track.ownerEndpointId? track.ownerEndpointId : "";
                 newParticipant['tracks'] = [];
                 newParticipant['screenTracks'] = [];
                 newParticipant['tracks'].push(track);
@@ -768,8 +784,9 @@ class Conference extends React.Component {
                 window.JitsiMeetJS.events.track.TRACK_AUDIO_OUTPUT_CHANGED,
                 deviceId => console.log(`track audio output device was changed to ${deviceId}`));    
 
-            this.mapTracksOnTags( true, false, id ); 
-            // this.setState({ isTrackUpdate: true });
+            // if ( !this.state.isWorkingMode || this.state.roomData.type === "teacher" ) {
+                this.mapTracksOnTags( true, false, id ); 
+            // }
         }
     }
 
@@ -784,8 +801,10 @@ class Conference extends React.Component {
             } else if ( track.getType() === "video" ) {
                 message.info(`${allParticipants[id].name} ${track.isMuted() ? " Video Off" : " Video On"}`);
                 isLocal && this.setState({ isLocalVideoMute: track.isMuted()});
-                this.setState({ isTrackUpdate: true, isScreenTrackUpdate: true})
 
+                if ( !this.state.isWorkingMode ) {
+                    this.setState({ isTrackUpdate: true, isScreenTrackUpdate: true})
+                }
                 
                 if ( allParticipants[id].type==="teacher" ) {
                     if ( this.state.currentTeacherToggledView === 'screen' ) {
@@ -804,47 +823,68 @@ class Conference extends React.Component {
         if (track.isLocal()) {
             return;
         }
-        const participantId = track.getParticipantId();
+        try {
+            const participantId = track.getParticipantId();
 
-        let roomParticipant = room.getParticipantById(participantId)
-        let userInfo = roomParticipant ? (roomParticipant._displayName ? roomParticipant._displayName.split('###') : null) : null;
-        if ( userInfo ) {
-            console.log('id => => ', id)
-            let id = userInfo[0];
-            let position = userInfo[3];
-            
-            let participant = allParticipants[id];
-    
-            if ( participant['localTracks'] ) {
-                let tracks = participant.tracks;
-                tracks.forEach(( track, index ) => {
-                    if (track.getType() === 'video') {
-                        track.detach($(`#video-tag-${position}`));
-                    } else {
-                        track.detach($(`#audio-tag-${position}`));
-                    }
-                    delete allParticipants[id][tracks][index];
-                })
+            let roomParticipant = room.getParticipantById(participantId)
+            let userInfo = roomParticipant ? (roomParticipant._displayName ? roomParticipant._displayName.split('###') : null) : null;
+            if ( userInfo ) {
+                console.log('id => => ', id)
+                let id = userInfo[0];
+                let position = userInfo[3];
+                
+                let participant = allParticipants[id];
+        
+                if ( participant['localTracks'] ) {
+                    let tracks = participant.tracks;
+                    tracks.forEach(( track, index ) => {
+                        if (track.getType() === 'video') {
+                            track.detach($(`#video-tag-${position}`));
+                        } else {
+                            track.detach($(`#audio-tag-${position}`));
+                        }
+                        delete allParticipants[id][tracks][index];
+                    })
+                }
             }
+        } catch (error) {
+            console.log('something went wrong when removing track ---> ', error);
         }
+        
     }
 
-    unload () {
+    unload ( shouldStopScreenOnly = false ) {
         let id = this.state.roomData.id;
         if (allParticipants[id]) {
             let localTracks = allParticipants[id]['tracks'];
-            let screenTracks = allParticipants[id]['screenTracks'];
-            for (let i = 0; i < localTracks.length; i++) {
-                localTracks[i].dispose();
-            }
-            if ( screenTracks[0] ) {
-                for (let j = 0; j < screenTracks.length; j++) {
-                    screenTracks[j].dispose();
+            if ( shouldStopScreenOnly ) {
+                this.clearScreenShareResources(id);
+            } else {
+                for (let i = 0; i < localTracks.length; i++) {
+                    localTracks[i].dispose();
                 }
-                screenConnection.disconnect();
+                
+                this.clearScreenShareResources(id); //if screen share on then clear that as well
+
+                room.leave();
+                connection.disconnect();  
+                room = null;
+                connection = null;   
             }
-            room.leave();
-            connection.disconnect();     
+        }
+    }
+    clearScreenShareResources = (id) => {
+        let screenTracks = allParticipants[id]['screenTracks'];
+        if ( screenTracks[0] ) {
+            for (let j = 0; j < screenTracks.length; j++) {
+                let screenVideoTag = $(`#teacher-screen-share-video`)[0];
+                screenTracks[j].detach(screenVideoTag)
+                screenTracks[j].dispose();
+            }
+            screenRoom && screenRoom.leave();
+            screenConnection && screenConnection.disconnect();;
+            screenRoom = null;
+            screenConnection = null;
         }
     }
 
@@ -1094,7 +1134,15 @@ class Conference extends React.Component {
                 socket.emit( 'event', messageObject);
                 this.setState({ isWorkingMode, isGlobalAudioMute: isWorkingMode });  //mute all audios button have no importance when working mode
             } else if(this.state.roomData.type === "student") {
-                this.setState({ isWorkingMode, isTrackUpdate: true }); //adding this line before toggle so it will not affect toggle local audio
+                if ( this.state.isScreenSharing ) {
+                    if ( isWorkingMode ) {
+                        this.setState({ isWorkingMode, isTrackUpdate: true }); //adding this line before toggle so it will not affect toggle local audio
+                    } else {
+                        this.setState({ isWorkingMode, isTrackUpdate: true, isScreenTrackUpdate: true }); //adding this line before toggle so it will not affect toggle local audio
+                    }
+                }else{
+                    this.setState({ isWorkingMode, isTrackUpdate: true }); //adding this line before toggle so it will not affect toggle local audio
+                }
                 this.toggleLocalAudioByTeacher(isWorkingMode);
                 // this.toggleLocalVideoByTeacher(isWorkingMode);
             }
@@ -1269,12 +1317,12 @@ class Conference extends React.Component {
                 });
             console.log('got screen tracks => =>', tracks[i])
             allParticipants[this.state.roomData.id]["screenTracks"].push(tracks[i]);
-            this.setState({ isScreenTrackUpdate: true });
 
             if ( isScreenJoined ) {
                 console.log('screen tracks => =>', tracks)
                 screenRoom.addTrack(tracks[i]);
             }
+            this.setState({ isScreenTrackUpdate: true });
         }
     }
 
@@ -1290,6 +1338,8 @@ class Conference extends React.Component {
             };
             socket.emit( 'event', messageObject);
 
+            this.unload( true ); //clear screen resources
+
             if ( allParticipants[id] ) {
                 allParticipants[id].screenTracks = [];            
             }
@@ -1298,13 +1348,18 @@ class Conference extends React.Component {
                 allParticipants[remoteScrenUserId].screenTracks = [];
             }
         }
-        this.toggleTeacherView( 'video' ); //after screen share stop move teacher back to center
+        if ( this.state.currentTeacherToggledView !== "board" )  {
+            this.toggleTeacherView( 'video' ); //after screen share stop move teacher back to center
+        }
         this.setState({ isScreenSharing: false, isTrackUpdate: true, isScreenTrackUpdate: true });
     }
 
     //jitsi supports only one video track at a time so we creating new connection for screen share separately
     handleScreenShareButton = ( isScreenSharing ) => {
         let { type } = this.state.roomData;
+        if(type==="teacher"&&this.state.currentTeacherToggledView==="board"){
+            return;
+        }
         if ( !isScreenSharing && ( (type === "teacher" && !this.state.remoteUserSwappedId) || type==="student") ) { 
             screenConnection = new window.JitsiMeetJS.JitsiConnection(null, null, options);
 
@@ -1442,12 +1497,15 @@ class Conference extends React.Component {
     toggleTeacherView = ( view ) => {
         console.log('update view => ', view)
         let { roomData } = this.state;
-        // if ( view === "board" || this.state.currentTeacherToggledView === "board" ) {  //incase of screen toggle update both screen and video tracks
-        //     this.setState({ isTrackUpdate: true, isScreenTrackUpdate: true, currentTeacherToggledView: view})
-        // } else {
+        if (view==='board' && this.state.remoteUserSwappedId){
+            return;
+        }
         this.setState({ isTrackUpdate: true, isScreenTrackUpdate: true, currentTeacherToggledView: view })
         // }
         if ( roomData.type === "teacher" ) {
+            if ( view === "board" ) {
+                this.unload( true ); //stop screen share when work on middle
+            }
             let messageObject = { type: 'teacher-view-change', data: { currentTeacherToggledView: view, teacherId: roomData.id, roomId: roomData.roomId } };
             socket.emit( 'event', messageObject);
         }
@@ -1626,6 +1684,7 @@ class Conference extends React.Component {
         console.log('remote user swapped id => => ', remoteUserSwappedId);
  
         let isFlipEnabled = false;
+        let isTeacherMuteStudentVideo = false;
 
         // if ( !params.id || !params.type || !params.class_id ) {
         //     return <div className="container" style={{ height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "center" }}>
@@ -1736,7 +1795,7 @@ class Conference extends React.Component {
                                             <div id="local-video-actions-box" className="row w-20 h-10">
                                                 {
                                                     (type === "teacher" || remoteUserSwappedId === id) &&
-                                                    <Tooltip title={isScreenSharing? "First Stop Screen Share." : ((remoteUserSwappedId && type==="teacher")?"First move teacher to center.":"")}>
+                                                    <Tooltip title={isScreenSharing? "First Stop Screen Share." : ((currentTeacherToggledView==="board" && type==="teacher")?"First move teacher to center.":"")}>
                                                         <div 
                                                             onClick={() => this.handleScreenShareButton(isScreenSharing)}
                                                             style={{
@@ -1802,8 +1861,12 @@ class Conference extends React.Component {
                                         </div>
                                     </div>
                                     <div className="col-md-4 col-sm-4 col-xs-12 w-100" id="teacher-dashboard">
-                                        {( currentTeacherToggledView==="video" || currentTeacherToggledView==="board") ? this.teacherViews('screen' ) : (currentTeacherToggledView==="screen" && this.teacherViews('video'))}
-                                        {(currentTeacherToggledView==="video" || currentTeacherToggledView==="screen") ? this.teacherViews('board' ) : (currentTeacherToggledView==="board" && this.teacherViews('video'))}
+                                            {(currentTeacherToggledView==="video" && this.teacherViews('screen'))}
+                                            {(currentTeacherToggledView==="screen" || currentTeacherToggledView==="board") && this.teacherViews('video')}
+
+
+                                            {(currentTeacherToggledView==="video" || currentTeacherToggledView==="screen") && this.teacherViews('board')}
+                                            {(currentTeacherToggledView==="board") && this.teacherViews('screen')}
                                     </div>
                                 </div>}
                             {
@@ -1824,31 +1887,33 @@ class Conference extends React.Component {
                                             </div>}
                                         {roomData.type=="teacher" && 
                                             <div className="global-actions-button-container">
-                                                <button 
-                                                    onClick={() => {
-                                                        if ( isWorkingMode ) {
-                                                            this.switchToGlobalWorkingMode( !isWorkingMode, true )
-                                                        }
-                                                        this.toggleTeacherView((currentTeacherToggledView=== 'board')?'video':'board' );
-                                                    }} 
-                                                    type="button"
-                                                    className="btn btn-primary teacher-actions-button"
-                                                    style={{
-                                                        backgroundColor: currentTeacherToggledView==="board"?"#6343AE":"",
-                                                        pointerEvents: !remoteUserSwappedId?"auto":"none",
-                                                        cursor: !remoteUserSwappedId?"pointer":"default",
-                                                        opacity: !remoteUserSwappedId?"1":"0.5"
-                                                    }}
-                                                >
-                                                    <div className="d-flex flex-row justify-content-center" style={{ marginTop: ".1rem"}}>
-                                                        <div className="btn-chat-inner-text d-flex justify-content-end w-70">Work Time</div>
-                                                        <div className="global-action-button-icon d-flex justify-content-start w-30">
-                                                            {<div style={{ cursor: "pointer" }} >
-                                                                <i class="fas fa-history"></i>    
-                                                            </div>}
+                                                <Tooltip title={remoteUserSwappedId? "First Move teacher to center." : ""}>
+                                                    <button 
+                                                        onClick={() => {
+                                                            if ( isWorkingMode ) {
+                                                                this.switchToGlobalWorkingMode( !isWorkingMode, true )
+                                                            }
+                                                            this.toggleTeacherView((currentTeacherToggledView=== 'board')?'video':'board' );
+                                                        }} 
+                                                        type="button"
+                                                        className="btn btn-primary teacher-actions-button"
+                                                        style={{
+                                                            backgroundColor: currentTeacherToggledView==="board"?"#6343AE":"",
+                                                            // pointerEvents: !remoteUserSwappedId?"auto":"none",
+                                                            // cursor: !remoteUserSwappedId?"pointer":"default",
+                                                            opacity: !remoteUserSwappedId?"1":"0.8"
+                                                        }}
+                                                    >
+                                                        <div className="d-flex flex-row justify-content-center" style={{ marginTop: ".1rem"}}>
+                                                            <div className="btn-chat-inner-text d-flex justify-content-end w-70">Work Time</div>
+                                                            <div className="global-action-button-icon d-flex justify-content-start w-30">
+                                                                {<div style={{ cursor: "pointer" }} >
+                                                                    <i class="fas fa-history"></i>    
+                                                                </div>}
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                </button>
+                                                    </button>
+                                                </Tooltip>
                                             </div>
                                         }
                                         {roomData.type=="teacher" && 
@@ -1905,9 +1970,18 @@ class Conference extends React.Component {
                                                                 ( !remoteUserSwappedId || ( sourceUserId===id ) )
                                                             )
                                                         }
+                                                        {
+                                                            allParticipants[sourceUserId] &&
+                                                            allParticipants[sourceUserId].tracks && 
+                                                            allParticipants[sourceUserId].tracks.forEach(track=>{
+                                                                if (track.getType() === 'video') {
+                                                                    isTeacherMuteStudentVideo = track.isMuted()
+                                                                }
+                                                            })
+                                                        }
                                                             <video className="student-video-tag" onClick={() => this.flipVideo( source )} 
                                                                 style={{ 
-                                                                    background: ( isFlipEnabled || sourceUserId === roomData.teacher_id )?"#4b3684":"white", 
+                                                                    background: ( isFlipEnabled || isTeacherMuteStudentVideo || sourceUserId === roomData.teacher_id )?"#4b3684":"white", 
                                                                     cursor: isFlipEnabled ? 'pointer' : 'none', 
                                                                     pointerEvents: isFlipEnabled? 'auto': 'none',
                                                                     // width: isChatBoxVisible? "85" : "100",
@@ -1918,6 +1992,7 @@ class Conference extends React.Component {
                                                                 poster="" 
                                                                 // width="105" 
                                                                 />
+                                                            {isTeacherMuteStudentVideo=false}
                                                         {/* {&& <div className="btn-swap-video" onClick={() => this.flipVideo( source )} style={{ backgroundImage: `url("${iconSwap}")`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', pointerEvents: "all", opacity: "1" }} />} */}
                                                         {/* <div className="btn-mute-unmute" onClick={() => this.toggleAudio( source, isMute )} style={{ backgroundImage: `url(${isMute?micOff:micOn})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', pointerEvents: "none", opacity: "0.5" }} /> */}
                                                         <audio autoPlay id={`audio-tag-${source.position}`} />
@@ -1983,7 +2058,7 @@ class Conference extends React.Component {
                                                     </div>
                                                     </Tooltip>
                                                     <div className="student-name" id={`name-box-${source.position}`}>
-                                                        <h6 className="student-name-text" align="center">{(remoteUserSwappedId && ((source.id===roomData.teacher_id && type==="student") || (source.id===roomData.id && roomData.type==="teacher" ))) ? allParticipants[remoteUserSwappedId].name : source.name}</h6>
+                                                        <h6 className="student-name-text" align="center">{(remoteUserSwappedId && ((source.id===roomData.teacher_id && type==="student") || (source.id===roomData.id && roomData.type==="teacher" ))) ? (allParticipants[remoteUserSwappedId] ? allParticipants[remoteUserSwappedId].name :"") : source.name}</h6>
                                                     </div>
                                                 </div>
                                             )
@@ -2045,7 +2120,7 @@ class Conference extends React.Component {
                                 <div id="local-video-actions-box" className="row w-20 h-10">
                                     {
                                         (type === "teacher" || remoteUserSwappedId === id) &&
-                                        <Tooltip title={isScreenSharing? "First Stop Screen Share." : ""}>
+                                        <Tooltip title={isScreenSharing? "First Stop Screen Share." : ((currentTeacherToggledView==="board" && type==="teacher")?"First Move teacher to Center.":"")}>
                                             <div 
                                                 onClick={() => this.handleScreenShareButton(isScreenSharing)}
                                                 style={{
