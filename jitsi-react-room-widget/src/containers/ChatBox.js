@@ -1,6 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { Input, Switch } from 'antd';
+import { Input, Switch, Tooltip } from 'antd';
 import uid from 'uid';
 
 import arrowSend from '../assets/img/arrow-send.png';
@@ -55,7 +55,9 @@ class ChatBox extends React.Component {
         return(
             <div className="chat-box-title d-flex flex-direction-row justify-content-around">
                 <span className="chat-box-close-icon" style={{ width: "20%" }}>
-                    <i onClick={()=>this.props.closeChatBox()} className="fas fa-times"></i>
+                    <Tooltip title={this.props.currentScreenMode!=="default"?"You are in comment mode.":""}>
+                        <i onClick={()=>this.props.closeChatBox()} className="fas fa-times"></i>
+                    </Tooltip>
                 </span>
                 <span className='p-1 d-flex justify-content-center chat-header-text' style={{ width: "80%" }}>Class Chat <i className="fas fa-comment chat-box-icon"></i></span>
                 <span className="p-1" style={{ width: "20%" }}>

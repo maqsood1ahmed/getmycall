@@ -116,7 +116,8 @@ class Conference extends React.Component {
             isRecording: false,
             isStudentsVisible: false,
             isWorkingMode: false,
-            isStudentHandRaised: false
+            isStudentHandRaised: false,
+            currentScreenMode: 'default'
         };
 
         //get page params and initialize socket
@@ -1530,7 +1531,9 @@ class Conference extends React.Component {
     }
 
     teacherViews = ( viewType ) => {
-        const { currentTeacherToggledView, roomData, isScreenSharing, remoteUserSwappedId, isChatBoxVisible, selectedBoard } = this.state;
+        const { currentTeacherToggledView, roomData, 
+                isScreenSharing, remoteUserSwappedId, isChatBoxVisible, 
+                selectedBoard, currentScreenMode } = this.state;
         const { type, bitrate } = roomData;
         const customStyle = {
             btnSwapScreen: {
@@ -1559,12 +1562,17 @@ class Conference extends React.Component {
         }
         if ( viewType === "video" ){
             return (
-                <div className={`${(this.state.isWorkingMode && type === "student") ? "teacher-video-div-working-mode" : "w-100 teaher-video-div teaher-video-div"} ${(currentTeacherToggledView === "video") ? (isChatBoxVisible? "teacher-div-large-with-chat" : "teacher-div-large") : (isChatBoxVisible? "teacher-div-small-with-chat": "teacher-div-small")}`}>
+                <div className={`${((currentTeacherToggledView!=="video"||remoteUserSwappedId)&&currentScreenMode!=="default")?"video-div-screen-mode":""} ${(this.state.isWorkingMode && type === "student") ? "teacher-video-div-working-mode" : "w-100 teaher-video-div"} ${(currentTeacherToggledView === "video") ? (isChatBoxVisible? (currentScreenMode==="chatMode"?"teacher-div-large-with-chat-mode":"teacher-div-large-with-chat") : (currentScreenMode==="default"?"teacher-div-large":"teacher-div-large-full-screen-mode")) : (isChatBoxVisible? "teacher-div-small-with-chat": "teacher-div-small")}`}
+                    style={{
+                        marginRight: (currentTeacherToggledView==="board"||currentTeacherToggledView==="screen"||remoteUserSwappedId)?"1.5rem":""
+                    }}
+                    >
                     <Tooltip title={( ( currentTeacherToggledView === "screen") && ( type === "teacher" ) )? "Flip Back to Center." : ""}>
                         <video
                             style = {{
                                 pointerEvents: ( ( currentTeacherToggledView === "screen" ) && ( type === "teacher" ) )?"auto":"none",
                                 cursor: ( ( currentTeacherToggledView === "screen" ) && ( type === "teacher" ) )?"pointer":"default",
+                                border: currentTeacherToggledView==="video"?( currentScreenMode==="fullPageMode"?"12px double #9670e3":""):""
                             }}
                             onClick={() => this.toggleTeacherView( 'video' )}
                             id="teacher-video-tag" autoPlay />
@@ -1588,7 +1596,11 @@ class Conference extends React.Component {
                 </div>);
         } else if ( viewType === "board" ) {
             return (
-                <div className={`${(this.state.isWorkingMode && type === "student")? "teacher-board-div-working-mode" : "teacher-board-div"} ${currentTeacherToggledView === "board" ? (isChatBoxVisible? "teacher-div-large-with-chat" : "teacher-div-large") : (isChatBoxVisible? "teacher-div-small-with-chat": "teacher-div-small")}`}>
+                <div className={`${currentScreenMode==="default"?"teacher-board-div-normal-mode":"teacher-board-div-screen-mode"} ${(this.state.isWorkingMode && type === "student")? "teacher-board-div-working-mode" : "teacher-board-div-normal-mode"} ${currentTeacherToggledView === "board" ? (isChatBoxVisible? (currentScreenMode==="chatMode"?"teacher-div-large-full-screen-mode":"teacher-div-large-with-chat") : (currentScreenMode==="default"?"teacher-div-large":"teacher-div-large-full-screen-mode")) : (isChatBoxVisible? "teacher-div-small-with-chat": "teacher-div-small")}`}
+                    style={{
+                        border: currentTeacherToggledView==="board" ?( currentScreenMode==="fullPageMode"?"12px double #9670e3":""):""
+                    }}
+                    >
                     <div style={{ width: "100%", height: "100%" }}> { this.iframe() }</div>
                     {/* with loader <div style={ customStyle.iframeLoader} dangerouslySetInnerHTML={ this.iframe() } /> */}
                     {
@@ -1626,7 +1638,12 @@ class Conference extends React.Component {
             );
         } else if ( viewType === "screen" ) {
             return (
-                <div className={`teacher-screen-share-div ${currentTeacherToggledView === "screen" ? (isChatBoxVisible? "teacher-div-large-with-chat" : "teacher-div-large") : (isChatBoxVisible? "teacher-div-small-with-chat": "teacher-div-small")}`}>
+                <div className={`${currentScreenMode==="default"?"teacher-screen-share-div-normal-mode":"teacher-screen-share-div-screen-mode"} ${currentTeacherToggledView === "screen" ? (isChatBoxVisible? (currentScreenMode==="chatMode"?"teacher-div-large-with-chat-mode":"teacher-div-large-with-chat") : (currentScreenMode==="default"?"teacher-div-large":"teacher-div-large-full-screen-mode")) : (isChatBoxVisible? "teacher-div-small-with-chat": "teacher-div-small")}`}
+                    style={{
+                        border: currentTeacherToggledView==="screen"? (currentScreenMode==="fullPageMode"?"12px double #9670e3":""): "",
+                        marginRight: currentTeacherToggledView==="video"?"1.5rem":""
+                    }}
+                    >
                     <Tooltip title={( (currentTeacherToggledView === "video") && isScreenSharing && ( type === "teacher" ) && !remoteUserSwappedId )? "Flip to Center." : ""}>
                         <video id="teacher-screen-share-video"
                             style = {{
@@ -1649,7 +1666,11 @@ class Conference extends React.Component {
     }
     
     toggleChatBox = () => {
-        this.setState({isChatBoxVisible: true });
+        if (this.state.currentScreenMode === "default" ) {
+            this.setState({isChatBoxVisible: true });
+        } else if ( this.state.currentScreenMode === "fullPageMode") {
+            this.setState({ currentScreenMode: "default", isChatBoxVisible: true });
+        }
     }
 
     showInputNote = (source) => {
@@ -1700,7 +1721,24 @@ class Conference extends React.Component {
                                                 progress: undefined,
                                             });
 
-
+    changeScreenMode = ( mode ) => {
+        const { currentScreenMode } = this.state;
+        if ( mode === currentScreenMode ) {
+            this.setState({ currentScreenMode: "default" });
+        } else {
+            if ( mode === "chatMode" ) {
+                this.setState({ isChatBoxVisible: true });
+            } else if ( mode === "fullPageMode" ) {
+                this.setState({ isChatBoxVisible: false });
+            }
+            this.setState({ currentScreenMode: mode });
+        }
+    }
+    closeChatBox = () => {
+        if (this.state.currentScreenMode === "default" ) {
+            this.setState({ isChatBoxVisible: false })
+        }
+    }
     render () {
         const { params, isLoggedIn, roomData, 
             currentTeacherToggledView, noOfNewMessages, 
@@ -1708,9 +1746,8 @@ class Conference extends React.Component {
             isSendMessageBoxVisible, isGlobalAudioMute,
             isScreenSharing, remoteUserSwappedId, isRecording,
             isStudentsVisible, noOfNewPrivateMessages, isWorkingMode,
-            isLocalAudioMute, isLocalVideoMute } = this.state;
+            isLocalAudioMute, isLocalVideoMute, currentScreenMode } = this.state;
         const { roomId, id, name, type } = roomData;
-        console.log('remote user swapped id => => ', remoteUserSwappedId);
  
         let isFlipEnabled = false;
         let isTeacherMuteStudentVideo = false;
@@ -1803,7 +1840,7 @@ class Conference extends React.Component {
                         {/* // className={isChatBoxVisible? "col-9" : "col-12" */}
                             {(type==="teacher" || (type==="student"&& !isWorkingMode)) && 
                                 <div className="row w-100" id="teacher-container">
-                                    <div className="col-md-8 col-sm-8 col-xs-12 w-100" id="large-video-container">
+                                    <div className={`${currentScreenMode!=="default"?"col-md-12 col-sm-12":"col-md-8 col-sm-8"} col-xs-12 w-100`} id={currentScreenMode==="default"?"large-video-container":"large-video-container-full-screen-mode"}>
                                         {currentTeacherToggledView==="video" ? this.teacherViews('video' ) : (currentTeacherToggledView==="board" ? this.teacherViews('board') : this.teacherViews('screen'))}
                                         {type === "student" &&
                                             <div className={`teacher-student-actions-right d-flex flex-column justify-content-start`}>
@@ -1831,76 +1868,107 @@ class Conference extends React.Component {
                                                 />
                                             </div>
                                         }
-                                        <div className="row w-100 d-flex justify-content-center teacher-actions-button-container">
-                                            <div id="local-video-actions-box" className="row w-20 h-10">
-                                                {
-                                                    (type === "teacher" || remoteUserSwappedId === id) &&
-                                                    <Tooltip title={((currentTeacherToggledView==="board"||remoteUserSwappedId)  && type==="teacher")?"First move teacher to center.":""}>
-                                                        <div 
-                                                            onClick={() => this.handleScreenShareButton(isScreenSharing)}
-                                                            style={{
-                                                                fontSize: "1.8rem",
-                                                                cursor: "pointer",
-                                                                opacity: ( isScreenSharing || (remoteUserSwappedId && type === "teacher") )?0.8:1,
-                                                                marginRight: ".4rem"
-                                                            }}>
-                                                            <i className="fas fa-desktop" />
-                                                        </div>
-                                                    </Tooltip>
-                                                }
-                                                {<div 
-                                                    onClick={() => { this.toggleLocalSource( id, isLocalAudioMute, 'audio' )}} 
-                                                    style={{ 
-                                                        cursor: "pointer", 
-                                                        marginLeft: "8px"  
-                                                    }}>
-                                                    <img 
-                                                        src={((isGlobalAudioMute && type==="student" ) || isLocalAudioMute) ? 
-                                                            "http://api.getmycall.com/static/media/mic-off.svg" : 
-                                                            "http://api.getmycall.com/static/media/mic-on.svg"
-                                                        } 
-                                                        style={{
-                                                            width: "30px", 
-                                                            height:"30px",
-                                                            opacity: `${(isGlobalAudioMute && type === "student")? 0.5 : 1}` 
-                                                    }} />
-                                                </div>}
-                                                {<div 
-                                                    onClick={() => this.toggleLocalSource( id, isLocalVideoMute, 'video' )} 
-                                                    style={{ 
-                                                        cursor: "pointer", 
-                                                        marginLeft: "8px"  
-                                                    }}>
-                                                    <img 
-                                                        src={isLocalVideoMute ? 
-                                                            "https://api.getmycall.com/static/media/video-slash-solid.svg" : 
-                                                            "https://api.getmycall.com/static/media/video-solid.svg"
-                                                        } 
-                                                        style={{
-                                                            width: "30px", 
-                                                            height:"30px",
-                                                            opacity: `${(this.state.isVideoMuteByTeacher && type === "student")? 0.5 : 1}` 
-                                                    }} />
-                                                </div>}
-
-                                                        {
-                                                        type==="teacher" &&
+                                        <div className={`row w-100 d-flex  ${currentScreenMode==="default"?"teacher-actions-button-container-normal-mode":"teacher-actions-button-container-view-mode"}`}>
+                                            <div id="main-video-actions-box-left" className="row"/>
+                                            <div id="main-video-actions-box-center" className="row">
+                                                <div className="main-video-actions-box-center-content d-flex flex-row justify-content-center">
+                                                    {
+                                                        (type === "teacher" || remoteUserSwappedId === id) &&
+                                                        <Tooltip title={((currentTeacherToggledView==="board"||remoteUserSwappedId)  && type==="teacher")?"First move teacher to center.":""}>
                                                             <div 
-                                                                onClick={() => this.handleRecordVideo()}
+                                                                onClick={() => this.handleScreenShareButton(isScreenSharing)}
                                                                 style={{
                                                                     fontSize: "1.8rem",
                                                                     cursor: "pointer",
-                                                                    color: isRecording?"red": "black",
-                                                                    marginLeft: ".5rem"
+                                                                    opacity: ( isScreenSharing || (remoteUserSwappedId && type === "teacher") )?0.8:1,
+                                                                    marginRight: ".4rem"
                                                                 }}>
-                                                                    <i className="fas fa-circle" />
-                                                                </div>
-                                                        }
-                                                <div onClick={this.leaveRoomBtn.bind(this)} style={{ backgroundImage: `url(${stopIcon})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', marginLeft: "8px", width: "35px", height: "35px", cursor: "pointer" }} />                            
+                                                                <i className="fas fa-desktop" />
+                                                            </div>
+                                                        </Tooltip>
+                                                    }
+                                                    {<div 
+                                                        onClick={() => { this.toggleLocalSource( id, isLocalAudioMute, 'audio' )}} 
+                                                        style={{ 
+                                                            cursor: "pointer", 
+                                                            marginLeft: "8px"  
+                                                        }}>
+                                                        <img 
+                                                            src={((isGlobalAudioMute && type==="student" ) || isLocalAudioMute) ? 
+                                                                "http://api.getmycall.com/static/media/mic-off.svg" : 
+                                                                "http://api.getmycall.com/static/media/mic-on.svg"
+                                                            } 
+                                                            style={{
+                                                                width: "30px", 
+                                                                height:"30px",
+                                                                opacity: `${(isGlobalAudioMute && type === "student")? 0.5 : 1}` 
+                                                        }} />
+                                                    </div>}
+                                                    {<div 
+                                                        onClick={() => this.toggleLocalSource( id, isLocalVideoMute, 'video' )} 
+                                                        style={{ 
+                                                            cursor: "pointer", 
+                                                            marginLeft: "8px"  
+                                                        }}>
+                                                        <img 
+                                                            src={isLocalVideoMute ? 
+                                                                "https://api.getmycall.com/static/media/video-slash-solid.svg" : 
+                                                                "https://api.getmycall.com/static/media/video-solid.svg"
+                                                            } 
+                                                            style={{
+                                                                width: "30px", 
+                                                                height:"30px",
+                                                                opacity: `${(this.state.isVideoMuteByTeacher && type === "student")? 0.5 : 1}` 
+                                                        }} />
+                                                    </div>}
+
+                                                            {
+                                                            type==="teacher" &&
+                                                                <div 
+                                                                    onClick={() => this.handleRecordVideo()}
+                                                                    style={{
+                                                                        fontSize: "1.8rem",
+                                                                        cursor: "pointer",
+                                                                        color: isRecording?"red": "black",
+                                                                        marginLeft: ".5rem"
+                                                                    }}>
+                                                                        <i className="fas fa-circle" />
+                                                                    </div>
+                                                            }
+                                                    <div onClick={this.leaveRoomBtn.bind(this)} style={{ backgroundImage: `url(${stopIcon})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', marginLeft: "8px", width: "35px", height: "35px", cursor: "pointer" }} />  
+                                                </div>                          
+                                            </div>
+                                            <div id="main-video-actions-box-right" className="row">
+                                                <div className="row main-video-actions-box-right-content d-flex flex-row justify-content-end">
+                                                    {
+                                                        <Tooltip title={currentScreenMode==="chatMode"?"Exist Comments Mode":"Comments Mode"}>
+                                                            <div
+                                                                onClick={() => this.changeScreenMode("chatMode")}
+                                                                style={{
+                                                                    cursor: "pointer",
+                                                                    opacity: 1,
+                                                                    marginLeft: ".7rem",
+                                                                    flex: "1 1 0"
+                                                                }}>
+                                                                <div id="rectangle-button" />
+                                                            </div>
+                                                        </Tooltip>
+                                                    }
+                                                    {
+                                                        <Tooltip title={currentScreenMode==="fullPageMode"?"Exist Full Page":"Full Page Mode"}>
+                                                            <div
+                                                                id="full-screen-icon"
+                                                                onClick={() => this.changeScreenMode("fullPageMode")}
+                                                                style={{}}>
+                                                                <i className="fas fa-expand" />
+                                                            </div>
+                                                        </Tooltip>
+                                                    }
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="col-md-4 col-sm-4 col-xs-12 w-100" id="teacher-dashboard">
+                                    <div className={currentScreenMode==="default"? "col-md-4 col-sm-4 col-xs-12 w-100 teacher-dashboard-normal-mode" : "col-md-12 col-sm-12 col-xs-12 w-100 teacher-dashboard-screen-mode"}>
                                             {(currentTeacherToggledView==="video" && this.teacherViews('screen'))}
                                             {(currentTeacherToggledView==="screen" || currentTeacherToggledView==="board") && this.teacherViews('video')}
 
@@ -2110,6 +2178,7 @@ class Conference extends React.Component {
                         <div className="chat-box-container" style={{ width: isChatBoxVisible? "20%" : "0%", display: isChatBoxVisible ? "block" : "none"}}>
                             <ChatBox
                                 isChatBoxVisible={isChatBoxVisible}
+                                currentScreenMode={this.state.currentScreenMode}
                                 profile={{
                                     userId:roomData.id,
                                     name: roomData.name,
@@ -2120,7 +2189,7 @@ class Conference extends React.Component {
                                 noOfNewMessages={noOfNewMessages}
                                 clearNoOfNewMessages={this.clearNoOfNewMessages.bind(this)}
                                 isChatAllowed={this.state.isChatPublic || type==="teacher"}
-                                closeChatBox={() => this.setState({ isChatBoxVisible: false })}
+                                closeChatBox={this.closeChatBox.bind(this)}
                                 />
                         </div>
                     </div> 
@@ -2157,7 +2226,7 @@ class Conference extends React.Component {
                             </div>
                         }
                         <div className="row w-100 d-flex justify-content-center teacher-actions-button-container">
-                                <div id="local-video-actions-box" className="row w-20 h-10">
+                                <div id="main-video-actions-box-center" className="row w-20 h-10">
                                     {
                                         (type === "teacher" || remoteUserSwappedId === id) &&
                                         <Tooltip title={isScreenSharing? "First Stop Screen Share." : ((currentTeacherToggledView==="board" && type==="teacher")?"First Move teacher to Center.":"")}>

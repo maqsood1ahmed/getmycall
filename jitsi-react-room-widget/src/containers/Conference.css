@@ -134,6 +134,11 @@ html, body {
     width: 100%;
     padding: 0rem 1.15rem 0rem 0rem;
 }
+#large-video-container-full-screen-mode {
+    position: relative;
+    width: 100%;
+    padding: 0rem 0em 0rem 0rem;
+}
 #teacher-container {
     background: #4b3684;
     margin-left: 0px !important;
@@ -147,9 +152,12 @@ html, body {
     padding-right: 1.3rem;
 }
 
-.teacher-actions-button-container {
+.teacher-actions-button-container-normal-mode {
     position: absolute;
     top: 87%;
+}.teacher-actions-button-container-view-mode {
+    position: absolute;
+    top: 92%;
 }
 .teacher-student-actions-right {
     margin: .2rem .3rem 0.2rem 0rem;
@@ -169,7 +177,17 @@ html, body {
     cursor: pointer;
 }
 
-#local-video-actions-box {
+#main-video-actions-box-left {
+    display: flex;
+    flex: 1 1 0;
+}
+
+#main-video-actions-box-center {
+    display: flex;
+    flex: 2 1 0;    /* https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Flexible_Box_Layout/Controlling_Ratios_of_Flex_Items_Along_the_Main_Ax */
+    justify-content: center;
+}
+.main-video-actions-box-center-content {
     z-index: 1;
     border-radius: 10px;
     width: 13rem;
@@ -178,6 +196,42 @@ html, body {
     align-items: center;
     justify-content: center;
     background: #9873e863;
+}
+#main-video-actions-box-right{
+    display: flex;
+    flex: 1 1 0;
+    justify-content: flex-end;
+    right: 1rem;
+}
+.main-video-actions-box-right-content {
+    z-index: 1;
+    border-radius: 10px;
+    width: 5.5rem;
+    height: 40px;
+    line-height: 50%;
+    align-items: center;
+    justify-content: center;
+    background: #9873e863;
+    margin-right: 1.7rem;
+    margin-top: 0.8rem;
+}
+#rectangle-button {
+    width: 1.8rem;
+    height: 1.2rem;
+    border: 3px solid rgba(0, 0, 0, 0.849);
+}
+
+#rectangle-button:hover{
+    width: 2rem;
+    height: 1.4rem;
+}
+#full-screen-icon{
+    cursor: pointer;
+    font-size: 1.45rem;
+    flex: 1 1 0;
+}
+#full-screen-icon:hover{
+    font-size: 1.6rem;
 }
 
 .studentsToggleDiv {
@@ -251,9 +305,9 @@ html, body {
 
 .change-bitrate-button {
     width: 80px;
-    right: 1%;
+    right: 1rem;
     position: absolute !important;
-    top: 4%;
+    top: 1rem;
     z-index: 1;
 }
 
@@ -405,11 +459,19 @@ html, body {
     border-radius: 20px
 }
 
-.teacher-screen-share-div {
+.teacher-screen-share-div-normal-mode {
     background-color: #fbf4fd;
     width: 100%;
     position: relative;
     border-radius: 20px;
+}
+.teacher-screen-share-div-screen-mode {
+    background-color: #fbf4fd;
+    width: 100%;
+    position: relative;
+    border-radius: 32px;
+    /* margin-right: 1.5rem; */
+    height: 400px;
 }
 #teacher-screen-share-video {
     width: 100%;
@@ -422,7 +484,7 @@ audio {
     display: none;
 }
 
-#teacher-dashboard {
+.teacher-dashboard-normal-mode {
     justify-content: space-between;
     display: flex;
     flex-direction: column;
@@ -432,9 +494,25 @@ audio {
     padding-left: 1.15rem;
     padding: 0rem 0rem 0rem 1.15rem;
 }
-.teacher-board-div {
+.teacher-dashboard-screen-mode {
+    justify-content: space-between;
+    display: flex;
+    flex-direction: row;
+    padding-top: 0rem;
+    padding-right: 0rem;
+    padding-bottom: 0rem;
+    padding-left: 1.15rem;
+    padding: 1.5rem 0rem 0rem 0rem;
+}
+.teacher-board-div-normal-mode {
     background-color: #fbf4fd;
     border-radius: 20px; 
+    width: 100%;
+    position: relative; 
+}
+.teacher-board-div-screen-mode {
+    background-color: #fbf4fd;
+    border-radius: 32px; 
     width: 100%;
     position: relative; 
 }
@@ -796,7 +874,7 @@ audio {
     #large-video-container {
         padding: 0rem 0rem 0rem 0rem;
     }
-    #teacher-dashboard {
+    .teacher-dashboard-normal-mode {
         flex-direction: row;
         margin-top: 1rem;
         padding-left: 0rem;
@@ -804,7 +882,7 @@ audio {
     .teacher-board-div {
         margin-right: 0.5rem;
     }
-    .teacher-screen-share-div {
+    .teacher-screen-share-div-normal-mode {
         margin-left: 0.5rem;
     }
     .student-video-tag {
@@ -825,6 +903,9 @@ audio {
     /* dynamic height change from React */
     .teacher-div-large {
         height: 400px;
+    }
+    .teacher-div-large-full-screen-mode {
+        height: 40vh;
     }
     .teacher-div-small {
         height: 175px;
@@ -867,6 +948,12 @@ audio {
     .teacher-div-small-with-chat{
         height: 175px;
     }
+    .teacher-div-large-full-screen-mode {
+        height: 89vh;
+    }
+    .teacher-div-large-with-chat-mode{
+        height: 89vh;
+    }
     .student-video-tag {
         height: 6rem;
     }
@@ -899,6 +986,19 @@ audio {
     .teacher-div-small-with-chat{
         height: 200px;
     }
+    .teacher-screen-share-div-screen-mode{
+        height: 330px;
+    }.teacher-board-div-screen-mode{
+        height: 330px;
+    }.video-div-screen-mode{
+        height: 330px;
+    }
+    .teacher-div-large-full-screen-mode {
+        height: 89vh;
+    }
+    .teacher-div-large-with-chat-mode{
+        height: 89vh;
+    }
     .student-video-tag {
         height: 6rem;
     }
@@ -928,6 +1028,19 @@ audio {
     .teacher-div-small-with-chat{
         height: 200px;
     }
+    .teacher-screen-share-div-screen-mode{
+        height: 400px;
+    }.teacher-board-div-screen-mode{
+        height: 400px;
+    }.video-div-screen-mode{
+        height: 400px;
+    }
+    .teacher-div-large-full-screen-mode {
+        height: 89vh;
+    }
+    .teacher-div-large-with-chat-mode{
+        height: 89vh;
+    }
     .student-video-tag {
         height: 5rem;
     }
@@ -954,6 +1067,19 @@ audio {
     .teacher-div-small-with-chat{
         height: 225px;
     }
+    .teacher-screen-share-div-screen-mode{
+        height: 480px;
+    }.teacher-board-div-screen-mode{
+        height: 480px;
+    }.video-div-screen-mode{
+        height: 480px;
+    }
+    .teacher-div-large-full-screen-mode {
+        height: 89vh;
+    }
+    .teacher-div-large-with-chat-mode{
+        height: 89vh;
+    }
     .student-video-tag {
         height: 6rem;
     }
@@ -979,6 +1105,19 @@ audio {
     }
     .teacher-div-small-with-chat{
         height: 260px;
+    }
+    .teacher-screen-share-div-screen-mode{
+        height: 560px;
+    }.teacher-board-div-screen-mode{
+        height: 560px;
+    }.video-div-screen-mode{
+        height: 560px;
+    }
+    .teacher-div-large-full-screen-mode {
+        height: 89vh;
+    }
+    .teacher-div-large-with-chat-mode{
+        height: 89vh;
     }
     .student-video-tag {
         height: 8rem;
