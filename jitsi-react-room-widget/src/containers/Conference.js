@@ -433,10 +433,12 @@ class Conference extends React.Component {
                         participantTracks[i].attach($(`#audio-tag-${participant.position}`)[0]);
                         //for teacher audio mapped on small div no need to map on screen share div
                         let audioTag = document.getElementById(`audio-tag-${participant.position}`);
-                        if ( participantId === roomData.id ) {
-                            audioTag.muted = true;
-                        } else {
-                            audioTag.muted = false;
+                        if ( audioTag ) {
+                            if ( participantId === roomData.id ) {
+                                audioTag.muted = true;
+                            } else {
+                                audioTag.muted = false;
+                            }
                         }
                     }
                 }
@@ -1133,7 +1135,11 @@ class Conference extends React.Component {
                 };
                 // this.handleScreenShareStop(true); //stop screen share before starting working mode
                 socket.emit( 'event', messageObject);
-                this.setState({ isWorkingMode, isGlobalAudioMute: isWorkingMode });  //mute all audios button have no importance when working mode
+                if ( isWorkingMode ) {
+                    this.setState({ isWorkingMode, isGlobalAudioMute: isWorkingMode });  //mute all audios button have no importance when working mode
+                }else {
+                    this.setState({ isWorkingMode, isGlobalAudioMute: isWorkingMode, isTrackUpdate: true });  //mute all audios button have no importance when working mode
+                }
             } else if(this.state.roomData.type === "student") {
                 if ( this.state.isScreenSharing ) {
                     if ( isWorkingMode ) {
@@ -1687,23 +1693,23 @@ class Conference extends React.Component {
         let isFlipEnabled = false;
         let isTeacherMuteStudentVideo = false;
 
-        // if ( !params.id || !params.type || !params.class_id ) {
-        //     return <div className="container" style={{ height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "center" }}>
-        //         <p style={{ fontSize: "35px", color: "#ff4d4f" }}>Please provide room info</p>
-        //     </div>
-        // } else if ( !isLoggedIn ) {
-        //     return (<div style={{ paddingLeft: "0px", paddingRight: "0px", width: "100vw", height: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "center" }}>
-        //         {this.state.isStopped ? <p style={{ fontSize: "35px", color: this.state.isStopped? "red" : "black" }}> Stopped! </p> : 
-        //         // <div style={{ width: "100%" }}>
-        //         //     <img src={loadingIcon} alt="" width="100%" height="100%" />
-        //         // </div>}
-        //         <div className="justify-content-center" style= {{ width: "100%", height: "100%", top: "50%", backgroundColor: 'white' }}>
-        //             <img src={`https://api.getmycall.com/static/media/loading-icon.gif`} alt="" width="200" height="200" style={{ marginTop: "120px" }} />
-        //         </div>}
-        //         {/* {this.state.isStopped && <Button onClick={()=> this.joinRoom()} type="primary"> Join Again </Button>} */}
-        //     </div>)
-        // } 
-        // else
+        if ( !params.id || !params.type || !params.class_id ) {
+            return <div className="container" style={{ height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "center" }}>
+                <p style={{ fontSize: "35px", color: "#ff4d4f" }}>Please provide room info</p>
+            </div>
+        } else if ( !isLoggedIn ) {
+            return (<div style={{ paddingLeft: "0px", paddingRight: "0px", width: "100vw", height: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "center" }}>
+                {this.state.isStopped ? <p style={{ fontSize: "35px", color: this.state.isStopped? "red" : "black" }}> Stopped! </p> : 
+                // <div style={{ width: "100%" }}>
+                //     <img src={loadingIcon} alt="" width="100%" height="100%" />
+                // </div>}
+                <div className="justify-content-center" style= {{ width: "100%", height: "100%", top: "50%", backgroundColor: 'white' }}>
+                    <img src={`https://api.getmycall.com/static/media/loading-icon.gif`} alt="" width="200" height="200" style={{ marginTop: "120px" }} />
+                </div>}
+                {/* {this.state.isStopped && <Button onClick={()=> this.joinRoom()} type="primary"> Join Again </Button>} */}
+            </div>)
+        } 
+        else
          {
             return (
                 <div className="w-100 h-100">
@@ -1796,7 +1802,7 @@ class Conference extends React.Component {
                                             <div id="local-video-actions-box" className="row w-20 h-10">
                                                 {
                                                     (type === "teacher" || remoteUserSwappedId === id) &&
-                                                    <Tooltip title={isScreenSharing? "First Stop Screen Share." : ((currentTeacherToggledView==="board" && type==="teacher")?"First move teacher to center.":"")}>
+                                                    <Tooltip title={((currentTeacherToggledView==="board"||remoteUserSwappedId)  && type==="teacher")?"First move teacher to center.":""}>
                                                         <div 
                                                             onClick={() => this.handleScreenShareButton(isScreenSharing)}
                                                             style={{
