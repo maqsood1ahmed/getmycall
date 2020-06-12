@@ -5,7 +5,8 @@ import queryString from 'query-string';
 import axios from  'axios';
 import Iframe from 'react-iframe';
 import { Modal } from 'antd';
-import Draggable from 'react-draggable';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 import { message, Select, Button, notification, Tooltip  } from 'antd';
 import socketIOClient from "socket.io-client";
@@ -1364,10 +1365,11 @@ class Conference extends React.Component {
     //jitsi supports only one video track at a time so we creating new connection for screen share separately
     handleScreenShareButton = ( isScreenSharing ) => {
         let { type } = this.state.roomData;
-        if(type==="teacher"&&this.state.currentTeacherToggledView==="board"){
+        if(type==="teacher" && this.state.currentTeacherToggledView==="board"){
             return;
         }
-        if ( !isScreenSharing && ( (type === "teacher" && !this.state.remoteUserSwappedId) || type==="student") ) { 
+        if ( !isScreenSharing && ( (type === "teacher" && !this.state.remoteUserSwappedId) || type==="student") ) {
+            this.startScreenshareProgress(); //show progress for screenshare on 
             screenConnection = new window.JitsiMeetJS.JitsiConnection(null, null, options);
 
             this.setConnectionListeners( true );
@@ -1679,6 +1681,17 @@ class Conference extends React.Component {
         }
     }
 
+    startScreenshareProgress = () => toast.info('Starting Screen Share', {
+                                                position: "top-center",
+                                                autoClose: 4000,
+                                                hideProgressBar: false,
+                                                closeOnClick: true,
+                                                pauseOnHover: false,
+                                                draggable: true,
+                                                progress: undefined,
+                                            });
+
+
     render () {
         const { params, isLoggedIn, roomData, 
             currentTeacherToggledView, noOfNewMessages, 
@@ -1693,26 +1706,37 @@ class Conference extends React.Component {
         let isFlipEnabled = false;
         let isTeacherMuteStudentVideo = false;
 
-        if ( !params.id || !params.type || !params.class_id ) {
-            return <div className="container" style={{ height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "center" }}>
-                <p style={{ fontSize: "35px", color: "#ff4d4f" }}>Please provide room info</p>
-            </div>
-        } else if ( !isLoggedIn ) {
-            return (<div style={{ paddingLeft: "0px", paddingRight: "0px", width: "100vw", height: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "center" }}>
-                {this.state.isStopped ? <p style={{ fontSize: "35px", color: this.state.isStopped? "red" : "black" }}> Stopped! </p> : 
-                // <div style={{ width: "100%" }}>
-                //     <img src={loadingIcon} alt="" width="100%" height="100%" />
-                // </div>}
-                <div className="justify-content-center" style= {{ width: "100%", height: "100%", top: "50%", backgroundColor: 'white' }}>
-                    <img src={`https://api.getmycall.com/static/media/loading-icon.gif`} alt="" width="200" height="200" style={{ marginTop: "120px" }} />
-                </div>}
-                {/* {this.state.isStopped && <Button onClick={()=> this.joinRoom()} type="primary"> Join Again </Button>} */}
-            </div>)
-        } 
-        else
+        // if ( !params.id || !params.type || !params.class_id ) {
+        //     return <div className="container" style={{ height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "center" }}>
+        //         <p style={{ fontSize: "35px", color: "#ff4d4f" }}>Please provide room info</p>
+        //     </div>
+        // } else if ( !isLoggedIn ) {
+        //     return (<div style={{ paddingLeft: "0px", paddingRight: "0px", width: "100vw", height: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "center" }}>
+        //         {this.state.isStopped ? <p style={{ fontSize: "35px", color: this.state.isStopped? "red" : "black" }}> Stopped! </p> : 
+        //         // <div style={{ width: "100%" }}>
+        //         //     <img src={loadingIcon} alt="" width="100%" height="100%" />
+        //         // </div>}
+        //         <div className="justify-content-center" style= {{ width: "100%", height: "100%", top: "50%", backgroundColor: 'white' }}>
+        //             <img src={`https://api.getmycall.com/static/media/loading-icon.gif`} alt="" width="200" height="200" style={{ marginTop: "120px" }} />
+        //         </div>}
+        //         {/* {this.state.isStopped && <Button onClick={()=> this.joinRoom()} type="primary"> Join Again </Button>} */}
+        //     </div>)
+        // } 
+        // else
          {
             return (
                 <div className="w-100 h-100">
+                    <ToastContainer
+                        position="top-right"
+                        autoClose={4000}
+                        hideProgressBar={false}
+                        newestOnTop={false}
+                        closeOnClick
+                        rtl={false}
+                        draggable
+                        pauseOnFocusLoss={false}
+                        pauseOnHover={false}
+                    />
                     <div style={{ width: "100%", display: (this.state.isWorkingMode && type==="student")? "none": "block"}}>
                         <div className="row classroom-header w-100 d-flex justify-content-between">
                             <div className="time-box-container w-10 d-flex flex-column justify-content-start">

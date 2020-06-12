@@ -679,8 +679,17 @@ audio {
     display: none;
 }
 
+
+
+.Toastify__toast.Toastify__toast--info {
+    border-radius: 0.7rem !important;
+    background-color: #9670e3 !important;
+
+}
+
 .ant-tooltip-inner {
-    background-color: ;
+    color: white;
+    /* background-color: ; */
 }
 
 /* scroll bar design */
