@@ -77,6 +77,7 @@ const jitsiInitOptions = {
     // Whether desktop sharing should be disabled on Firefox.
     desktopSharingFirefoxDisabled: false
 };
+var studentHandRaiseTime = 10*60*1000; //60*1000=>1mint and 10*60*1000=10mint
 
 var connection, isJoined, room;
 var screenConnection, isScreenJoined, screenRoom;
@@ -114,7 +115,8 @@ class Conference extends React.Component {
             isVideoMuteByTeacher: false,
             isRecording: false,
             isStudentsVisible: false,
-            isWorkingMode: false
+            isWorkingMode: false,
+            isStudentHandRaised: false
         };
 
         //get page params and initialize socket
@@ -961,7 +963,11 @@ class Conference extends React.Component {
         }
     }
     raiseHand = ( source ) => {
-        const { roomData } = this.state;
+        const { roomData, isStudentHandRaised } = this.state;
+        if ( this.state.isStudentHandRaised ) {
+            message.warning('You already raised your hand!');
+            return
+        }
         let studentHand = document.getElementById(`studenthand-${source.id}`);
         studentHand.style.backgroundColor = "white";
 
@@ -970,14 +976,17 @@ class Conference extends React.Component {
 
         setTimeout(() => {
             studentHand.style.backgroundColor = "#d0f543";
-        }, 5000);
+            this.setState({ isStudentHandRaised: false });
+        }, studentHandRaiseTime);
+        
+        this.setState({ isStudentHandRaised: true });
     }
     remoteStudentHandRaised = ( remoteSource ) => {
         this.updateHandRaised(remoteSource, true);
 
         setTimeout(()=>{
             this.updateHandRaised(remoteSource, false);
-        }, 5000)
+        }, studentHandRaiseTime)
     }
 
     handleRecordVideo = () => {
