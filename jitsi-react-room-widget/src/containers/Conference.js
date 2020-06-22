@@ -593,7 +593,7 @@ class Conference extends React.Component {
             room.join();
     
             let bitrate = roomData.bitrate ? roomData.bitrate : ( roomData.type==="teacher" ? "720" : "180" );
-            room.setReceiverVideoConstraint(bitrate);
+            room.setSenderVideoConstraint(bitrate);
         } else {
             screenRoom = screenConnection.initJitsiConference( roomId, {} ); //name of conference
             screenRoom.on(window.JitsiMeetJS.events.conference.CONFERENCE_JOINED, () => {
@@ -944,7 +944,7 @@ class Conference extends React.Component {
     }
 
     handleChangeResolutions = (value) => {
-        room.setReceiverVideoConstraint(value);
+        room.setSenderVideoConstraint(value);
         message.success(`Resolution Changed to ${value}`)
     }
 
@@ -1206,7 +1206,7 @@ class Conference extends React.Component {
                                     }
                                 }
                             });
-                            room.setReceiverVideoConstraint('180'); //manually setting small box at 180
+                            room.setSenderVideoConstraint('180'); //manually setting small box at 180
                         }
                         return sourceElement;
                     } 
@@ -1219,7 +1219,7 @@ class Conference extends React.Component {
                             //         track.unmute();
                             //     }
                             // });
-                            room.setReceiverVideoConstraint(roomData.bitrate);
+                            room.setSenderVideoConstraint(roomData.bitrate);
                         }
                         return sourceElement;
                     }
@@ -1261,7 +1261,7 @@ class Conference extends React.Component {
                                         track.unmute();
                                     }
                                 });
-                                room.setReceiverVideoConstraint('720'); //set student bitrate at 720
+                                room.setSenderVideoConstraint('720'); //set student bitrate at 720
                             }
                         } else if ( allParticipants[id].type === "teacher" ) {
                             allParticipants[id].position = sourcePosition; //change teacher position to student div
@@ -1271,7 +1271,7 @@ class Conference extends React.Component {
                                 //         track.mute();
                                 //     }
                                 // });
-                                room.setReceiverVideoConstraint('180'); //set teacher bitrate to 180
+                                room.setSenderVideoConstraint('180'); //set teacher bitrate to 180
                             }
                         }
                     });
