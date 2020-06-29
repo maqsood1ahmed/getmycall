@@ -23,7 +23,7 @@ html, body {
     color: red;
 } */
 
-.classroom-header {
+#classroom-header {
     height: 3rem;
     background-color: #fefefe;
     margin: 0 !important;
@@ -233,12 +233,22 @@ html, body {
 #full-screen-icon:hover{
     font-size: 1.6rem;
 }
-
+.studentsSelectDiv{
+    margin-top: 0.5rem;
+}
 .studentsToggleDiv {
     cursor: pointer;
     font-size: 24px;
     margin-right: 1rem;
     color: #6243ad;
+    margin-left: 1rem;
+}
+.ant-select-arrow {
+    top: 1rem !important;
+}
+.student-action-buttons{
+    display: flex;
+    flex-direction: row;
 }
 
 .student-video-actions-top {
@@ -360,7 +370,14 @@ html, body {
     padding-left: 2.3rem;
     padding-right: 2.3rem;
     background-color: #9772E8;
+    min-height: 12rem; /*for scrolling purpose*/
     /* border-radius: 0rem 1rem 0rem 0rem; */
+}
+#end-of-page-div{
+    width: 10%;
+    height: 1px;
+    background-color: #9772E8;
+    margin-bottom: 10px;
 }
 
 .student-small-video {
@@ -370,7 +387,7 @@ html, body {
     /* padding: 0rem 1rem 1rem 0.5rem; */
     padding: 0rem 0rem 1rem 1rem;
         /* height: 85; */
-    width: 10%;
+    /* width: 10%; */
     height: 100%;
 }
 .student-video-tag {
@@ -757,6 +774,16 @@ audio {
     display: none;
 }
 
+.students-loading-icon {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+.students-loading-icon>img{
+    width: 2rem;
+    height: 2rem;
+}
+
 
 
 .Toastify__toast.Toastify__toast--info {
@@ -833,7 +860,7 @@ audio {
         font-size: 16px;
         margin-left: 0rem;
     }
-    .classroom-header {
+    #classroom-header {
         height: 44px;
     }
 
@@ -861,7 +888,7 @@ audio {
 }
 
 
-
+/* All these queries related to teacher */
 /* Extra small devices (phones, 575px and down) */
 @media only screen and (max-width: 575px) {
     /* dynamic height change from React */
@@ -885,12 +912,6 @@ audio {
     .teacher-screen-share-div-normal-mode {
         margin-left: 0.5rem;
     }
-    .student-video-tag {
-        height: 6rem;
-    }
-    .student-small-video {
-        width: 50%;
-    }
     .teacher-actions-button{
         width: 3rem;
     }
@@ -910,28 +931,7 @@ audio {
     .teacher-div-small {
         height: 175px;
     }
-    
-    .student-video-actions-right {
-        margin: 0;
-        font-size: 8px;
-    }
-    .student-action-right-icon-div{
-        width: .8rem;
-        height: .8rem;
-        margin: 0rem 0rem 0.1rem 0rem;
-        top: 0rem;
-    }
-    .student-video-tag {
-        height: 8rem;
-    }
-    .student-name {
-        /* margin: 0rem; */
-    }
-    .student-small-video {
-        width: 33%;
-    }
 }
-
 
 /* Medium devices (landscape tablets, 768px and up) */
 @media only screen and (min-width: 768px) {
@@ -954,25 +954,10 @@ audio {
     .teacher-div-large-with-chat-mode{
         height: 89vh;
     }
-    .student-video-tag {
-        height: 6rem;
-    }
-    .student-action-right-icon-div{
-        width: 1rem;
-        height: 1rem;
-    }
-
-    .student-video-actions-right {
-        margin: 0rem;
-        font-size: 10px;
-    }
-    .student-small-video {
-        width: 25%;
-    }
 }
 
 /* Large devices (laptops/desktops, 992px and up) */
-@media only screen and (min-width: 992px) {
+@media only screen and (min-width: 1024px) and (min-height:768px) {
     /* dynamic height change from React */
     .teacher-div-large {
         height: 500px;
@@ -999,6 +984,178 @@ audio {
     .teacher-div-large-with-chat-mode{
         height: 89vh;
     }
+}
+
+/* Extra large devices (large laptops and desktops, 1200px and up) */
+@media only screen and (min-width: 1280px) {
+    /* dynamic height change from React */
+    .teacher-div-large {
+        height: 61vh;
+    }
+    .teacher-div-small {
+        height: 28vh;
+    }
+    .teacher-div-large-with-chat{
+        height: 58vh;
+    }
+    .teacher-div-small-with-chat{
+        height: 27vh;
+    }
+    .teacher-screen-share-div-screen-mode{
+        height: 50vh;
+    }.teacher-board-div-screen-mode{
+        height: 50vh;
+    }.video-div-screen-mode{
+        height: 50vh;
+    }
+    .teacher-div-large-full-screen-mode {
+        height: 89vh;
+    }
+    .teacher-div-large-with-chat-mode{
+        height: 89vh;
+    }
+}
+
+@media only screen and (min-width: 1366px) and (min-height: 768px) {
+    /* dynamic height change from React */
+    .teacher-div-large {
+        height: 63vh;
+    }
+    .teacher-div-small {
+        height: 29.5vh;
+    }
+    .teacher-div-large-with-chat{
+        height: 63vh;
+    }
+    .teacher-div-small-with-chat{
+        height: 29.5vh;
+    }
+    .teacher-screen-share-div-screen-mode{
+        height: 52vh;
+    }.teacher-board-div-screen-mode{
+        height: 52vh;
+    }.video-div-screen-mode{
+        height: 52vh;
+    }
+    .teacher-div-large-full-screen-mode {
+        height: 89vh;
+    }
+    .teacher-div-large-with-chat-mode{
+        height: 89vh;
+    }
+}
+
+@media only screen and (min-width: 1600px)  and (min-height: 900px) {
+    /* dynamic height change from React */
+    .teacher-div-large {
+        height: 66vh;
+    }
+    .teacher-div-small {
+        height: 31vh;
+    }
+    .teacher-div-large-with-chat{
+        height: 66vh;
+    }
+    .teacher-div-small-with-chat{
+        height: 31vh;
+    }
+    .teacher-screen-share-div-screen-mode{
+        height: 65vh;
+    }.teacher-board-div-screen-mode{
+        height: 65vh;
+    }.video-div-screen-mode{
+        height: 65vh;
+    }
+    .teacher-div-large-full-screen-mode {
+        height: 91vh;
+    }
+    .teacher-div-large-with-chat-mode{
+        height: 91vh;
+    }
+}
+@media only screen and (min-width: 1920px) and (min-height: 1080px){
+    /* dynamic height change from React */
+    .teacher-div-large {
+        height: 68vh;
+    }
+    .teacher-div-small {
+        height: 32.2vh;
+    }
+    .teacher-div-large-with-chat{
+        height: 70vh;
+    }
+    .teacher-div-small-with-chat{
+        height: 33vh;
+    }
+    .teacher-screen-share-div-screen-mode{
+        height: 70vh;
+    }.teacher-board-div-screen-mode{
+        height: 70vh;
+    }.video-div-screen-mode{
+        height: 70vh;
+    }
+    .teacher-div-large-full-screen-mode {
+        height: 92vh;
+    }
+    .teacher-div-large-with-chat-mode{
+        height: 92vh;
+    }
+}
+
+/* All these queries related to student */
+/* Extra small devices (phones, 575px and down) */
+@media only screen and (max-width: 575px) {
+    /* dynamic height change from React */
+    .student-video-tag {
+        height: 6rem;
+    }
+    .student-small-video {
+        width: 50%;
+    }
+}
+@media only screen and (min-width: 576px) {
+    /* dynamic height change from React */
+    .student-video-actions-right {
+        margin: 0;
+        font-size: 8px;
+    }
+    .student-action-right-icon-div{
+        width: .8rem;
+        height: .8rem;
+        margin: 0rem 0rem 0.1rem 0rem;
+        top: 0rem;
+    }
+    .student-video-tag {
+        height: 8rem;
+    }
+    .student-name {
+        /* margin: 0rem; */
+    }
+    .student-small-video {
+        width: 33%;
+    }
+}
+/* Medium devices (landscape tablets, 768px and up) */
+@media only screen and (min-width: 768px) {
+    /* dynamic height change from React */
+    .student-video-tag {
+        height: 6rem;
+    }
+    .student-action-right-icon-div{
+        width: 1rem;
+        height: 1rem;
+    }
+    .student-video-actions-right {
+        margin: 0rem;
+        font-size: 10px;
+    }
+    .student-small-video {
+        width: 25%;
+    }
+}
+/* Large devices (laptops/desktops, 992px and up) */
+@media only screen and (min-width: 992px) {
+    /* dynamic height change from React */
     .student-video-tag {
         height: 6rem;
     }
@@ -1012,37 +1169,11 @@ audio {
         width: 20%;
     }
 }
-
 /* Extra large devices (large laptops and desktops, 1200px and up) */
 @media only screen and (min-width: 1200px) {
     /* dynamic height change from React */
-    .teacher-div-large {
-        height: 550px;
-    }
-    .teacher-div-small {
-        height: 255px;
-    }
-    .teacher-div-large-with-chat{
-        height: 440px;
-    }
-    .teacher-div-small-with-chat{
-        height: 200px;
-    }
-    .teacher-screen-share-div-screen-mode{
-        height: 400px;
-    }.teacher-board-div-screen-mode{
-        height: 400px;
-    }.video-div-screen-mode{
-        height: 400px;
-    }
-    .teacher-div-large-full-screen-mode {
-        height: 89vh;
-    }
-    .teacher-div-large-with-chat-mode{
-        height: 89vh;
-    }
     .student-video-tag {
-        height: 5rem;
+        height: 4.8rem;
     }
     .student-action-right-icon-div{
         width: 1.1rem;
@@ -1052,34 +1183,8 @@ audio {
         width: 10%;
     }
 }
-
 @media only screen and (min-width: 1650px) {
     /* dynamic height change from React */
-    .teacher-div-large {
-        height: 600px;
-    }
-    .teacher-div-small {
-        height: 280px;
-    }
-    .teacher-div-large-with-chat{
-        height: 490px;
-    }
-    .teacher-div-small-with-chat{
-        height: 225px;
-    }
-    .teacher-screen-share-div-screen-mode{
-        height: 480px;
-    }.teacher-board-div-screen-mode{
-        height: 480px;
-    }.video-div-screen-mode{
-        height: 480px;
-    }
-    .teacher-div-large-full-screen-mode {
-        height: 89vh;
-    }
-    .teacher-div-large-with-chat-mode{
-        height: 89vh;
-    }
     .student-video-tag {
         height: 6rem;
     }
@@ -1090,35 +1195,7 @@ audio {
         width: 10%;
     }
 }
-
-
 @media only screen and (min-width: 2000px) {
-    /* dynamic height change from React */
-    .teacher-div-large {
-        height: 650px;
-    }
-    .teacher-div-small {
-        height: 305px;
-    }
-    .teacher-div-large-with-chat{
-        height: 560px;
-    }
-    .teacher-div-small-with-chat{
-        height: 260px;
-    }
-    .teacher-screen-share-div-screen-mode{
-        height: 560px;
-    }.teacher-board-div-screen-mode{
-        height: 560px;
-    }.video-div-screen-mode{
-        height: 560px;
-    }
-    .teacher-div-large-full-screen-mode {
-        height: 89vh;
-    }
-    .teacher-div-large-with-chat-mode{
-        height: 89vh;
-    }
     .student-video-tag {
         height: 8rem;
     }
