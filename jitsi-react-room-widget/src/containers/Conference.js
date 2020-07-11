@@ -33,51 +33,12 @@ import ItemsLoader from '../assets/img/purple-gif-big.gif';
 
 import bellRing from '../assets/mesg_ting.mp3';
 
+import { webRootUrl, jitsiServerParams, socketSeverEndpoint, jitsiInitOptions } from '../config';
+
 // import teacherBoardLoader from '../assets/img/teacher-board-loader.gif';
 
 const { Option } = Select;
-const staticServerURL = "https://api.getmycall.com";
 
-// const options = {
-//     hosts: {
-//         domain: 'dev.getmycall.com',
-//         muc: 'conference.dev.getmycall.com' // FIXME: use XEP-0030
-//     },
-//     bosh: 'https://dev.getmycall.com/http-bind', // FIXME: use xep-0156 for that
-
-//     // The name of client node advertised in XEP-0115 'c' stanza
-//     clientNode: 'http://jitsi.org/jitsimeet'
-// };
-const options = {
-    hosts: {
-        domain: 'beta.meet.jit.si',
-        muc: 'conference.beta.meet.jit.si' // FIXME: use XEP-0030
-    },
-    bosh: 'https://beta.meet.jit.si/http-bind', // FIXME: use xep-0156 for that
-
-    // The name of client node advertised in XEP-0115 'c' stanza
-    clientNode: 'http://jitsi.org/jitsimeet'
-};
-
-const jitsiInitOptions = {
-    disableAudioLevels: true,
-
-    // The ID of the jidesha extension for Chrome.
-    // desktopSharingChromeExtId: 'mbocklcggfhnbahlnepmldehdhpjfcjp',
-
-    // Whether desktop sharing should be disabled on Chrome.
-    desktopSharingChromeDisabled: false,
-
-    // The media sources to use when using screen sharing with the Chrome
-    // extension.
-    desktopSharingChromeSources: [ 'screen', 'window' ],
-
-    // Required version of Chrome extension
-    desktopSharingChromeMinExtVersion: '0.1',
-
-    // Whether desktop sharing should be disabled on Firefox.
-    desktopSharingFirefoxDisabled: false
-};
 var studentHandRaiseTime = 10*60*1000; //60*1000=>1mint and 10*60*1000=10mint
 
 var connection, isJoined, room;
@@ -105,7 +66,7 @@ class Conference extends React.Component {
             isScreenSharing: false,
             isStopped: false,
             selectedBoard: null,
-            socketEndpoint: `${staticServerURL}/class-rooms`,
+            socketEndpoint: `${socketSeverEndpoint}/class-rooms`,
             currentTeacherToggledView: 'video',  //three types 1=>video(video at center), 2=>screen and 3=>html
             isChatBoxVisible: false,
             noOfNewMessages: 0,
@@ -121,17 +82,19 @@ class Conference extends React.Component {
             currentScreenMode: 'default',
             isPageEndReached: false,
             noOfStudentsShowing: 10,
-            isStudentsTrackUpdate: false
+            isStudentsTrackUpdate: false,
+            appMessage: "Stopped!",
+            roomJoinError: ""
         };
 
         //get page params and initialize socket
         socket = socketIOClient(this.state.socketEndpoint);
         this.addSocketEvents();
 
-        let params = null;//this.props.params;
-        // if ( !params ) { //temporary for testing
+        let params = null//this.props.params;
+        if ( !params ) { //temporary for testing
             params= queryString.parse(window.location.search.substring(1));
-        // }
+        }
         this.state.params = params;
     }
     async componentDidMount () {
@@ -201,7 +164,7 @@ class Conference extends React.Component {
                     socket.emit('event', messageObj);
 
                     window.JitsiMeetJS.init(jitsiInitOptions);
-                    connection = new window.JitsiMeetJS.JitsiConnection(null, null, options);
+                    connection = new window.JitsiMeetJS.JitsiConnection(null, null, jitsiServerParams);
                     this.setConnectionListeners();
                     connection.connect();
 
@@ -211,6 +174,8 @@ class Conference extends React.Component {
                 } else {
                     message.error('Must provide valid user params! See console errors.');
                 }
+            } else if(response.data && response.data.messge) {
+                this.setState({ isLoggedIn: false, roomJoinError: response.data.messge });
             }
         }
         let $ = window.jQuery;
@@ -244,12 +209,6 @@ class Conference extends React.Component {
         console.error(error, errorInfo);
     }
 
-    handleLeavePage(e) {
-        window.alert('changing')
-        const confirmationMessage = 'Some message';
-        e.returnValue = confirmationMessage;     // Gecko, Trident, Chrome 34+
-        return confirmationMessage;              // Gecko, WebKit, Chrome <34
-    }
     async getUserData( params,  ) {
         console.log(params , 'params => =>')
         try {
@@ -382,8 +341,6 @@ class Conference extends React.Component {
             allParticipantsIds.forEach( participantId => {
                 this.mapTracksOnTags( isTrackUpdate, isScreenTrackUpdate, participantId, isStudentsTrackUpdate );
             });
-
-            this.setState({ isStudentsTrackUpdate: false }); //after students tracks updation change to false
         }
 
         if ( prevState.isScreenSharing !== this.state.isScreenSharing ) {
@@ -469,9 +426,9 @@ class Conference extends React.Component {
             this.setState({ isTrackUpdate: false });
         } else if (isStudentsTrackUpdate) {   //update only from 10 to 20 or 30
             let participantTracks = participant.tracks;
-            if (participant.position > 0 && participantId!==this.state.remoteUserSwappedId) {
-		            console.log(participantId, this.state.remoteUserSwappedId, "==>ids", participant ,allParticipants)
+            if (participant.position > 0 && participant.type !== 'teacher') { //if !teacher
                 for ( let i = 0; i < participantTracks.length ; i++ ) {
+                    if ( participantId)
                     if (participantTracks[i].getType() === 'video') {
                         if ($(`#video-tag-${participant.position}`) && $(`#video-tag-${participant.position}`)[0]) {
                             participantTracks[i].attach($(`#video-tag-${participant.position}`)[0]);
@@ -483,6 +440,7 @@ class Conference extends React.Component {
                     }
                 }
             }
+            this.setState({ isStudentsTrackUpdate: false })
         } else if ( isScreenTrackUpdate ) {
             let screenTracks = participant.screenTracks;
             if ( screenTracks[0] ) {
@@ -895,7 +853,7 @@ class Conference extends React.Component {
 
     }
 
-    unload ( shouldStopScreenOnly = false ) {
+    unload = ( shouldStopScreenOnly= false ) => {
         let id = this.state.roomData.id;
         if (allParticipants[id]) {
             let localTracks = allParticipants[id]['tracks'];
@@ -912,6 +870,14 @@ class Conference extends React.Component {
                 connection.disconnect();
                 room = null;
                 connection = null;
+
+                socket.disconnect();
+        
+                // if ( redirectToMainPage ) {
+                window.location.href = webRootUrl;
+                // } else {
+                    this.setState({ isLoggedIn: false, isStopped: true });
+                // }
             }
         }
     }
@@ -938,8 +904,6 @@ class Conference extends React.Component {
 
     leaveRoomBtn = (e) => {
         this.unload();
-        socket.disconnect();
-        this.setState({ isLoggedIn: false, isStopped: true });
     }
 
     handleDataValidation = ( roomData ) => {
@@ -1069,8 +1033,8 @@ class Conference extends React.Component {
     }
 
     toggleLocalAudioByTeacher = async ( mute ) => {
-        if (mute) { message.warning('Teacher Mute all audios');
-        } else if (!mute) { message.success('Now all audios have previous states.'); }
+        if (mute) { message.warning("Teacher Mute all");
+        } else if (!mute) { message.success("Now all Mic's have previous states."); }
 
         if ( mute ) {
             this.setState({ isGlobalAudioMute: mute });
@@ -1170,6 +1134,7 @@ class Conference extends React.Component {
     }
 
     switchToGlobalWorkingMode = ( isWorkingMode, isLocal = true ) => {
+        console.log('switch working mode', isWorkingMode, isLocal)
         try {
             if ( isLocal ) {
                 let messageObject = {
@@ -1416,7 +1381,7 @@ class Conference extends React.Component {
         }
         if ( !isScreenSharing && ( (type === "teacher" && !this.state.remoteUserSwappedId) || type==="student") ) {
             this.startScreenshareProgress(); //show progress for screenshare on
-            screenConnection = new window.JitsiMeetJS.JitsiConnection(null, null, options);
+            screenConnection = new window.JitsiMeetJS.JitsiConnection(null, null, jitsiServerParams);
 
             this.setConnectionListeners( true );
             screenConnection.connect();
@@ -1793,7 +1758,7 @@ class Conference extends React.Component {
             isScreenSharing, remoteUserSwappedId, isRecording,
             isStudentsVisible, noOfNewPrivateMessages, isWorkingMode,
             isLocalAudioMute, isLocalVideoMute, currentScreenMode,
-            noOfStudentsShowing } = this.state;
+            noOfStudentsShowing, appMessage, roomJoinError } = this.state;
         const { roomId, id, name, type } = roomData;
 
         let isFlipEnabled = false;
@@ -1805,13 +1770,17 @@ class Conference extends React.Component {
             </div>
         } else if ( !isLoggedIn ) {
             return (<div style={{ paddingLeft: "0px", paddingRight: "0px", width: "100vw", height: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "center" }}>
-                {this.state.isStopped ? <p style={{ fontSize: "35px", color: this.state.isStopped? "red" : "black" }}> Stopped! </p> :
+                {this.state.isStopped ? <p style={{ fontSize: "35px", color: this.state.isStopped? "red" : "black" }}> {appMessage} </p> :
                 // <div style={{ width: "100%" }}>
                 //     <img src={loadingIcon} alt="" width="100%" height="100%" />
                 // </div>}
-                <div className="justify-content-center" style= {{ width: "100%", height: "100%", top: "50%", backgroundColor: 'white' }}>
-                    <img src={`https://api.getmycall.com/static/media/loading-icon.gif`} alt="" width="200" height="200" style={{ marginTop: "120px" }} />
-                </div>}
+                (roomJoinError!==""?
+                    <p style={{ fontSize: "35px", color: "red" }}> {roomJoinError} </p>
+                    :
+                    <div className="justify-content-center" style= {{ width: "100%", height: "100%", top: "50%", backgroundColor: 'white' }}>
+                        <img src={`https://api.getmycall.com/static/media/loading-icon.gif`} alt="" width="200" height="200" style={{ marginTop: "120px" }} />
+                    </div>)
+                }
                 {/* {this.state.isStopped && <Button onClick={()=> this.joinRoom()} type="primary"> Join Again </Button>} */}
             </div>)
         }
@@ -1832,12 +1801,22 @@ class Conference extends React.Component {
                     />
                     <div style={{ width: "100%", display: (this.state.isWorkingMode && type==="student")? "none": "block"}}>
                         <div className="row w-100 d-flex justify-content-between" id="classroom-header">
-                            <div className="time-box-container w-10 d-flex flex-column justify-content-start">
+                            <div className="time-box-container d-flex flex-row justify-content-between">
+                                <div className="back-button-container">
+                                    <button onClick={()=>this.leaveRoomBtn()} type="button" className="btn btn-primary main-button">
+                                        <div className="d-flex flex-row justify-content-center">
+                                            <div className="d-flex justify-content-start w-30">
+                                                <i className="fa fa-arrow-left btn-back-icon" aria-hidden="true" />
+                                            </div>
+                                            <div className="btn-chat-inner-text d-flex justify-content-end w-70">Go Back</div>
+                                        </div>
+                                    </button>
+                                </div>
                                 <div className="time-box-info">
                                     <span className="time-start">08:30</span>  -  <span className="time-end">09:15</span>
                                 </div>
                             </div>
-                            <div className="class-room-header-info w-30 d-flex flex-column justify-content-center">
+                            <div className="class-room-header-info d-flex flex-column justify-content-center">
                                 <RoomAnnouncement
                                     id={roomData}
                                     roomId={roomData.roomId}
@@ -1847,9 +1826,9 @@ class Conference extends React.Component {
                                     handleChangeAnnouncement={(e) => this.handleChangeAnnouncement(e)}
                                 />
                             </div>
-                            <div className="chat-button w-20 d-flex flex-column justify-content-start">
+                            <div className="main-button d-flex flex-column justify-content-start">
                                 <div className="chat-button-container">
-                                    <button onClick={()=>this.toggleChatBox()} type="button" className="btn btn-primary chat-button"
+                                    <button onClick={()=>this.toggleChatBox()} type="button" className="btn btn-primary main-button"
                                         style={{
                                             background: `${isChatBoxVisible? "rgb(121, 119, 128)" : "#9772E8"}`
                                         }}>
@@ -1867,19 +1846,6 @@ class Conference extends React.Component {
                                             </div>
                                     }
                                 </div>
-                                {/* <ChatBox
-                                    isChatBoxVisible={isChatBoxVisible}
-                                    profile={{
-                                        userId:roomData.id,
-                                        name: roomData.name,
-                                        roomId: roomData.roomId,
-                                        type: roomData.type
-                                    }}
-                                    socket={socket}
-                                    noOfNewMessages={noOfNewMessages}
-                                    clearNoOfNewMessages={this.clearNoOfNewMessages.bind(this)}
-                                    isChatAllowed={this.state.isChatPublic || type==="teacher"}
-                                /> */}
                             </div>
                         </div>
                         <div className="all-sources-container row" style={{ width: "100%" }}>
@@ -2109,7 +2075,7 @@ class Conference extends React.Component {
                                     this.state.roomData && this.state.roomData.sources && (this.state.roomData.sources.length > 1) &&
                                     this.state.roomData.sources.sort(this.sortSources.bind(this)).map((source,index) => {
                                         console.log('sources roomData teacher_id => =>', source, roomData.teacher_id)
-                                        if( source.position.toString() !== "0" ) {
+                                        if( source.position && source.position.toString() !== "0" ) {
                                             if ( index<=noOfStudentsShowing ) {
                                                 let sourceUserId = source.id,
                                                 isHandRaised = source.isHandRaised ? source.isHandRaised : false;

@@ -31,14 +31,27 @@ html, body {
 .time-box-container {
     padding-top: 0.5rem;
 }
+.back-button-container {
+    margin: 0 1rem 0 1rem;
+    position: relative;
+}
+.back-button-container>button {
+    width: 6.6rem;
+    height: 2.3rem;
+    background: #9772E8;
+}
+.back-button-container>button>div{
+    line-height: 1.1rem;
+}
 .time-box-info {
     border: 0.1rem #9772E8 solid;
     padding: 0rem 1rem 0rem 1rem;
     border-radius: 20px;
     color: #9772E8;
-    margin-left: 2.5rem;
     font-size: 20px;
     font-weight: 600;
+    width: 10rem;
+    height: 2.3rem;
 }
 .class-room-header-info {
     font-size: 22px;
@@ -65,9 +78,14 @@ html, body {
     padding-top: 0.5rem;
 }
 
+
 .btn-chat-icon {
     margin-left: 0.5rem; 
     font-size: 17px
+}
+.btn-back-icon {
+    margin-right: 0.5rem; 
+    font-size: 20px
 }
 
 .chat-messages-count {
@@ -838,15 +856,20 @@ audio {
     .chat-button-container {
         margin-right: 1rem;
     }
-    .chat-button{
+    .back-button-container{
+        margin-left: 1rem;
+    }
+    .main-button{
         width: 2rem;
         margin-right: 2rem;
         position: relative;
     }
 
     .btn-chat-icon {
-        margin-left: 0rem; 
-        font-size: 17px
+        margin-left: 0rem;
+    }
+    .btn-chat-icon {
+        margin-right: 0rem;
     }
     .btn-chat-inner-text {
         display: none !important;
