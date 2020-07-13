@@ -1,10 +1,10 @@
 self.__precacheManifest = [
   {
-    "revision": "9df778268eb7fbc297a0",
+    "revision": "b969d64d97a8d0912497",
     "url": "/static/css/react-classroom.css"
   },
   {
-    "revision": "9df778268eb7fbc297a0",
+    "revision": "b969d64d97a8d0912497",
     "url": "/static/js/react-classroom.js"
   },
   {
@@ -46,6 +46,10 @@ self.__precacheManifest = [
   {
     "revision": "d3e14283ff05298a4a66f26b190c437f",
     "url": "/static/media/hand-point-up-regular.svg"
+  },
+  {
+    "revision": "b75fe5806502b2c31734326078dfc0fb",
+    "url": "/static/media/purple-gif-big.gif"
   },
   {
     "revision": "60d09699b6dbfcd4f2dfc331a760f7e8",

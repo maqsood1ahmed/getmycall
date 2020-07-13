@@ -944,8 +944,11 @@ class Conference extends React.Component {
     }
 
     handleChangeResolutions = (value) => {
+        let { roomData } = this.state;
         room.setSenderVideoConstraint(value);
         message.success(`Resolution Changed to ${value}`)
+        roomData.bitrate = value;
+        this.setState({ roomData });
     }
 
     sendRingBellMessage = () => {
@@ -1134,7 +1137,8 @@ class Conference extends React.Component {
     }
 
     switchToGlobalWorkingMode = ( isWorkingMode, isLocal = true ) => {
-        console.log('switch working mode', isWorkingMode, isLocal)
+        console.log('switch working mode', isWorkingMode, isLocal);
+        let { roomData } = this.state;
         try {
             if ( isLocal ) {
                 let messageObject = {
@@ -1148,8 +1152,10 @@ class Conference extends React.Component {
                 // this.handleScreenShareStop(true); //stop screen share before starting working mode
                 socket.emit( 'event', messageObject);
                 if ( isWorkingMode ) {
+                    this.handleChangeResolutions('360');
                     this.setState({ isWorkingMode, isGlobalAudioMute: isWorkingMode });  //mute all audios button have no importance when working mode
                 }else {
+                    this.handleChangeResolutions('720');
                     this.setState({ isWorkingMode, isGlobalAudioMute: isWorkingMode, isTrackUpdate: true });  //mute all audios button have no importance when working mode
                 }
             } else if(this.state.roomData.type === "student") {
@@ -1584,6 +1590,7 @@ class Conference extends React.Component {
                             defaultValue={bitrate}
                             className="change-bitrate-button"
                             onChange={(value) => this.handleChangeResolutions(value)}
+                            value={bitrate}
                         >
                         {this.state.resolutions.map(resolution => (
                             <Option key={resolution}>{resolution}</Option>

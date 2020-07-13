@@ -12,8 +12,9 @@
   "static/media/video-solid.svg": "/static/media/video-solid.svg",
   "static/media/video-slash-solid.svg": "/static/media/video-slash-solid.svg",
   "static/media/hand-point-up-regular.svg": "/static/media/hand-point-up-regular.svg",
+  "static/media/purple-gif-big.gif": "/static/media/purple-gif-big.gif",
   "static/css/react-classroom.css.map": "/static/css/react-classroom.css.map",
   "index.html": "/index.html",
-  "precache-manifest.85e050976f220bca5126b2a6b8cff3c6.js": "/precache-manifest.85e050976f220bca5126b2a6b8cff3c6.js",
+  "precache-manifest.e3afc0d105409a82f99da565995ee048.js": "/precache-manifest.e3afc0d105409a82f99da565995ee048.js",
   "service-worker.js": "/service-worker.js"
 }

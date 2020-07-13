@@ -758,11 +758,14 @@ audio {
     height: 100vh !important;
 }
 .teacher-video-div-working-mode{
-    width: 15rem !important;
-    height: 13rem !important;
+    width: 14rem !important;
+    height: 10rem !important;
     position: absolute;
     top: 0.5rem;
     right: 1rem;
+}
+.teacher-video-div-working-mode>video{
+    object-fit: fill;
 }
 .teacher-student-actions-right-working-mode {
     margin: .2rem .3rem 0.2rem 0rem;

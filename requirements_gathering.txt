@@ -141,10 +141,44 @@ maybe other color
 teacher missing
 
 
-Hi Eli I have checked as you mentioned in https://github.com/elisom/devgetmycall/issues/1
+ https://github.com/elisom/devgetmycall/issues/1
 
 1=> "share screen always in one position. up or middle." --> done
 2=>"teacher always: up or middle." --> possible scenario is ->  upRight(when screenshare/student) and downRight(when work time.)
 3=> "work always down right or middle." --> done
 4=> "if work on middle. we auto close share." --> done
 5=> "now if share open - teacher disappears."
+
+
+
+
+Video Page:
+1=> Students will be able to go full screen for every screen.(done)
+2=> First increasing will be to big window with chat (done)
+3=> Second increasing is a larger full screen without chat, the screen will have borders. (done)
+4=> Add specific buttons for increase/decrease (done)
+5=> Students will be able to increase screen size by hiding other students.
+6=> Remove working time & Working mode - instead 2 left buttons on the small screens
+	To avoid confusion from the users: When teacher press "working mode" button, he will get a message "Students will see now only the work screen, Yes/No" and a "working mode" text will be presented on teachers main screen.
+7=> Add a progress bar of 4 seconds when the share screen is pressed. (done)
+8=> Increasing hand raising time to 10 Min. (done)
+9=> Navigation sidebar for teacher and student. (as you said last time leave it)
+10=> API optional: Students will see only 10 users at a time. (done)
+11=>  Students can scroll to see more students. (done)
+12=> Stop video streaming of unseen students. (done)
+Teacher sees all the students.
+13=> Downgrade resolution of students at server end. (to verify => I have changed on client end) (done)
+14=> * test screenshots webrtc. (done)
+
+check the list exlained on file to see all clear there.
+
+
+Students will be able to go full screen for every screen.
+First increasing will be to big window with chat
+Second increasing is a larger full screen without chat, the screen will have borders.
+Add specific buttons for increase/decrease
+
+Add a progress bar of 4 seconds when the share screen is pressed.
+Increasing hand raising time to 10 Min.
+Downgrade resolution of students at server end. (to verify)
+* test screenshots webrtc.
