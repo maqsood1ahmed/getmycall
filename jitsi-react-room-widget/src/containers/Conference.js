@@ -1642,6 +1642,26 @@ class Conference extends React.Component {
                         (currentTeacherToggledView === "video") && ( type === "teacher" ) && !remoteUserSwappedId &&
                             <div className="btn-swap-screen" style={ customStyle.btnSwapScreen } />
                     } */}
+                    <div className={`change-teacher-view-arrow d-flex flex-row ${currentTeacherToggledView==="board"?"justify-content-end":"justify-content-start"}`}>
+                        <Tooltip title={( ( type === "teacher" ) )? (currentTeacherToggledView === "board"?"Flip back":"Flip to Center.") : ""}>
+                            <button
+                                onClick={() => {
+                                    if ( this.state.isWorkingMode ) {
+                                        this.switchToGlobalWorkingMode( !this.state.isWorkingMode, true )
+                                    }
+                                    this.toggleTeacherView((currentTeacherToggledView=== 'board')?'video':'board' );
+                                }}
+                                type="button"
+                                className="btn btn-primary"
+                                style={{
+                                    backgroundColor: currentTeacherToggledView==="board"?"#6343AE":"",
+                                    opacity: !remoteUserSwappedId?"1":"0.8",
+                                    width:"2.3rem", height:"2.3rem"
+                                }}>
+                                <i className={`fa ${currentTeacherToggledView==="board"?"fa-arrow-right":"fa-arrow-left"}`} aria-hidden="true" />
+                            </button>
+                        </Tooltip>
+                    </div>
                 </div>
             );
         } else if ( viewType === "screen" ) {
@@ -1650,24 +1670,29 @@ class Conference extends React.Component {
                     style={{
                         border: currentTeacherToggledView==="screen"? (currentScreenMode==="fullPageMode"?"12px double #9670e3":""): "",
                         marginRight: currentTeacherToggledView==="video"?"1.5rem":""
-                    }}
-                    >
-                    <Tooltip title={( (currentTeacherToggledView === "video") && isScreenSharing && ( type === "teacher" ) && !remoteUserSwappedId )? "Flip to Center." : ""}>
-                        <video id="teacher-screen-share-video"
-                            style = {{
-                                pointerEvents: ( (currentTeacherToggledView === "video") && isScreenSharing && ( type === "teacher" ) && !remoteUserSwappedId )?"auto":"none",
-                                cursor: ((currentTeacherToggledView === "video") && isScreenSharing && ( type === "teacher" ) && !remoteUserSwappedId )?"pointer":"default",
-                            }}
-                            onClick={() => this.toggleTeacherView( 'screen' )}
-                            autoPlay
-                            poster="https://miro.medium.com/max/3200/0*-fWZEh0j_bNfhn2Q" />
-                        {/* {(type === "teacher") &&<div className="btn-start-screen" onClick={() => this.handleScreenShareButton(this.state.isScreenSharing)} style={ customStyle.btnStartScreen} />} */}
-                        {/* {
-                            (currentTeacherToggledView === "video") && isScreenSharing && ( type === "teacher" ) && !remoteUserSwappedId &&
-                                <div className="btn-swap-screen" onClick={() => this.toggleTeacherView( 'screen' )} style={ customStyle.btnSwapScreen } />
-                        } */}
-                    </Tooltip>
-
+                    }}>
+                    <video id="teacher-screen-share-video"
+                        style = {{
+                            pointerEvents: ( (currentTeacherToggledView === "video") && isScreenSharing && ( type === "teacher" ) && !remoteUserSwappedId )?"auto":"none",
+                            cursor: ((currentTeacherToggledView === "video") && isScreenSharing && ( type === "teacher" ) && !remoteUserSwappedId )?"pointer":"default",
+                        }}
+                        onClick={() => this.toggleTeacherView( 'screen' )}
+                        autoPlay
+                        poster="https://miro.medium.com/max/3200/0*-fWZEh0j_bNfhn2Q" />
+                    {/* {(type === "teacher") &&<div className="btn-start-screen" onClick={() => this.handleScreenShareButton(this.state.isScreenSharing)} style={ customStyle.btnStartScreen} />} */}
+                    {/* {
+                        (currentTeacherToggledView === "video") && isScreenSharing && ( type === "teacher" ) && !remoteUserSwappedId &&
+                            <div className="btn-swap-screen" onClick={() => this.toggleTeacherView( 'screen' )} style={ customStyle.btnSwapScreen } />
+                    } */}
+                    { (type === "teacher" && isScreenSharing) &&
+                        <div className={`change-teacher-view-arrow d-flex flex-row ${currentTeacherToggledView==="screen"?"justify-content-end":"justify-content-start"}`}>
+                            <Tooltip title={( (currentTeacherToggledView === "video" || currentTeacherToggledView === "screen") && isScreenSharing && ( type === "teacher" ) && !remoteUserSwappedId )? (currentTeacherToggledView === "screen"?"Flip back":"Flip to Center.") : ""}>
+                                <button onClick={() => this.toggleTeacherView( currentTeacherToggledView==="screen"?'video':"screen" )}  type="button" style={{width:"2.3rem", height:"2.3rem"}} className="btn btn-primary">
+                                    <i className={`fa ${currentTeacherToggledView==="screen"?"fa-arrow-right":"fa-arrow-left"}`} aria-hidden="true" />
+                                </button>
+                            </Tooltip>
+                        </div>
+                    }
                 </div>
             );
         }
@@ -1810,7 +1835,7 @@ class Conference extends React.Component {
                         <div className="row w-100 d-flex justify-content-between" id="classroom-header">
                             <div className="time-box-container d-flex flex-row justify-content-between">
                                 <div className="back-button-container">
-                                    <button onClick={()=>this.leaveRoomBtn()} type="button" className="btn btn-primary main-button">
+                                    <button onClick={()=>this.leaveRoomBtn()} type="button" width= "11rem" height="2rem" className="btn btn-primary main-button">
                                         <div className="d-flex flex-row justify-content-center">
                                             <div className="d-flex justify-content-start w-30">
                                                 <i className="fa fa-arrow-left btn-back-icon" aria-hidden="true" />
@@ -1837,6 +1862,8 @@ class Conference extends React.Component {
                                 <div className="chat-button-container">
                                     <button onClick={()=>this.toggleChatBox()} type="button" className="btn btn-primary main-button"
                                         style={{
+                                            width: "11rem",
+                                            height: "2rem",
                                             background: `${isChatBoxVisible? "rgb(121, 119, 128)" : "#9772E8"}`
                                         }}>
                                         <div className="d-flex flex-row justify-content-center">
@@ -2002,8 +2029,8 @@ class Conference extends React.Component {
                                     {/* <div className="d-flex mb-3"> */}
                                         {roomData.type=="teacher" &&
                                             <div className="global-actions-button-container">
-                                                <button onClick={() => this.toggleGlobalSources( id, "mute-all-students-audio" )} type="button" class="btn btn-primary teacher-actions-button">
-                                                    <div className="d-flex flex-row justify-content-center" style={{ marginTop: ".1rem"}}>
+                                                <button onClick={() => this.toggleGlobalSources( id, "mute-all-students-audio" )} type="button" style={{ width: "11rem", height: "2rem" }} className="btn btn-primary teacher-actions-button">
+                                                    <div className="d-flex flex-row justify-content-center" style={{ marginTop: ".1rem" }}>
                                                         <div className="btn-chat-inner-text d-flex justify-content-end w-70">{this.state.isGlobalAudioMute?"UnMute All":"Mute All"}</div>
                                                         <div className="global-action-button-icon d-flex justify-content-start w-30">
                                                             {<div style={{cursor: "pointer" }}>
@@ -2013,7 +2040,7 @@ class Conference extends React.Component {
                                                     </div>
                                                 </button>
                                             </div>}
-                                        {roomData.type=="teacher" &&
+                                        {/* {roomData.type=="teacher" &&
                                             <div className="global-actions-button-container">
                                                 <Tooltip title={remoteUserSwappedId? "First Move teacher to center." : ""}>
                                                     <button
@@ -2029,21 +2056,22 @@ class Conference extends React.Component {
                                                             backgroundColor: currentTeacherToggledView==="board"?"#6343AE":"",
                                                             // pointerEvents: !remoteUserSwappedId?"auto":"none",
                                                             // cursor: !remoteUserSwappedId?"pointer":"default",
-                                                            opacity: !remoteUserSwappedId?"1":"0.8"
+                                                            opacity: !remoteUserSwappedId?"1":"0.8",
+                                                            width: "11rem", height: "2rem"
                                                         }}
-                                                    >
-                                                        <div className="d-flex flex-row justify-content-center" style={{ marginTop: ".1rem"}}>
+                                                    > */}
+                                                        {/* <div className="d-flex flex-row justify-content-center" style={{ marginTop: ".1rem"}}>
                                                             <div className="btn-chat-inner-text d-flex justify-content-end w-70">Work Time</div>
                                                             <div className="global-action-button-icon d-flex justify-content-start w-30">
                                                                 {<div style={{ cursor: "pointer" }} >
                                                                     <i class="fas fa-history"></i>
                                                                 </div>}
                                                             </div>
-                                                        </div>
-                                                    </button>
+                                                        </div> */}
+                                                    {/* </button>
                                                 </Tooltip>
                                             </div>
-                                        }
+                                        } */}
                                         {roomData.type=="teacher" &&
                                             <div className="global-actions-button-container">
                                                 <button onClick={() => this.switchToGlobalWorkingMode(!isWorkingMode, true)} type="button"
@@ -2052,7 +2080,8 @@ class Conference extends React.Component {
                                                         backgroundColor: isWorkingMode?"#6343AE":"",
                                                         pointerEvents: currentTeacherToggledView==="board"?"auto":"none",
                                                         cursor: currentTeacherToggledView==="board"?"pointer":"default",
-                                                        opacity: currentTeacherToggledView==="board"?"1":"0.5"
+                                                        opacity: currentTeacherToggledView==="board"?"1":"0.5",
+                                                        width: "11rem", height: "2rem"
                                                     }}
                                                 >
                                                     <div className="d-flex flex-row justify-content-center" style={{ marginTop: ".1rem"}}>
