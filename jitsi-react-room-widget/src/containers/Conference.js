@@ -91,7 +91,7 @@ class Conference extends React.Component {
         socket = socketIOClient(this.state.socketEndpoint);
         this.addSocketEvents();
 
-        let params = this.props.params;
+        let params = null//this.props.params;
         if ( !params ) { //temporary for testing
             params= queryString.parse(window.location.search.substring(1));
         }
@@ -1642,26 +1642,28 @@ class Conference extends React.Component {
                         (currentTeacherToggledView === "video") && ( type === "teacher" ) && !remoteUserSwappedId &&
                             <div className="btn-swap-screen" style={ customStyle.btnSwapScreen } />
                     } */}
-                    <div className={`change-teacher-view-arrow d-flex flex-row ${currentTeacherToggledView==="board"?"justify-content-end":"justify-content-start"}`}>
-                        <Tooltip title={( ( type === "teacher" ) )? (currentTeacherToggledView === "board"?"Flip back":"Flip to Center.") : ""}>
-                            <button
-                                onClick={() => {
-                                    if ( this.state.isWorkingMode ) {
-                                        this.switchToGlobalWorkingMode( !this.state.isWorkingMode, true )
-                                    }
-                                    this.toggleTeacherView((currentTeacherToggledView=== 'board')?'video':'board' );
-                                }}
-                                type="button"
-                                className="btn btn-primary"
-                                style={{
-                                    backgroundColor: currentTeacherToggledView==="board"?"#6343AE":"",
-                                    opacity: !remoteUserSwappedId?"1":"0.8",
-                                    width:"2.3rem", height:"2.3rem"
-                                }}>
-                                <i className={`fa ${currentTeacherToggledView==="board"?"fa-arrow-right":"fa-arrow-left"}`} aria-hidden="true" />
-                            </button>
-                        </Tooltip>
-                    </div>
+                    {type==="teacher" &&
+                        <div className={`change-teacher-view-arrow d-flex flex-row ${currentTeacherToggledView==="board"?"justify-content-end":"justify-content-start"}`}>
+                            <Tooltip title={( ( type === "teacher" ) )? (currentTeacherToggledView === "board"?"Flip back":"Flip to Center.") : ""}>
+                                <button
+                                    onClick={() => {
+                                        if ( this.state.isWorkingMode ) {
+                                            this.switchToGlobalWorkingMode( !this.state.isWorkingMode, true )
+                                        }
+                                        this.toggleTeacherView((currentTeacherToggledView=== 'board')?'video':'board' );
+                                    }}
+                                    type="button"
+                                    className="btn btn-primary"
+                                    style={{
+                                        backgroundColor: currentTeacherToggledView==="board"?"#6343AE":"",
+                                        opacity: !remoteUserSwappedId?"1":"0.8",
+                                        width:"2.3rem", height:"2.3rem"
+                                    }}>
+                                    <i className={`fa ${currentTeacherToggledView==="board"?"fa-arrow-right":"fa-arrow-left"}`} aria-hidden="true" />
+                                </button>
+                            </Tooltip>
+                        </div>
+                    }
                 </div>
             );
         } else if ( viewType === "screen" ) {
