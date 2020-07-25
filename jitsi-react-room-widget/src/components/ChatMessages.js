@@ -9,6 +9,7 @@ export const ChatMessages = (props) => {
         } else if (!isPrivate ){
             return message
         }
+        return null;
     })
     return (
         <div id={props.divID} 

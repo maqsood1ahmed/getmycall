@@ -8,7 +8,7 @@ import { Modal } from 'antd';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-import { message, Select, Button, notification, Tooltip  } from 'antd';
+import { message, Select, notification, Tooltip  } from 'antd';
 import socketIOClient from "socket.io-client";
 import './Conference.css';
 import { addMessages } from '../actions';
@@ -34,6 +34,7 @@ import ItemsLoader from '../assets/img/purple-gif-big.gif';
 import bellRing from '../assets/mesg_ting.mp3';
 
 import { webRootUrl, jitsiServerParams, socketSeverEndpoint, jitsiInitOptions } from '../config';
+import ScreenModesButtons from '../components/ScreenModes';
 
 // import teacherBoardLoader from '../assets/img/teacher-board-loader.gif';
 
@@ -80,6 +81,7 @@ class Conference extends React.Component {
             isWorkingMode: false,
             isStudentHandRaised: false,
             currentScreenMode: 'default',
+            clickedTeacherView: null,
             isPageEndReached: false,
             noOfStudentsShowing: 10,
             isStudentsTrackUpdate: false,
@@ -91,7 +93,7 @@ class Conference extends React.Component {
         socket = socketIOClient(this.state.socketEndpoint);
         this.addSocketEvents();
 
-        let params = this.props.params;
+        let params = null//this.props.params;
         if ( !params ) { //temporary for testing
             params= queryString.parse(window.location.search.substring(1));
         }
@@ -101,8 +103,6 @@ class Conference extends React.Component {
         let roomData = {};
 
         let params = this.state.params;
-        console.log('params => =>', params);
-
         if ( params.id && params.type && params.class_id ) {
             let response = await this.getUserData(params);
             console.log('=> => respone ', response)
@@ -164,13 +164,14 @@ class Conference extends React.Component {
                     socket.emit('event', messageObj);
 
                     window.JitsiMeetJS.init(jitsiInitOptions);
+                    window.JitsiMeetJS.setLogLevel(window.JitsiMeetJS.logLevels.ERROR); //setting log level only for errors
                     connection = new window.JitsiMeetJS.JitsiConnection(null, null, jitsiServerParams);
                     this.setConnectionListeners();
                     connection.connect();
 
                     // window.addEventListener(window.JitsiMeetJS.errors.conference.PASSWORD_REQUIRED, function () { message.error('Please provide room password'); });
-
-                    this.setState({ roomData, isChatBoxVisible: (type==="teacher" ? true : false) });
+                    //comment selected board later
+                    this.setState({ roomData, isChatBoxVisible: (type==="teacher" ? true : false), selectedBoard: roomData.board_sources[3] });
                 } else {
                     message.error('Must provide valid user params! See console errors.');
                 }
@@ -362,7 +363,6 @@ class Conference extends React.Component {
 
     mapTracksOnTags = ( isTrackUpdate=false, isScreenTrackUpdate=false, participantId, isStudentsTrackUpdate=false ) => {
         let participant = allParticipants[participantId];
-        console.log('participant =>', participant)
         let { roomData } = this.state;
 
         if ( isTrackUpdate  ) {
@@ -401,7 +401,6 @@ class Conference extends React.Component {
                               participantTracks[i].detach($(`#video-tag-${participant.position}`)[0]); //also detach from small div
                             }
                         } else {
-                            console.log('attaching participant => =>', participant)
                             if ($(`#video-tag-${participant.position}`) && $(`#video-tag-${participant.position}`)[0]){
                                 participantTracks[i].attach($(`#video-tag-${participant.position}`)[0]);
                             }
@@ -562,8 +561,6 @@ class Conference extends React.Component {
     joinRoom ( isScreen = false) {
         let roomData = this.state.roomData;
         let roomId = roomData.roomId;
-        console.log('room join data name => => ', roomData);
-
         if ( !isScreen ) {
             room = connection.initJitsiConference( roomId, {} ); //name of conference
 
@@ -813,7 +810,10 @@ class Conference extends React.Component {
                         document.getElementById("teacher-video-tag").load();
                     }
                 } else {
-                    document.getElementById(`video-tag-${allParticipants[id].position}`).load();
+                    let videoTag = document.getElementById(`video-tag-${allParticipants[id].position}`);
+                    if (videoTag) {
+                        videoTag.load();
+                    }
                 }
             }
         }
@@ -1284,14 +1284,10 @@ class Conference extends React.Component {
                     });
 
                     remoteUserSwappedId = sourceId;
-                    console.log('all participant => => ', allParticipants);
                     this.setState({ roomData, isTrackUpdate: true, remoteUserSwappedId });
                 }
             }
-
-            console.log('final data => => ', roomData)
             if ( roomData.type === "teacher" ) {
-                console.log('sending this => => ', source, tempSource)
                 let messageObject = { type: 'videos-swapped', data: { selectedSource: tempSource, teacherId, remoteUserSwappedId, roomId  } };
                 socket.emit( 'event', messageObject );
             }
@@ -1340,11 +1336,9 @@ class Conference extends React.Component {
                     console.log('screen share stopped! => =>');
                     this.handleScreenShareStop( true );
                 });
-            console.log('got screen tracks => =>', tracks[i])
             allParticipants[this.state.roomData.id]["screenTracks"].push(tracks[i]);
 
             if ( isScreenJoined ) {
-                console.log('screen tracks => =>', tracks)
                 screenRoom.addTrack(tracks[i]);
             }
             this.setState({ isScreenTrackUpdate: true });
@@ -1432,8 +1426,6 @@ class Conference extends React.Component {
                     }
                     return sourceElement;
                 });
-                console.log('sources mapping => =>' , roomData.sources)
-
                 this.setState({ roomData });
             }
         } else {
@@ -1458,13 +1450,10 @@ class Conference extends React.Component {
         if ( selectedBoard && selectedBoard.source ) {
             if (Array.isArray(selectedBoard.source) ) {
                 if ( selectedBoard['currentPart'] ) {
-                    console.log('returning from here => =>', selectedBoard.source)
                     return selectedBoard.source[selectedBoard['currentPart']];
                 }
-                console.log('returning from here1 => =>', selectedBoard.source[0])
                 return selectedBoard.source[0]
             } else {
-                console.log('returning from here2 => =>', selectedBoard)
                 return selectedBoard.source
             }
         }
@@ -1474,7 +1463,6 @@ class Conference extends React.Component {
     iframe = () => {
         let { selectedBoard, roomData } = this.state;
         let htmlSource = this.gethtmlSource( selectedBoard, roomData );
-        console.log('iframe source => => ', htmlSource)
         if ( htmlSource ) {
             return (
                 <Iframe url={htmlSource}
@@ -1498,7 +1486,6 @@ class Conference extends React.Component {
     }
     changeInnerBoard = ( selectionType ) => {
         let { selectedBoard } = this.state;
-
         let currentPart = selectedBoard["currentPart"];
         if ( !currentPart ) {
             currentPart = 0;
@@ -1516,7 +1503,6 @@ class Conference extends React.Component {
                 selectedBoard["currentPart"] = currentPart - 1;
             }
         }
-        console.log('board part changed => => ', selectedBoard)
         this.handleChangeBoard( selectedBoard )
     }
 
@@ -1540,7 +1526,7 @@ class Conference extends React.Component {
     teacherViews = ( viewType ) => {
         const { currentTeacherToggledView, roomData,
                 isScreenSharing, remoteUserSwappedId, isChatBoxVisible,
-                selectedBoard, currentScreenMode } = this.state;
+                selectedBoard, currentScreenMode, clickedTeacherView } = this.state;
         const { type, bitrate } = roomData;
         const customStyle = {
             btnSwapScreen: {
@@ -1664,6 +1650,16 @@ class Conference extends React.Component {
                             </Tooltip>
                         </div>
                     }
+                    {type==="student" && ((currentScreenMode === 'default' && 
+                                            (currentTeacherToggledView==='video' || currentTeacherToggledView==="screen")) ||  
+                        clickedTeacherView==="board") &&
+                        <div className="row small-video-modes-actions-box-right">
+                            <ScreenModesButtons
+                                teacherView="board"
+                                currentScreenMode={currentScreenMode}
+                                changeScreenMode={this.changeScreenMode.bind(this)}/>
+                        </div>
+                    }
                 </div>
             );
         } else if ( viewType === "screen" ) {
@@ -1693,6 +1689,16 @@ class Conference extends React.Component {
                                     <i className={`fa ${currentTeacherToggledView==="screen"?"fa-arrow-right":"fa-arrow-left"}`} aria-hidden="true" />
                                 </button>
                             </Tooltip>
+                        </div>
+                    }
+                    {type==="student" && ((currentScreenMode === 'default' && 
+                                            (currentTeacherToggledView==='video' || currentTeacherToggledView==="screen")) ||  
+                        clickedTeacherView==="screen") && (isScreenSharing && allParticipants[roomData.id].screenTracks) &&
+                        <div className="row small-video-modes-actions-box-right">
+                            <ScreenModesButtons
+                                teacherView="screen"
+                                currentScreenMode={currentScreenMode}
+                                changeScreenMode={this.changeScreenMode.bind(this)}/>
                         </div>
                     }
                 </div>
@@ -1756,8 +1762,17 @@ class Conference extends React.Component {
                                                 progress: undefined,
                                             });
 
-    changeScreenMode = ( mode ) => {
-        const { currentScreenMode } = this.state;
+    changeScreenMode = ( mode, teacherView ) => {
+        const { currentScreenMode, clickedTeacherView } = this.state;
+        if (teacherView === "screen" || teacherView === "board"){
+            if (clickedTeacherView === teacherView) {
+                this.toggleTeacherView("video");  //first move small screen to center then change mode
+                this.setState({ clickedTeacherView: null });
+            } else {
+                this.toggleTeacherView(teacherView);  //first move small screen to center then change mode
+                this.setState({ clickedTeacherView: teacherView });
+            }
+        }
         if ( mode === currentScreenMode ) {
             this.setState({ currentScreenMode: "default" });
         } else {
@@ -1792,7 +1807,7 @@ class Conference extends React.Component {
             isScreenSharing, remoteUserSwappedId, isRecording,
             isStudentsVisible, noOfNewPrivateMessages, isWorkingMode,
             isLocalAudioMute, isLocalVideoMute, currentScreenMode,
-            noOfStudentsShowing, appMessage, roomJoinError } = this.state;
+            noOfStudentsShowing, appMessage, roomJoinError, clickedTeacherView } = this.state;
         const { roomId, id, name, type } = roomData;
 
         let isFlipEnabled = false;
@@ -1987,33 +2002,13 @@ class Conference extends React.Component {
                                                     <div onClick={this.leaveRoomBtn.bind(this)} style={{ backgroundImage: `url(${stopIcon})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', marginLeft: "8px", width: "35px", height: "35px", cursor: "pointer" }} />
                                                 </div>
                                             </div>
-                                            <div id="main-video-actions-box-right" className="row">
-                                                <div className="row main-video-actions-box-right-content d-flex flex-row justify-content-end">
-                                                    {
-                                                        <Tooltip title={currentScreenMode==="chatMode"?"Exist Comments Mode":"Comments Mode"}>
-                                                            <div
-                                                                onClick={() => this.changeScreenMode("chatMode")}
-                                                                style={{
-                                                                    cursor: "pointer",
-                                                                    opacity: 1,
-                                                                    marginLeft: ".7rem",
-                                                                    flex: "1 1 0"
-                                                                }}>
-                                                                <div id="rectangle-button" />
-                                                            </div>
-                                                        </Tooltip>
-                                                    }
-                                                    {
-                                                        <Tooltip title={currentScreenMode==="fullPageMode"?"Exist Full Page":"Full Page Mode"}>
-                                                            <div
-                                                                id="full-screen-icon"
-                                                                onClick={() => this.changeScreenMode("fullPageMode")}
-                                                                style={{}}>
-                                                                <i className="fas fa-expand" />
-                                                            </div>
-                                                        </Tooltip>
-                                                    }
-                                                </div>
+                                            
+                                            <div className="row main-video-modes-actions-box-right">
+                                                {!clickedTeacherView &&  //if old screen mode variable is not null means currently small screen is big  
+                                                    <ScreenModesButtons
+                                                        currentScreenMode={currentScreenMode}
+                                                        changeScreenMode={this.changeScreenMode.bind(this)}/>
+                                                }
                                             </div>
                                         </div>
                                     </div>
@@ -2036,7 +2031,7 @@ class Conference extends React.Component {
                                                         <div className="btn-chat-inner-text d-flex justify-content-end w-70">{this.state.isGlobalAudioMute?"UnMute All":"Mute All"}</div>
                                                         <div className="global-action-button-icon d-flex justify-content-start w-30">
                                                             {<div style={{cursor: "pointer" }}>
-                                                                <i class={`fas ${this.state.isGlobalAudioMute ? "fa-microphone-slash" : "fa-microphone"}`}></i>
+                                                                <i className={`fas ${this.state.isGlobalAudioMute ? "fa-microphone-slash" : "fa-microphone"}`}></i>
                                                             </div>}
                                                         </div>
                                                     </div>
@@ -2066,7 +2061,7 @@ class Conference extends React.Component {
                                                             <div className="btn-chat-inner-text d-flex justify-content-end w-70">Work Time</div>
                                                             <div className="global-action-button-icon d-flex justify-content-start w-30">
                                                                 {<div style={{ cursor: "pointer" }} >
-                                                                    <i class="fas fa-history"></i>
+                                                                    <i className="fas fa-history"></i>
                                                                 </div>}
                                                             </div>
                                                         </div> */}
@@ -2090,7 +2085,7 @@ class Conference extends React.Component {
                                                         <div className="btn-chat-inner-text d-flex justify-content-end w-70">Working Mode</div>
                                                         <div className="global-action-button-icon d-flex justify-content-start w-30">
                                                             {/* {<div style={{ cursor: "pointer" }} >
-                                                                <i class="fas fa-history"></i>
+                                                                <i className="fas fa-history"></i>
                                                             </div>} */}
                                                         </div>
                                                     </div>
@@ -2103,7 +2098,7 @@ class Conference extends React.Component {
                                             {this.selectStudentsButton()}
                                         </div> */}
                                         <div className="studentsToggleDiv" onClick={()=>this.setState({ isStudentsVisible: !isStudentsVisible})}>
-                                            <i class={`${isStudentsVisible? "fas fa-arrow-up":"fas fa-arrow-down" }`}></i>
+                                            <i className={`${isStudentsVisible? "fas fa-arrow-up":"fas fa-arrow-down" }`}></i>
                                         </div>
                                     </div>
                                 </div>
@@ -2112,7 +2107,6 @@ class Conference extends React.Component {
                                 {
                                     this.state.roomData && this.state.roomData.sources && (this.state.roomData.sources.length > 1) &&
                                     this.state.roomData.sources.sort(this.sortSources.bind(this)).map((source,index) => {
-                                        console.log('sources roomData teacher_id => =>', source, roomData.teacher_id)
                                         if( source.position && source.position.toString() !== "0" ) {
                                             if ( index<=noOfStudentsShowing ) {
                                                 let sourceUserId = source.id,
@@ -2199,7 +2193,7 @@ class Conference extends React.Component {
                                                                             pointerEvents: allParticipants[source.id] ? "auto" : "none",
                                                                             cursor: allParticipants[source.id] ? "pointer" : "default"
                                                                         }}>
-                                                                        <i class="fas fa-pencil-alt student-action-right-icon"></i>
+                                                                        <i className="fas fa-pencil-alt student-action-right-icon"></i>
                                                                     </div>
                                                                     <InputNote
                                                                         isInputNoteVisible={isInputNoteVisible ? (selectedSource.id === source.id ? true: false) : false}
@@ -2216,7 +2210,7 @@ class Conference extends React.Component {
                                                                             pointerEvents: allParticipants[source.id] ? "auto" : "none",
                                                                             cursor: allParticipants[source.id] ? "pointer" : "default"
                                                                         }}>
-                                                                        <i class="fas fa-times student-action-right-icon"></i>
+                                                                        <i className="fas fa-times student-action-right-icon"></i>
                                                                     </div>
                                                                 </div>
                                                             }

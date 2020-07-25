@@ -129,7 +129,7 @@ class ChatBox extends React.Component {
         this.setState({ messageText: "" })
     }
     render () {
-        const { isChatBoxVisible } = this.props;
+        // const { isChatBoxVisible } = this.props;
         return (
             // <Popover 
             //     placement="bottomLeft" 

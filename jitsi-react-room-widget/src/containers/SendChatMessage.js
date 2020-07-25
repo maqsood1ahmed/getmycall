@@ -19,7 +19,7 @@ class SendChatMessage extends React.Component {
     }
 
     componentDidUpdate( prevProps, prevState ) {
-        let { roomData, selectedSource, noOfNewPrivateMessages } = this.props;
+        let { selectedSource, noOfNewPrivateMessages } = this.props;
         let filteredMessages = this.props.messages.map(message => {
             // if ( message.studentId === selectedSource.id  || roomData.id === message.id ) { 
                 return message;
