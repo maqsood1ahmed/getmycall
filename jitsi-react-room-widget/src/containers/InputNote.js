@@ -76,7 +76,6 @@ class InputNote extends React.Component {
 
     render () {
         const { isInputNoteVisible } = this.props;
-        console.log('roomDAta from input note', this.props.roomData)
         return (
             <Popover 
                 placement="top" 

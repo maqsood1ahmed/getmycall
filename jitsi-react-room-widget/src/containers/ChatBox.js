@@ -90,7 +90,7 @@ class ChatBox extends React.Component {
                             <TextArea name="messageText" value={this.state.messageText} onPressEnter={this.sendMessage.bind(this)} onChange={this.handleChange.bind(this)} rows={3} />
                         </div>
                         <div className="chat-send-button d-flex flex-row justify-content-end">
-                            <button disabled={!this.state.messageText ? true : false} onClick={this.sendMessage.bind(this)} type="button" class="btn"><img width="20px" height="20px" src={arrowSend} alt="Send" /></button>
+                            <button disabled={!this.state.messageText ? true : false} onClick={this.sendMessage.bind(this)} type="button" className="btn"><img width="20px" height="20px" src={arrowSend} alt="Send" /></button>
                         </div>
                     </div> :
                     <div className="chat-send-message">

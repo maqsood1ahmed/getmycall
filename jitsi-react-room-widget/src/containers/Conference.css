@@ -130,13 +130,37 @@ html, body {
     font-size: 13px;
     color: white;
     letter-spacing: 1px;
-    line-height: 15px;
+    line-height: 14px;
     /* border: 2px solid rgba(58, 133, 191, 0.75); */
     border-radius: 40px;
     background: #9772E8;
     /* transition: all 0.3s ease 0s; */
     font-weight: 600;
-  }
+}
+.ant-btn {
+    /* font-family: Raleway-SemiBold; */
+    font-size: 13px;
+    color: white;
+    letter-spacing: 1px;
+    line-height: 0;
+    /* border: 2px solid rgba(58, 133, 191, 0.75); */
+    border-radius: 40px;
+    background: #9772E8;
+    /* transition: all 0.3s ease 0s; */
+    font-weight: 600;
+}
+.ant-btn-primary {
+    /* font-family: Raleway-SemiBold; */
+    font-size: 13px;
+    color: white;
+    letter-spacing: 1px;
+    line-height: 0;
+    /* border: 2px solid rgba(58, 133, 191, 0.75); */
+    border-radius: 40px;
+    background: #9772E8;
+    /* transition: all 0.3s ease 0s; */
+    font-weight: 600;
+}
 
 .all-sources-container {
     padding-top: 1.5rem;
@@ -277,18 +301,17 @@ html, body {
 }
 
 .student-video-actions-top {
-    /* top: -12%; */
-    top: -.7rem;
+    top: .1rem;
     position: absolute;
     z-index: 1;
     border-radius: 10px;
-    margin-left: 2px;
+    margin-left: 0;
     /* width: 130px;
     height: 0px; */
     /* line-height: 50%; */
     /* align-items: center; */
     justify-content: flex-start;
-    font-size: 20px;
+    font-size: 15px;
 }
 .student-video-actions-top-icon {
     margin-left: 4px;
@@ -297,7 +320,7 @@ html, body {
     display: inline-block;
     border-radius: 60px;
     box-shadow: 0px 0px 2px #888;
-    padding: 0.2em 0.3em;
+    padding: 0.37em 0.47em;
     background-color: #d0f543;
 }
 .student-video-actions-top-icon>span.no-of-messages {
@@ -306,7 +329,7 @@ html, body {
     box-shadow: 0px 0px 2px #888;
     padding: 0.1em 0.6em;
     background-color: #e9dc3d;
-    font-size: 16px;
+    /* font-size: 16px; */
 }
 
 .btn-swap-video {
@@ -383,7 +406,7 @@ html, body {
     font-weight: 500;
 }
 
-#small-videos-box {
+#small-videos-box-outer {
     /* padding-top: 8px !important; */
     /* margin-left: auto; */
     /* //11.2%; */
@@ -396,11 +419,17 @@ html, body {
     padding-right: 2.3rem;
     background-color: #9772E8;
     min-height: 12rem; /*for scrolling purpose*/
+    /* bottom: auto; */
+    /* height: 12vh; */
     /* border-radius: 0rem 1rem 0rem 0rem; */
 }
-#end-of-page-div{
+#small-videos-box-inner {
+    height: 7rem;
+    overflow-y: auto;
+}
+#end-of-students-box-div, #start-of-students-box-div {
     width: 10%;
-    height: 1px;
+    height: 0px;
     background-color: #9772E8;
     margin-bottom: 10px;
 }
@@ -408,7 +437,7 @@ html, body {
 .student-small-video {
     position: relative;
     padding: 0rem 0rem 1rem 1rem;
-    height: 100%;
+    /* height: 100%; */
 }
 
 .student-video-tag {
@@ -621,18 +650,18 @@ audio {
 }
 
 /* chat box */
-.ant-popover {
+/* .ant-popover { */
     /* top: 2.5rem !important; */
     /* height: 96vh !important; */
-}
-.ant-popover-inner {
+/* } */
+/* .mainChatBox .ant-popover-inner {
     /* height: 34rem !important; */
-    height: 88vh !important;
+    /* height: 88vh !important;
     border-radius: 1.3rem 0rem 0rem 1.3rem !important;
-}
-.mainChatBox .ant-popover-content {
+} */
+/* .mainChatBox .ant-popover-content {
     width: 100%;
-}
+}  */
 /* .ant-popover-title {
     border-bottom: none;
     background-color: #9670e3;
@@ -643,7 +672,7 @@ audio {
     /* display: none;
 } */
 
-.btn-primary:hover {
+.btn-primary:hover, .ant-btn-primary:hover, .ant-btn:hover {
     background-color: #6343AE;
 }
 .btn-primary:active, .btn-primary:focus {
