@@ -2,9 +2,10 @@ import React from 'react';
 import { Popconfirm } from 'antd';
 
 const AppButtons = (props) => {
-    const { buttonFor } = props;
+    const { buttonFor, roomData, isWorkingMode, currentTeacherToggledView, 
+        switchToGlobalWorkingMode, toggleGlobalSources, isGlobalAudioMute 
+    } = props;
     if ( buttonFor === "workingMode" ) {
-        const { isWorkingMode, currentTeacherToggledView, switchToGlobalWorkingMode } = props;
         return (
             <Popconfirm
                 placement="topRight"
@@ -20,7 +21,10 @@ const AppButtons = (props) => {
                         pointerEvents: currentTeacherToggledView==="board"?"auto":"none",
                         cursor: currentTeacherToggledView==="board"?"pointer":"default",
                         opacity: currentTeacherToggledView==="board"?"1":"0.5",
-                        width: "11rem", height: "2rem"
+                        paddingLeft: "1.3rem",
+                        marginLeft: "0.2rem",
+                        border: "2px solid white",
+                        letterSpacing: 0
                     }}
                 >
                     <div className="d-flex flex-row justify-content-center" style={{ marginTop: ".1rem"}}>
@@ -33,7 +37,24 @@ const AppButtons = (props) => {
                     </div>
                 </button>
             </Popconfirm>)
-        }
+    } else if (buttonFor === "muteAll") {
+        const id = (roomData && roomData.id) || "";
+        return (
+            <button 
+                onClick={() => toggleGlobalSources( id, "mute-all-students-audio" )} 
+                type="button" 
+                style={{ border: "2px solid white", letterSpacing: 0 }} 
+                className="btn btn-primary teacher-actions-button">
+                <div className="d-flex flex-row justify-content-center" style={{ marginTop: ".1rem" }}>
+                    <div className="btn-chat-inner-text d-flex justify-content-end w-70">{isGlobalAudioMute?"UnMute All":"Mute All"}</div>
+                    <div className="global-action-button-icon d-flex justify-content-start w-30">
+                        {<div style={{ cursor: "pointer" }}>
+                            <i className={`fas ${isGlobalAudioMute ? "fa-microphone-slash" : "fa-microphone"}`}></i>
+                        </div>}
+                    </div>
+                </div>
+            </button>);
+    }
     return null;
 };
 

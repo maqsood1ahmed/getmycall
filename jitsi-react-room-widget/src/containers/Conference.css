@@ -24,20 +24,18 @@ html, body {
 } */
 
 #classroom-header {
-    height: 3rem;
+    height: 8vh;
     background-color: #fefefe;
     margin: 0 !important;
 }
-.time-box-container {
-    padding-top: 0.5rem;
-}
+
 .back-button-container {
     margin: 0 1rem 0 1rem;
     position: relative;
 }
 .back-button-container>button {
-    width: 6.6rem;
-    height: 2.3rem;
+    width: 6.5rem;
+    height: 2rem;
     background: #9772E8;
 }
 .back-button-container>button>div{
@@ -51,7 +49,7 @@ html, body {
     font-size: 20px;
     font-weight: 600;
     width: 10rem;
-    height: 2.3rem;
+    height: 2rem;
 }
 .class-room-header-info {
     font-size: 22px;
@@ -71,11 +69,13 @@ html, body {
 .class-room-header-content {
     /* cursor: pointer; */
 }
+.classroom-header-inner {
+    height: 100%;
+}
 
 .chat-button-container {
     margin-right: 2rem;
     position: relative;
-    padding-top: 0.5rem;
 }
 
 
@@ -220,6 +220,8 @@ html, body {
 #main-video-actions-box-left {
     display: flex;
     flex: 1 1 0;
+    margin-left: 1.7rem;
+    padding-top: 0.5rem;
 }
 
 #main-video-actionhs-box-center {
@@ -237,6 +239,17 @@ html, body {
     justify-content: center;
     background: #9873e863;
 }
+.screen-share-icon{
+    position: relative;
+}
+.screen-share-stop-icon{
+    position: absolute;
+    color: rgb(235, 77, 32);
+    margin-top: -1rem;
+    margin-left: 0.7rem;
+    font-size: 15px;
+}
+
 .small-video-modes-actions-box-right {
     display: flex;
     flex: 1 1 0;
@@ -291,6 +304,9 @@ html, body {
     margin-right: 1rem;
     color: #6243ad;
     margin-left: 1rem;
+    position: absolute;
+    top: 10px;
+    right: 0;
 }
 .ant-select-arrow {
     top: 1rem !important;
@@ -383,16 +399,8 @@ html, body {
     color: #080000;
 }
 
-.room-global-actions-div {
-    height: 3rem;    
-    padding-left: 4.5rem;
-    background-color: #9772E8;
-    border-radius: 0rem 1rem 0rem 0rem;
-    margin-bottom: 0rem !important;
-}
-
 .global-action-button-icon {
-    margin-left: 0.5rem;
+    margin-left: 0.3rem;
 }
 .global-actions-button-container {
     margin-top: .4rem;
@@ -403,7 +411,14 @@ html, body {
     border: 1px solid white;
     font-size: 18px;
     color: white;
-    font-weight: 500;
+    /* font-weight: 500; */
+    pointer-events: auto;
+    cursor: pointer;
+    opacity: 1;
+    width: 6rem !important;
+    height: 2rem;
+    font-size: 11px;
+    font-weight: 700;
 }
 
 #small-videos-box-outer {
@@ -418,13 +433,15 @@ html, body {
     padding-left: 2.3rem;
     padding-right: 2.3rem;
     background-color: #9772E8;
-    min-height: 12rem; /*for scrolling purpose*/
+    /* min-height: 12rem; for scrolling purpose */
+    border-radius: 0 20px 0px 0px;
     /* bottom: auto; */
     /* height: 12vh; */
     /* border-radius: 0rem 1rem 0rem 0rem; */
+    position: relative;
 }
 #small-videos-box-inner {
-    height: 7rem;
+    height: 9rem;
     overflow-y: auto;
 }
 #end-of-students-box-div, #start-of-students-box-div {
@@ -443,7 +460,7 @@ html, body {
 .student-video-tag {
     border-radius: 10px;
     width: 100%;
-    height: 5rem;
+    /* height: 5rem; */
 }
 
 .student-name {
@@ -688,7 +705,7 @@ audio {
     /* top: .5rem; */
     background-color: white;
     position: absolute;
-    top: 5rem;
+    top: 10.5vh;
     right: 0;
     bottom: 1rem;
     border-radius: 1rem 0rem 0rem 0rem;
@@ -1097,166 +1114,15 @@ audio {
     .teacher-div-large-with-chat-mode{
         height: 89vh;
     }
-}
 
-@media only screen and (min-width: 1366px) and (min-height: 768px) {
-    /* dynamic height change from React */
-    .teacher-div-large {
-        height: 63vh;
-    }
-    .teacher-div-small {
-        height: 29.5vh;
-    }
-    .teacher-div-large-with-chat{
-        height: 63vh;
-    }
-    .teacher-div-small-with-chat{
-        height: 29.5vh;
-    }
-    .teacher-screen-share-div-screen-mode{
-        height: 52vh;
-    }.teacher-board-div-screen-mode{
-        height: 52vh;
-    }.video-div-screen-mode{
-        height: 52vh;
-    }
-    .teacher-div-large-full-screen-mode {
-        height: 89vh;
-    }
-    .teacher-div-large-with-chat-mode{
-        height: 89vh;
-    }
-}
-
-@media only screen and (min-width: 1600px)  and (min-height: 900px) {
-    /* dynamic height change from React */
-    .teacher-div-large {
-        height: 66vh;
-    }
-    .teacher-div-small {
-        height: 31vh;
-    }
-    .teacher-div-large-with-chat{
-        height: 66vh;
-    }
-    .teacher-div-small-with-chat{
-        height: 31vh;
-    }
-    .teacher-screen-share-div-screen-mode{
-        height: 65vh;
-    }.teacher-board-div-screen-mode{
-        height: 65vh;
-    }.video-div-screen-mode{
-        height: 65vh;
-    }
-    .teacher-div-large-full-screen-mode {
-        height: 91vh;
-    }
-    .teacher-div-large-with-chat-mode{
-        height: 91vh;
-    }
-}
-@media only screen and (min-width: 1920px) and (min-height: 1080px){
-    /* dynamic height change from React */
-    .teacher-div-large {
-        height: 68vh;
-    }
-    .teacher-div-small {
-        height: 32.2vh;
-    }
-    .teacher-div-large-with-chat{
-        height: 70vh;
-    }
-    .teacher-div-small-with-chat{
-        height: 33vh;
-    }
-    .teacher-screen-share-div-screen-mode{
-        height: 70vh;
-    }.teacher-board-div-screen-mode{
-        height: 70vh;
-    }.video-div-screen-mode{
-        height: 70vh;
-    }
-    .teacher-div-large-full-screen-mode {
-        height: 92vh;
-    }
-    .teacher-div-large-with-chat-mode{
-        height: 92vh;
-    }
-}
-
-/* All these queries related to student */
-/* Extra small devices (phones, 575px and down) */
-@media only screen and (max-width: 575px) {
-    /* dynamic height change from React */
     .student-video-tag {
-        height: 6rem;
+        height: 11vh;
     }
-    .student-small-video {
-        width: 50%;
+    #small-videos-box-outer {
+        height: 27vh !important;
     }
-}
-@media only screen and (min-width: 576px) {
-    /* dynamic height change from React */
-    .student-video-actions-right {
-        margin: 0;
-        font-size: 8px;
-    }
-    .student-action-right-icon-div{
-        width: .8rem;
-        height: .8rem;
-        margin: 0rem 0rem 0.1rem 0rem;
-        top: 0rem;
-    }
-    .student-video-tag {
-        height: 8rem;
-    }
-    .student-name {
-        /* margin: 0rem; */
-    }
-    .student-small-video {
-        width: 33%;
-    }
-}
-/* Medium devices (landscape tablets, 768px and up) */
-@media only screen and (min-width: 768px) {
-    /* dynamic height change from React */
-    .student-video-tag {
-        height: 6rem;
-    }
-    .student-action-right-icon-div{
-        width: 1rem;
-        height: 1rem;
-    }
-    .student-video-actions-right {
-        margin: 0rem;
-        font-size: 10px;
-    }
-    .student-small-video {
-        width: 25%;
-    }
-}
-/* Large devices (laptops/desktops, 992px and up) */
-@media only screen and (min-width: 992px) {
-    /* dynamic height change from React */
-    .student-video-tag {
-        height: 6rem;
-    }
-    .student-action-right-icon-div{
-        width: 1rem;
-        height: 1rem;
-        margin: 0.3rem 0rem 0rem 0rem;
-        font-size: 10px;
-    }
-    .student-small-video {
-        width: 20%;
-    }
-}
-/* Extra large devices (large laptops and desktops, 1200px and up) */
-@media only screen and (min-width: 1200px) {
-    /* dynamic height change from React */
-    .student-video-tag {
-        height: 4.8rem;
+    #small-videos-box-inner {
+        height: 23vh;
     }
     .student-action-right-icon-div{
         width: 1.1rem;
@@ -1266,20 +1132,4 @@ audio {
         width: 10%;
     }
 }
-@media only screen and (min-width: 1650px) {
-    /* dynamic height change from React */
-    .student-video-tag {
-        height: 6rem;
-    }
-    .student-video-actions-right {
-        top: .5rem;
-    }
-    .student-small-video {
-        width: 10%;
-    }
-}
-@media only screen and (min-width: 2000px) {
-    .student-video-tag {
-        height: 8rem;
-    }
-}
+
