@@ -899,9 +899,9 @@ class Conference extends React.Component {
                 socket.disconnect();
         
                 // if ( redirectToMainPage ) {
-                // window.location.href = webRootUrl;
+                window.location.href = webRootUrl;
                 // } else {
-                    this.setState({ isLoggedIn: false, isStopped: true });
+                //     this.setState({ isLoggedIn: false, isStopped: true });
                 // }
             }
         }
@@ -1869,16 +1869,16 @@ class Conference extends React.Component {
             </div>
         } else if ( !isLoggedIn ) {
             return (<div style={{ paddingLeft: "0px", paddingRight: "0px", width: "100vw", height: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "center" }}>
-                {this.state.isStopped ? <p style={{ fontSize: "35px", color: this.state.isStopped? "red" : "black" }}> {appMessage} </p> :
+                {/* {this.state.isStopped ? <p style={{ fontSize: "35px", color: this.state.isStopped? "red" : "black" }}> {appMessage} </p> :
                 // <div style={{ width: "100%" }}>
                 //     <img src={loadingIcon} alt="" width="100%" height="100%" />
-                // </div>}
-                (roomJoinError!==""?
+                // </div>} */}
+                {roomJoinError!==""?
                     <p style={{ fontSize: "35px", color: "red" }}> {roomJoinError} </p>
                     :
                     <div className="justify-content-center" style= {{ width: "100%", height: "100%", top: "50%", backgroundColor: 'white' }}>
                         <img src={`https://api.getmycall.com/static/media/loading-icon.gif`} alt="" width="200" height="200" style={{ marginTop: "120px" }} />
-                    </div>)
+                    </div>
                 }
                 {/* {this.state.isStopped && <Button onClick={()=> this.joinRoom()} type="primary"> Join Again </Button>} */}
             </div>)
