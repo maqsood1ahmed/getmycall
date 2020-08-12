@@ -502,7 +502,9 @@ class Conference extends React.Component {
                 isConnected = false;
                 message.error('connection failed.');
             });
-            connection.addEventListener(window.JitsiMeetJS.events.connection.CONNECTION_DISCONNECTED,() => this.disconnect());
+            connection.addEventListener(window.JitsiMeetJS.events.connection.CONNECTION_DISCONNECTED,() => {
+                this.disconnect();
+            });
 
             window.JitsiMeetJS.mediaDevices.addEventListener(
                 JitsiMeetJS.events.mediaDevices.DEVICE_LIST_CHANGED,(devices) => {
@@ -896,6 +898,7 @@ class Conference extends React.Component {
                 room = null;
                 connection = null;
 
+                message.warn('Disconnected!!!')
                 socket.disconnect();
         
                 // if ( redirectToMainPage ) {
