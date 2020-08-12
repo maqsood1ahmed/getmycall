@@ -4,6 +4,7 @@ import { createStore, applyMiddleware, compose } from 'redux';
 import { Provider } from "react-redux";
 import thunk from "redux-thunk";
 import 'antd/dist/antd.css';
+import MediaQuery from 'react-responsive'
 
 import Confernece from './containers/Conference';
 import messagesReducer from "./reducers";
@@ -31,7 +32,16 @@ if ( type === 'student' ) {
 }
  
 ReactDOM.render(<Provider store={store}>
-    <Confernece params={params} />
+    <MediaQuery minDeviceWidth={1280}>
+        <Confernece 
+            params={params} 
+            isMobileOrTablet={false}/>
+    </MediaQuery>
+    <MediaQuery maxDeviceWidth={1280}>
+        <Confernece 
+            params={params} 
+            isMobileOrTablet={true}/>
+    </MediaQuery>
 </Provider>, el);
 
 /* uncomment this block to "defer" ReactDOM.render and expose it globaly

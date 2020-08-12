@@ -1086,6 +1086,20 @@ audio {
     }
 }
 
+/* Small devices (tablets or mobiles) */
+@media only screen and (max-width: 1280px) {
+    body{
+        overflow: hidden;
+    }
+    .teaher-video-div {
+        width: 90vw !important;
+        height: 90vh !important;
+    }
+    .main-video-actions-box-center-content {
+        width: 100vw;
+    }
+}
+
 /* Extra large devices (large laptops and desktops, 1200px and up) */
 @media only screen and (min-width: 1280px) {
     /* dynamic height change from React */

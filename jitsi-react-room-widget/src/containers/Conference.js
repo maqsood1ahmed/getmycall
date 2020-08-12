@@ -7,13 +7,12 @@ import Iframe from 'react-iframe';
 import { Modal, Popconfirm } from 'antd';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import MediaQuery from 'react-responsive'
 
-import { message, Select, notification, Tooltip, Typography } from 'antd';
+import { message, Select, notification, Tooltip } from 'antd';
 import socketIOClient from "socket.io-client";
 import './Conference.css';
 import { addMessages } from '../actions';
-
-const { Text } = Typography;
 
 import startIcon from '../assets/img/start.png';
 import stopIcon from '../assets/img/stop.png';
@@ -99,6 +98,7 @@ class Conference extends React.Component {
             params= queryString.parse(window.location.search.substring(1));
         }
         this.state.params = params;
+        console.log(params, 'current params')
         
         this.smallVideosContainerRef = React.createRef();
     }
@@ -134,7 +134,6 @@ class Conference extends React.Component {
                         class_id: params.class_id,
                         teacher_id: params.teacher_id
                     }
-
 
                     // //***change teacher id later in both if and else block currenlty using manually
                     // //*** its related to sources */
@@ -185,24 +184,6 @@ class Conference extends React.Component {
         let $ = window.jQuery;
         $(window).bind('beforeunload', this.unload.bind(this));
         $(window).bind('unload', this.unload.bind(this));
-
-        // document.getElementById("small-videos-box-inner").addEventListener('scroll', this.trackScrolling);
-        
-        // $('').on('scroll', function()
-        // {
-        //     console.log('scrolling', $(this).scrollTop(), $(this).innerHeight())
-        // //   if($(this).scrollTop() + $(this).innerHeight()>=$(this)[0].scrollHeight)
-        // //   {
-        // //     console.log('end of scroll detected.')
-        // //     this.setState({ noOfStudentsShowing: this.state.noOfStudentsShowing+10, isStudentsTrackUpdate: true });
-        // //   }
-        // })
-        // $('#small-videos-box-inner').scroll(()=>{
-        //     alert("scroll")
-        //     if($(this).scrollTop() + $(this).innerHeight() >= $(this)[0].scrollHeight) {
-        //         alert('end reached');
-        //     }
-        // })
     }
     isBottomOfDiv = el => {
         if (el.getBoundingClientRect()){
@@ -902,7 +883,7 @@ class Conference extends React.Component {
                 socket.disconnect();
         
                 // if ( redirectToMainPage ) {
-                window.location.href = webRootUrl;
+                // window.location.href = webRootUrl;
                 // } else {
                 //     this.setState({ isLoggedIn: false, isStopped: true });
                 // }
@@ -1861,6 +1842,9 @@ class Conference extends React.Component {
             noOfNewPrivateMessages, isWorkingMode,
             isLocalAudioMute, isLocalVideoMute, currentScreenMode,
             noOfStudentsShowing, appMessage, roomJoinError, clickedTeacherView } = this.state;
+        const {
+            isMobileOrTablet
+        } = this.props;
         const { roomId, id, name, type } = roomData;
 
         let isFlipEnabled = false;
@@ -1902,388 +1886,426 @@ class Conference extends React.Component {
                         pauseOnHover={false}
                     />
                     <div style={{ width: "100%", display: (this.state.isWorkingMode && type==="student")? "none": "block"}}>
-                        <div className="w-100" id="classroom-header">
-                            <div className="classroom-header-inner d-flex flex-row justify-content-between">
-                                <div className="d-flex flex-column justify-content-center">
-                                    <div className="time-box-container d-flex flex-row justify-content-between">
-                                        <div className="back-button-container">
-                                            <button onClick={()=>this.leaveRoomBtn()} type="button" width= "11rem" height="2rem" className="btn btn-primary main-button">
-                                                <div className="d-flex flex-row justify-content-center">
-                                                    <div className="d-flex justify-content-start w-30">
-                                                        <i className="fa fa-arrow-left btn-back-icon" aria-hidden="true" />
+                        
+                        {/* =================== 1 => classroom header start ===================== */}
+                        {!isMobileOrTablet &&
+                            <div className="w-100" id="classroom-header">
+                                <div className="classroom-header-inner d-flex flex-row justify-content-between">
+                                    <div className="d-flex flex-column justify-content-center">
+                                        <div className="time-box-container d-flex flex-row justify-content-between">
+                                            <div className="back-button-container">
+                                                <button onClick={()=>this.leaveRoomBtn()} type="button" width= "11rem" height="2rem" className="btn btn-primary main-button">
+                                                    <div className="d-flex flex-row justify-content-center">
+                                                        <div className="d-flex justify-content-start w-30">
+                                                            <i className="fa fa-arrow-left btn-back-icon" aria-hidden="true" />
+                                                        </div>
+                                                        <div className="btn-chat-inner-text d-flex justify-content-end w-70">Go Back</div>
                                                     </div>
-                                                    <div className="btn-chat-inner-text d-flex justify-content-end w-70">Go Back</div>
-                                                </div>
-                                            </button>
-                                        </div>
-                                        <div className="time-box-info">
-                                            <span className="time-start">08:30</span>  -  <span className="time-end">09:15</span>
+                                                </button>
+                                            </div>
+                                            <div className="time-box-info">
+                                                <span className="time-start">08:30</span>  -  <span className="time-end">09:15</span>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                                <div className="class-room-header-info d-flex flex-column justify-content-center">
-                                    <RoomAnnouncement
-                                        id={roomData}
-                                        roomId={roomData.roomId}
-                                        announcment={roomData.announcment}
-                                        type={roomData.type}
-                                        socket={socket}
-                                        handleChangeAnnouncement={(e) => this.handleChangeAnnouncement(e)}
-                                    />
-                                </div>
-                                <div className="main-button d-flex flex-column justify-content-center">
-                                <div className="chat-button-container d-flex flex-column justify-content-center">
-                                    <button onClick={()=>this.toggleChatBox()} type="button" className="btn btn-primary main-button"
-                                        style={{
-                                            width: '9rem',
-                                            height: "2rem",
-                                            background: `${isChatBoxVisible? "rgb(121, 119, 128)" : "#9772E8"}`
-                                        }}>
-                                        <div className="d-flex flex-row justify-content-center">
-                                            <div className="btn-chat-inner-text d-flex justify-content-end w-70">Class Chat</div>
-                                            <div className="chat-button-icon d-flex justify-content-start w-30">
-                                                <i className="fas fa-comment btn-chat-icon" />
-                                            </div>
-                                        </div>
-                                    </button>
-                                    {
-                                        (noOfNewMessages !== 0) &&
-                                            <div className="chat-messages-count">
-                                                <span className="chat-messages-count-text">{noOfNewMessages}</span>
-                                            </div>
-                                    }
-                                </div>
-                            </div>
-                            </div>
-                            </div>
-                        <div className="all-sources-container row" style={{ width: "100%" }}>
-                        <div style={{width: isChatBoxVisible? "80%" : "100%"}}>
-                        {/* // className={isChatBoxVisible? "col-9" : "col-12" */}
-                            {(type==="teacher" || (type==="student"&& !isWorkingMode)) &&
-                                <div className="row w-100" id="teacher-container">
-                                    <div className={`${currentScreenMode!=="default"?"col-md-12 col-sm-12":"col-md-8 col-sm-8"} col-xs-12 w-100`} id={currentScreenMode==="default"?"large-video-container":"large-video-container-full-screen-mode"}>
-                                        {currentTeacherToggledView==="video" ? this.teacherViews('video' ) : (currentTeacherToggledView==="board" ? this.teacherViews('board') : this.teacherViews('screen'))}
-                                        {type === "student" &&
-                                            <div className={`teacher-student-actions-right d-flex flex-column justify-content-start`}>
-                                                <div onClick={() => this.showSendMessageBox(roomData.sources[0])}
-                                                    className="teacher-student-action-right-icon-div d-flex flex-row justify-content-center"
-                                                    style={{ backgroundColor: "#fabe11",  }}>
-                                                    <i className="fas fa-comment student-action-right-icon"></i>
+                                    <div className="class-room-header-info d-flex flex-column justify-content-center">
+                                        <RoomAnnouncement
+                                            id={roomData}
+                                            roomId={roomData.roomId}
+                                            announcment={roomData.announcment}
+                                            type={roomData.type}
+                                            socket={socket}
+                                            handleChangeAnnouncement={(e) => this.handleChangeAnnouncement(e)}
+                                        />
+                                    </div>
+                                    <div className="main-button d-flex flex-column justify-content-center">
+                                    <div className="chat-button-container d-flex flex-column justify-content-center">
+                                        <button onClick={()=>this.toggleChatBox()} type="button" className="btn btn-primary main-button"
+                                            style={{
+                                                width: '9rem',
+                                                height: "2rem",
+                                                background: `${isChatBoxVisible? "rgb(121, 119, 128)" : "#9772E8"}`
+                                            }}>
+                                            <div className="d-flex flex-row justify-content-center">
+                                                <div className="btn-chat-inner-text d-flex justify-content-end w-70">Class Chat</div>
+                                                <div className="chat-button-icon d-flex justify-content-start w-30">
+                                                    <i className="fas fa-comment btn-chat-icon" />
                                                 </div>
-                                                {
-                                                    (noOfNewPrivateMessages !== 0) &&
-                                                        <div className="chat-messages-count">
-                                                            <span className="private-chat-messages-count-text">{noOfNewPrivateMessages}</span>
-                                                        </div>
-                                                }
-                                                <SendChatMessage
-                                                    isSendMessageBoxVisible={isSendMessageBoxVisible ? true : false}
-                                                    selectedSource={selectedSource}
-                                                    hideMessageBox={this.hideSendMessageBox.bind(this)}
-                                                    roomData={roomData}
-                                                    socket= {socket}
-                                                    studentId={roomData.teacher_id} //now its teacher
-                                                    studentName={roomData.sources[0].name}
-                                                    noOfNewPrivateMessages={noOfNewPrivateMessages}
-                                                    clearNoOfNewPrivateMessages={this.clearNoOfNewPrivateMessages.bind(this)}
-                                                />
                                             </div>
+                                        </button>
+                                        {
+                                            (noOfNewMessages !== 0) &&
+                                                <div className="chat-messages-count">
+                                                    <span className="chat-messages-count-text">{noOfNewMessages}</span>
+                                                </div>
                                         }
-                                        <div className={`row w-100 d-flex  ${currentScreenMode==="default"?"teacher-actions-button-container-normal-mode":"teacher-actions-button-container-view-mode"}`}>
-                                            <div id="main-video-actions-box-left" className="row d-flex flex-row">
-                                                <AppButtons
-                                                    buttonFor="muteAll"
-                                                    roomData={roomData}
-                                                    isGlobalAudioMute={this.state.isGlobalAudioMute}
-                                                    toggleGlobalSources={this.toggleGlobalSources.bind(this)}
-                                                />
-                                                {roomData.type=="teacher" &&
-                                                    <AppButtons 
-                                                        buttonFor="workingMode"
-                                                        isWorkingMode={isWorkingMode}
-                                                        currentTeacherToggledView={currentTeacherToggledView}
-                                                        switchToGlobalWorkingMode={this.switchToGlobalWorkingMode.bind(this)}/>
-                                                }
-                                            </div>
-                                            <div id="main-video-actions-box-center" className="row">
-                                                <div className="main-video-actions-box-center-content d-flex flex-row justify-content-center">
-                                                    {
-                                                        (type === "teacher" || remoteUserSwappedId === id) &&
-                                                        <Tooltip title={((currentTeacherToggledView==="board"||remoteUserSwappedId)  && type==="teacher")?"First move teacher to center.":""}>
-                                                            <div
-                                                                style={{
-                                                                    fontSize: "1.8rem",
-                                                                    cursor: "pointer",
-                                                                    opacity: (remoteUserSwappedId && type === "teacher") ?0.8:1,
-                                                                    marginRight: ".4rem"
-                                                                }}>
-                                                                {isScreenSharing ? 
-                                                                    <Popconfirm
-                                                                        placement="top"
-                                                                        title="Do you want to Stop Screen Share!"
-                                                                        onConfirm={() => this.unload(true)}
-                                                                        okText="Ok"
-                                                                        cancelText="Cancel"
-                                                                    >
-                                                                        <div className="screen-share-icon">
-                                                                            <i className="fas fa-desktop" />
-                                                                        </div>
-                                                                        <div className="screen-share-stop-icon">
-                                                                            <i className="fa fa-times" aria-hidden="true" />
-                                                                        </div>
-                                                                    </Popconfirm>:
-                                                                    <div
-                                                                        onClick={() => this.handleScreenShareButton(isScreenSharing)}
-                                                                        className="screen-share-icon">
-                                                                        <i className="fas fa-desktop" />
-                                                                    </div>
-                                                                }
-                                                                
-                                                            </div>
-                                                        </Tooltip>
-                                                    }
-                                                    {<div
-                                                        onClick={() => { this.toggleLocalSource( id, isLocalAudioMute, 'audio' )}}
-                                                        style={{
-                                                            cursor: "pointer",
-                                                            marginLeft: "8px"
-                                                        }}>
-                                                        <img
-                                                            src={((isGlobalAudioMute && type==="student" ) || isLocalAudioMute) ?
-                                                                "http://api.getmycall.com/static/media/mic-off.svg" :
-                                                                "http://api.getmycall.com/static/media/mic-on.svg"
-                                                            }
-                                                            style={{
-                                                                width: "30px",
-                                                                height:"30px",
-                                                                opacity: `${(isGlobalAudioMute && type === "student")? 0.5 : 1}`
-                                                        }} />
-                                                    </div>}
-                                                    {<div
-                                                        onClick={() => this.toggleLocalSource( id, isLocalVideoMute, 'video' )}
-                                                        style={{
-                                                            cursor: "pointer",
-                                                            marginLeft: "8px"
-                                                        }}>
-                                                        <img
-                                                            src={isLocalVideoMute ?
-                                                                "https://api.getmycall.com/static/media/video-slash-solid.svg" :
-                                                                "https://api.getmycall.com/static/media/video-solid.svg"
-                                                            }
-                                                            style={{
-                                                                width: "30px",
-                                                                height:"30px",
-                                                                opacity: `${(this.state.isVideoMuteByTeacher && type === "student")? 0.5 : 1}`
-                                                        }} />
-                                                    </div>}
+                                    </div>
+                                </div>
+                                </div>
+                            </div>
+                        }
+                        {/* =================== classroom header end ===================== */}
+                        
 
-                                                            {
-                                                            type==="teacher" &&
+                        <div className="all-sources-container row" style={{ width: "100%" }}>
+
+
+                        {/* ================= 2 => teacher and students container start ================== */}
+                        <div style={{width: isChatBoxVisible? "80%" : "100%"}}>
+                            {/* ================= 2.1=> teacher container start ================== */}
+                            {
+                                (type==="teacher" || (type==="student"&& !isWorkingMode)) &&
+                                    <div className="row w-100" id="teacher-container">
+                                        <div className={`${currentScreenMode!=="default"?"col-md-12 col-sm-12":"col-md-8 col-sm-8"} col-xs-12 w-100`} id={currentScreenMode==="default"?"large-video-container":"large-video-container-full-screen-mode"}>
+                                            {currentTeacherToggledView==="video" ? this.teacherViews('video' ) : (currentTeacherToggledView==="board" ? this.teacherViews('board') : this.teacherViews('screen'))}
+                                            {type === "student" &&
+                                                <div className={`teacher-student-actions-right d-flex flex-column justify-content-start`}>
+                                                    <div onClick={() => this.showSendMessageBox(roomData.sources[0])}
+                                                        className="teacher-student-action-right-icon-div d-flex flex-row justify-content-center"
+                                                        style={{ backgroundColor: "#fabe11",  }}>
+                                                        <i className="fas fa-comment student-action-right-icon"></i>
+                                                    </div>
+                                                    {
+                                                        (noOfNewPrivateMessages !== 0) &&
+                                                            <div className="chat-messages-count">
+                                                                <span className="private-chat-messages-count-text">{noOfNewPrivateMessages}</span>
+                                                            </div>
+                                                    }
+                                                    <SendChatMessage
+                                                        isSendMessageBoxVisible={isSendMessageBoxVisible ? true : false}
+                                                        selectedSource={selectedSource}
+                                                        hideMessageBox={this.hideSendMessageBox.bind(this)}
+                                                        roomData={roomData}
+                                                        socket= {socket}
+                                                        studentId={roomData.teacher_id} //now its teacher
+                                                        studentName={roomData.sources[0].name}
+                                                        noOfNewPrivateMessages={noOfNewPrivateMessages}
+                                                        clearNoOfNewPrivateMessages={this.clearNoOfNewPrivateMessages.bind(this)}
+                                                    />
+                                                </div>
+                                            }
+                                            <div 
+                                                className={`row d-flex ${isMobileOrTablet && 'justify-content-center'}  ${currentScreenMode==="default"?"teacher-actions-button-container-normal-mode":"teacher-actions-button-container-view-mode"}`}
+                                                style={{ width: (isMobileOrTablet? "100vw": "100%")}}
+                                            >
+                                                {!isMobileOrTablet && 
+                                                    <div id="main-video-actions-box-left" className="row d-flex flex-row">
+                                                        {roomData.type=="teacher" &&
+                                                            <AppButtons
+                                                                buttonFor="muteAll"
+                                                                roomData={roomData}
+                                                                isGlobalAudioMute={this.state.isGlobalAudioMute}
+                                                                toggleGlobalSources={this.toggleGlobalSources.bind(this)}
+                                                            />
+                                                        }
+                                                        {roomData.type=="teacher" &&
+                                                            <AppButtons 
+                                                                buttonFor="workingMode"
+                                                                isWorkingMode={isWorkingMode}
+                                                                currentTeacherToggledView={currentTeacherToggledView}
+                                                                switchToGlobalWorkingMode={this.switchToGlobalWorkingMode.bind(this)}/>
+                                                        }
+                                                    </div>
+                                                }
+                    
+                                                <div id="main-video-actions-box-center" className="row">
+                                                    <div className="main-video-actions-box-center-content d-flex flex-row justify-content-center">
+                                                        {
+                                                            (type === "teacher" || remoteUserSwappedId === id) &&
+                                                            <Tooltip title={((currentTeacherToggledView==="board"||remoteUserSwappedId)  && type==="teacher")?"First move teacher to center.":""}>
                                                                 <div
-                                                                    onClick={() => this.handleRecordVideo()}
                                                                     style={{
                                                                         fontSize: "1.8rem",
                                                                         cursor: "pointer",
-                                                                        color: isRecording?"red": "black",
-                                                                        marginLeft: ".5rem"
+                                                                        opacity: (remoteUserSwappedId && type === "teacher") ?0.8:1,
+                                                                        marginRight: ".4rem"
                                                                     }}>
-                                                                        <i className="fas fa-circle" />
-                                                                    </div>
-                                                            }
-                                                    <div onClick={this.leaveRoomBtn.bind(this)} style={{ backgroundImage: `url(${stopIcon})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', marginLeft: "8px", width: "35px", height: "35px", cursor: "pointer" }} />
+                                                                    {isScreenSharing ? 
+                                                                        <Popconfirm
+                                                                            placement="top"
+                                                                            title="Do you want to Stop Screen Share!"
+                                                                            onConfirm={() => this.unload(true)}
+                                                                            okText="Ok"
+                                                                            cancelText="Cancel"
+                                                                        >
+                                                                            <div className="screen-share-icon">
+                                                                                <i className="fas fa-desktop" />
+                                                                            </div>
+                                                                            <div className="screen-share-stop-icon">
+                                                                                <i className="fa fa-times" aria-hidden="true" />
+                                                                            </div>
+                                                                        </Popconfirm>:
+                                                                        <div
+                                                                            onClick={() => this.handleScreenShareButton(isScreenSharing)}
+                                                                            className="screen-share-icon">
+                                                                            <i className="fas fa-desktop" />
+                                                                        </div>
+                                                                    }
+                                                                    
+                                                                </div>
+                                                            </Tooltip>
+                                                        }
+                                                        {<div
+                                                            onClick={() => { this.toggleLocalSource( id, isLocalAudioMute, 'audio' )}}
+                                                            style={{
+                                                                cursor: "pointer",
+                                                                marginLeft: "8px"
+                                                            }}>
+                                                            <img
+                                                                src={((isGlobalAudioMute && type==="student" ) || isLocalAudioMute) ?
+                                                                    "http://api.getmycall.com/static/media/mic-off.svg" :
+                                                                    "http://api.getmycall.com/static/media/mic-on.svg"
+                                                                }
+                                                                style={{
+                                                                    width: "30px",
+                                                                    height:"30px",
+                                                                    opacity: `${(isGlobalAudioMute && type === "student")? 0.5 : 1}`
+                                                            }} />
+                                                        </div>}
+                                                        {<div
+                                                            onClick={() => this.toggleLocalSource( id, isLocalVideoMute, 'video' )}
+                                                            style={{
+                                                                cursor: "pointer",
+                                                                marginLeft: "8px"
+                                                            }}>
+                                                            <img
+                                                                src={isLocalVideoMute ?
+                                                                    "https://api.getmycall.com/static/media/video-slash-solid.svg" :
+                                                                    "https://api.getmycall.com/static/media/video-solid.svg"
+                                                                }
+                                                                style={{
+                                                                    width: "30px",
+                                                                    height:"30px",
+                                                                    opacity: `${(this.state.isVideoMuteByTeacher && type === "student")? 0.5 : 1}`
+                                                            }} />
+                                                        </div>}
+
+                                                                {
+                                                                type==="teacher" &&
+                                                                    <div
+                                                                        onClick={() => this.handleRecordVideo()}
+                                                                        style={{
+                                                                            fontSize: "1.8rem",
+                                                                            cursor: "pointer",
+                                                                            color: isRecording?"red": "black",
+                                                                            marginLeft: ".5rem"
+                                                                        }}>
+                                                                            <i className="fas fa-circle" />
+                                                                        </div>
+                                                                }
+                                                        <div onClick={this.leaveRoomBtn.bind(this)} style={{ backgroundImage: `url(${stopIcon})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', marginLeft: "8px", width: "35px", height: "35px", cursor: "pointer" }} />
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            
-                                            <div className="row main-video-modes-actions-box-right">
-                                                {!clickedTeacherView &&  //if old screen mode variable is not null means currently small screen is big  
-                                                    <ScreenModesButtons
-                                                        currentScreenMode={currentScreenMode}
-                                                        changeScreenMode={this.changeScreenMode.bind(this)}/>
+                                                
+                                                {!isMobileOrTablet &&
+                                                    <div className="row main-video-modes-actions-box-right">
+                                                        {!clickedTeacherView &&  //if old screen mode variable is not null means currently small screen is big  
+                                                            <ScreenModesButtons
+                                                                currentScreenMode={currentScreenMode}
+                                                                changeScreenMode={this.changeScreenMode.bind(this)}/>
+                                                        }
+                                                    </div>
                                                 }
                                             </div>
                                         </div>
+                                        <div className={currentScreenMode==="default"? "col-md-4 col-sm-4 col-xs-12 w-100 teacher-dashboard-normal-mode" : "col-md-12 col-sm-12 col-xs-12 w-100 teacher-dashboard-screen-mode"}>
+                                                {(currentTeacherToggledView==="video" && this.teacherViews('screen'))}
+                                                {(currentTeacherToggledView==="screen" || currentTeacherToggledView==="board") && this.teacherViews('video')}
+
+                                                {(currentTeacherToggledView==="video" || currentTeacherToggledView==="screen") && this.teacherViews('board')}
+                                                {(currentTeacherToggledView==="board") && this.teacherViews('screen')}
+                                        </div>
                                     </div>
-                                    <div className={currentScreenMode==="default"? "col-md-4 col-sm-4 col-xs-12 w-100 teacher-dashboard-normal-mode" : "col-md-12 col-sm-12 col-xs-12 w-100 teacher-dashboard-screen-mode"}>
-                                            {(currentTeacherToggledView==="video" && this.teacherViews('screen'))}
-                                            {(currentTeacherToggledView==="screen" || currentTeacherToggledView==="board") && this.teacherViews('video')}
+                            }
+                            {/* ================= teacher container end ================== */}
 
 
-                                            {(currentTeacherToggledView==="video" || currentTeacherToggledView==="screen") && this.teacherViews('board')}
-                                            {(currentTeacherToggledView==="board") && this.teacherViews('screen')}
-                                    </div>
-                                </div>}
-                            <div style={{ display: "block", paddingTop: type==="student"?"0":"1rem"}} className="row w-100" id="small-videos-box-outer">
-                                <div ref={this.smallVideosContainerRef} onScroll={this.trackScrolling.bind(this)} style={{ display: "flex"}} className="row w-100 justify-content-start" id="small-videos-box-inner">
-                                    {/* <div id="start-of-students-box-div" /> */}
-                                    {
-                                        this.state.roomData && this.state.roomData.sources && (this.state.roomData.sources.length > 1) &&
-                                        this.state.roomData.sources.sort(this.sortSources.bind(this)).map((source,index) => {
-                                            if( source.position && source.position.toString() !== "0" ) {
-                                                if ( index<=noOfStudentsShowing ) {
-                                                    let sourceUserId = source.id,
-                                                    isHandRaised = source.isHandRaised ? source.isHandRaised : false;
-                                                    return (
-                                                        <div
-                                                            key={source.position}
-                                                            style={{
-                                                                padding: isChatBoxVisible? "0rem 0rem 1rem 1rem" : "0rem 0rem 1rem 2.3rem"}}
-                                                                className="student-small-video"
-                                                                id={`student-box-${source.position}`}
-                                                                >
-                                                            <Tooltip title={(isScreenSharing && allParticipants[sourceUserId])? "First Stop Screen Share." : ((type==="teacher" && currentTeacherToggledView !== "video"&&allParticipants[sourceUserId])?"Move Teacher to center": "")}>
-                                                                <div id={`video-box-${source.position}`}>
-                                                                {
-                                                                    isFlipEnabled = ( //only for teacher
-                                                                        (type==="teacher") &&
-                                                                        (currentTeacherToggledView === "video") &&
+                                
+                            {/* ================= 2.2=> students videos container start ================== */}
+                            {!isMobileOrTablet &&
+                                <div style={{ display: "block", paddingTop: type==="student"?"0":"1rem"}} className="row w-100" id="small-videos-box-outer">
+                                    <div ref={this.smallVideosContainerRef} onScroll={this.trackScrolling.bind(this)} style={{ display: "flex"}} className="row w-100 justify-content-start" id="small-videos-box-inner">
+                                        {/* <div id="start-of-students-box-div" /> */}
+                                        {
+                                            this.state.roomData && this.state.roomData.sources && (this.state.roomData.sources.length > 1) &&
+                                            this.state.roomData.sources.sort(this.sortSources.bind(this)).map((source,index) => {
+                                                if( source.position && source.position.toString() !== "0" ) {
+                                                    if ( index<=noOfStudentsShowing ) {
+                                                        let sourceUserId = source.id,
+                                                        isHandRaised = source.isHandRaised ? source.isHandRaised : false;
+                                                        return (
+                                                            <div
+                                                                key={source.position}
+                                                                style={{
+                                                                    padding: isChatBoxVisible? "0rem 0rem 1rem 1rem" : "0rem 0rem 1rem 2.3rem"}}
+                                                                    className="student-small-video"
+                                                                    id={`student-box-${source.position}`}
+                                                                    >
+                                                                <Tooltip title={(isScreenSharing && allParticipants[sourceUserId])? "First Stop Screen Share." : ((type==="teacher" && currentTeacherToggledView !== "video"&&allParticipants[sourceUserId])?"Move Teacher to center": "")}>
+                                                                    <div id={`video-box-${source.position}`}>
+                                                                    {
+                                                                        isFlipEnabled = ( //only for teacher
+                                                                            (type==="teacher") &&
+                                                                            (currentTeacherToggledView === "video") &&
+                                                                            allParticipants[sourceUserId] &&
+                                                                            ( !remoteUserSwappedId || ( sourceUserId===id ) )
+                                                                        )
+                                                                    }
+                                                                    {
                                                                         allParticipants[sourceUserId] &&
-                                                                        ( !remoteUserSwappedId || ( sourceUserId===id ) )
-                                                                    )
-                                                                }
-                                                                {
-                                                                    allParticipants[sourceUserId] &&
-                                                                    allParticipants[sourceUserId].tracks &&
-                                                                    allParticipants[sourceUserId].tracks.forEach(track=>{
-                                                                        if (track.getType() === 'video') {
-                                                                            isTeacherMuteStudentVideo = track.isMuted()
+                                                                        allParticipants[sourceUserId].tracks &&
+                                                                        allParticipants[sourceUserId].tracks.forEach(track=>{
+                                                                            if (track.getType() === 'video') {
+                                                                                isTeacherMuteStudentVideo = track.isMuted()
+                                                                            }
+                                                                        })
+                                                                    }
+                                                                        <video className="student-video-tag" onClick={() => this.flipVideo( source )}
+                                                                            style={{
+                                                                                background: ( isFlipEnabled || isTeacherMuteStudentVideo || sourceUserId === roomData.teacher_id )?"#4b3684":"white",
+                                                                                cursor: isFlipEnabled ? 'pointer' : 'none',
+                                                                                pointerEvents: isFlipEnabled? 'auto': 'none',
+                                                                                // width: isChatBoxVisible? "85" : "100",
+                                                                                // height: "5rem"
+                                                                            }}
+                                                                            id={`video-tag-${source.position}`}
+                                                                            autoPlay
+                                                                            poster=""
+                                                                            // width="105"
+                                                                            />
+                                                                        {isTeacherMuteStudentVideo=false}
+                                                                    {/* {&& <div className="btn-swap-video" onClick={() => this.flipVideo( source )} style={{ backgroundImage: `url("${iconSwap}")`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', pointerEvents: "all", opacity: "1" }} />} */}
+                                                                    {/* <div className="btn-mute-unmute" onClick={() => this.toggleAudio( source, isMute )} style={{ backgroundImage: `url(${isMute?micOff:micOn})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', pointerEvents: "none", opacity: "0.5" }} /> */}
+                                                                    <audio autoPlay id={`audio-tag-${source.position}`} />
+                                                                    <div className="row w-20 h-10 student-video-actions-top">
+                                                                        {( (sourceUserId===id || isHandRaised) && !remoteUserSwappedId ) && 
+                                                                            <div className="student-video-actions-top-icon" onClick={() => !isHandRaised && this.raiseHand(source)} style={{ cursor: 'pointer' }}>
+                                                                                <i id={`studenthand-${sourceUserId}`} className="fa fa-hand-point-up"></i>
+                                                                            </div>
                                                                         }
-                                                                    })
-                                                                }
-                                                                    <video className="student-video-tag" onClick={() => this.flipVideo( source )}
-                                                                        style={{
-                                                                            background: ( isFlipEnabled || isTeacherMuteStudentVideo || sourceUserId === roomData.teacher_id )?"#4b3684":"white",
-                                                                            cursor: isFlipEnabled ? 'pointer' : 'none',
-                                                                            pointerEvents: isFlipEnabled? 'auto': 'none',
-                                                                            // width: isChatBoxVisible? "85" : "100",
-                                                                            // height: "5rem"
-                                                                        }}
-                                                                        id={`video-tag-${source.position}`}
-                                                                        autoPlay
-                                                                        poster=""
-                                                                        // width="105"
-                                                                        />
-                                                                    {isTeacherMuteStudentVideo=false}
-                                                                {/* {&& <div className="btn-swap-video" onClick={() => this.flipVideo( source )} style={{ backgroundImage: `url("${iconSwap}")`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', pointerEvents: "all", opacity: "1" }} />} */}
-                                                                {/* <div className="btn-mute-unmute" onClick={() => this.toggleAudio( source, isMute )} style={{ backgroundImage: `url(${isMute?micOff:micOn})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', pointerEvents: "none", opacity: "0.5" }} /> */}
-                                                                <audio autoPlay id={`audio-tag-${source.position}`} />
-                                                                <div className="row w-20 h-10 student-video-actions-top">
-                                                                    {( (sourceUserId===id || isHandRaised) && !remoteUserSwappedId ) && 
-                                                                        <div className="student-video-actions-top-icon" onClick={() => !isHandRaised && this.raiseHand(source)} style={{ cursor: 'pointer' }}>
-                                                                            <i id={`studenthand-${sourceUserId}`} className="fa fa-hand-point-up"></i>
-                                                                        </div>
-                                                                    }
-                                                                    {(source.noOfNewPrivateMessages>0) &&
-                                                                        <div className="student-video-actions-top-icon">
-                                                                            <span className="no-of-messages">1{source.noOfNewPrivateMessages}</span>
-                                                                        </div>
-                                                                    }
-                                                                    {/* <div className="student-video-actions-top-icon" onClick={this.leaveRoomBtn.bind(this)}><i className="fa fa-hand-point-up"></i></div>
-                                                                    <div className="student-video-actions-top-icon" onClick={this.leaveRoomBtn.bind(this)}><i className="fa fa-hand-point-up"></i></div>                                                */}
-                                                                </div>
-                                                                {( type === "teacher" ) &&
-                                                                    <div className="student-video-actions-right d-flex flex-column justify-content-start"
-                                                                        style={{
-                                                                            coursor: allParticipants[source.id] ? "pointer" : "default",
-                                                                            opacity: allParticipants[source.id] ? "1" : "0.5"
-                                                                        }}
-                                                                        >
-                                                                        <div onClick={() => this.showSendMessageBox(source)} className="student-action-right-icon-div d-flex flex-row justify-content-center"
-                                                                            style={{
-                                                                                backgroundColor: "#fabe11",
-                                                                                pointerEvents: allParticipants[source.id] ? "auto" : "none",
-                                                                                cursor: allParticipants[source.id] ? "pointer" : "default"
-                                                                            }}>
-                                                                            <i className="fas fa-comment student-action-right-icon"></i>
-                                                                        </div>
-                                                                        <SendChatMessage
-                                                                            isSendMessageBoxVisible={isSendMessageBoxVisible ? (selectedSource.id === source.id ? true: false) : false}
-                                                                            selectedSource={selectedSource}
-                                                                            hideMessageBox={this.hideSendMessageBox.bind(this)}
-                                                                            roomData={roomData}
-                                                                            socket= {socket}
-                                                                            studentId={source.id}
-                                                                            studentName={source.name}
-                                                                            noOfNewPrivateMessages={source.noOfNewPrivateMessages}
-                                                                            clearNoOfNewPrivateMessages={this.clearNoOfNewPrivateMessages.bind(this)}
-                                                                        />
-                                                                        <div onClick={() => this.showInputNote(source)} className="student-action-right-icon-div d-flex flex-row justify-content-center"
-                                                                            style={{
-                                                                                backgroundColor: "#6343AE",
-                                                                                pointerEvents: allParticipants[source.id] ? "auto" : "none",
-                                                                                cursor: allParticipants[source.id] ? "pointer" : "default"
-                                                                            }}>
-                                                                            <i className="fas fa-pencil-alt student-action-right-icon"></i>
-                                                                        </div>
-                                                                        <InputNote
-                                                                            isInputNoteVisible={isInputNoteVisible ? (selectedSource.id === source.id ? true: false) : false}
-                                                                            selectedNoteSource={selectedSource}
-                                                                            hideInputNote={this.hideInputNote.bind(this)}
-                                                                            student_id={source.id}
-                                                                            class_id={roomData.class_id}
-                                                                            teacher_id={roomData.id}
-                                                                            roomData={roomData}
-                                                                        />
-                                                                        <div onClick={() => (source.id !== id) && this.toggleGlobalSources( source.id, "mute-student-video" )} className="student-action-right-icon-div d-flex flex-row justify-content-center"
-                                                                            style={{
-                                                                                backgroundColor: "#eb4d20",
-                                                                                pointerEvents: allParticipants[source.id] ? "auto" : "none",
-                                                                                cursor: allParticipants[source.id] ? "pointer" : "default"
-                                                                            }}>
-                                                                            <i className="fas fa-times student-action-right-icon"></i>
-                                                                        </div>
+                                                                        {(source.noOfNewPrivateMessages>0) &&
+                                                                            <div className="student-video-actions-top-icon">
+                                                                                <span className="no-of-messages">1{source.noOfNewPrivateMessages}</span>
+                                                                            </div>
+                                                                        }
+                                                                        {/* <div className="student-video-actions-top-icon" onClick={this.leaveRoomBtn.bind(this)}><i className="fa fa-hand-point-up"></i></div>
+                                                                        <div className="student-video-actions-top-icon" onClick={this.leaveRoomBtn.bind(this)}><i className="fa fa-hand-point-up"></i></div>                                                */}
                                                                     </div>
-                                                                }
+                                                                    {( type === "teacher" ) &&
+                                                                        <div className="student-video-actions-right d-flex flex-column justify-content-start"
+                                                                            style={{
+                                                                                coursor: allParticipants[source.id] ? "pointer" : "default",
+                                                                                opacity: allParticipants[source.id] ? "1" : "0.5"
+                                                                            }}
+                                                                            >
+                                                                            <div onClick={() => this.showSendMessageBox(source)} className="student-action-right-icon-div d-flex flex-row justify-content-center"
+                                                                                style={{
+                                                                                    backgroundColor: "#fabe11",
+                                                                                    pointerEvents: allParticipants[source.id] ? "auto" : "none",
+                                                                                    cursor: allParticipants[source.id] ? "pointer" : "default"
+                                                                                }}>
+                                                                                <i className="fas fa-comment student-action-right-icon"></i>
+                                                                            </div>
+                                                                            <SendChatMessage
+                                                                                isSendMessageBoxVisible={isSendMessageBoxVisible ? (selectedSource.id === source.id ? true: false) : false}
+                                                                                selectedSource={selectedSource}
+                                                                                hideMessageBox={this.hideSendMessageBox.bind(this)}
+                                                                                roomData={roomData}
+                                                                                socket= {socket}
+                                                                                studentId={source.id}
+                                                                                studentName={source.name}
+                                                                                noOfNewPrivateMessages={source.noOfNewPrivateMessages}
+                                                                                clearNoOfNewPrivateMessages={this.clearNoOfNewPrivateMessages.bind(this)}
+                                                                            />
+                                                                            <div onClick={() => this.showInputNote(source)} className="student-action-right-icon-div d-flex flex-row justify-content-center"
+                                                                                style={{
+                                                                                    backgroundColor: "#6343AE",
+                                                                                    pointerEvents: allParticipants[source.id] ? "auto" : "none",
+                                                                                    cursor: allParticipants[source.id] ? "pointer" : "default"
+                                                                                }}>
+                                                                                <i className="fas fa-pencil-alt student-action-right-icon"></i>
+                                                                            </div>
+                                                                            <InputNote
+                                                                                isInputNoteVisible={isInputNoteVisible ? (selectedSource.id === source.id ? true: false) : false}
+                                                                                selectedNoteSource={selectedSource}
+                                                                                hideInputNote={this.hideInputNote.bind(this)}
+                                                                                student_id={source.id}
+                                                                                class_id={roomData.class_id}
+                                                                                teacher_id={roomData.id}
+                                                                                roomData={roomData}
+                                                                            />
+                                                                            <div onClick={() => (source.id !== id) && this.toggleGlobalSources( source.id, "mute-student-video" )} className="student-action-right-icon-div d-flex flex-row justify-content-center"
+                                                                                style={{
+                                                                                    backgroundColor: "#eb4d20",
+                                                                                    pointerEvents: allParticipants[source.id] ? "auto" : "none",
+                                                                                    cursor: allParticipants[source.id] ? "pointer" : "default"
+                                                                                }}>
+                                                                                <i className="fas fa-times student-action-right-icon"></i>
+                                                                            </div>
+                                                                        </div>
+                                                                    }
+                                                                </div>
+                                                                </Tooltip>
+                                                                <div className="student-name" id={`name-box-${source.position}`}>
+                                                                    <h6 className="student-name-text" align="center">{(remoteUserSwappedId && ((source.id===roomData.teacher_id && type==="student") || (source.id===roomData.id && roomData.type==="teacher" ))) ? (allParticipants[remoteUserSwappedId] ? allParticipants[remoteUserSwappedId].name :"") : source.name}</h6>
+                                                                </div>
                                                             </div>
-                                                            </Tooltip>
-                                                            <div className="student-name" id={`name-box-${source.position}`}>
-                                                                <h6 className="student-name-text" align="center">{(remoteUserSwappedId && ((source.id===roomData.teacher_id && type==="student") || (source.id===roomData.id && roomData.type==="teacher" ))) ? (allParticipants[remoteUserSwappedId] ? allParticipants[remoteUserSwappedId].name :"") : source.name}</h6>
-                                                            </div>
-                                                        </div>
-                                                    )
-                                                }else {
-                                                    return;
-                                                }
+                                                        )
+                                                    }else {
+                                                        return;
+                                                    }
 
-                                            }
-                                        })
-                                    }
-                                    {/* <div style={{
-                                            display: "flex"
-                                        }}
-                                        className="students-loading-icon">
-                                        <img src={ItemsLoader} alt="Loading Students"></img>
-                                    </div> */}
-                                    <div id="end-of-students-box-div" />
+                                                }
+                                            })
+                                        }
+                                        {/* <div style={{
+                                                display: "flex"
+                                            }}
+                                            className="students-loading-icon">
+                                            <img src={ItemsLoader} alt="Loading Students"></img>
+                                        </div> */}
+                                        <div id="end-of-students-box-div" />
+                                    </div>
+                                    <div className="studentsToggleDiv" onClick={()=>this.handleShowOrHideAllStudents()}>
+                                        <i className={`${noOfStudentsShowing===0? "fas fa-arrow-up":"fas fa-arrow-down" }`}></i>
+                                    </div>
                                 </div>
-                                <div className="studentsToggleDiv" onClick={()=>this.handleShowOrHideAllStudents()}>
-                                    <i className={`${noOfStudentsShowing===0? "fas fa-arrow-up":"fas fa-arrow-down" }`}></i>
-                                </div>
+                            }
+                            {/* ================= students videos container end ================== */}
+                        </div>
+                        {/* ================== teacher and students container end ================ */}
+
+
+                        {/* ================= 3=> Chat Box container start ================== */}
+                        {!isMobileOrTablet &&
+                            <div className="chat-box-container" style={{ width: isChatBoxVisible? "20%" : "0%", display: isChatBoxVisible ? "block" : "none"}}>
+                                <ChatBox
+                                    isChatBoxVisible={isChatBoxVisible}
+                                    currentScreenMode={this.state.currentScreenMode}
+                                    profile={{
+                                        userId:roomData.id,
+                                        name: roomData.name,
+                                        roomId: roomData.roomId,
+                                        type: roomData.type
+                                    }}
+                                    socket={socket}
+                                    noOfNewMessages={noOfNewMessages}
+                                    clearNoOfNewMessages={this.clearNoOfNewMessages.bind(this)}
+                                    isChatAllowed={this.state.isChatPublic || type==="teacher"}
+                                    closeChatBox={this.closeChatBox.bind(this)}
+                                    />
                             </div>
-                        </div>
-                        <div className="chat-box-container" style={{ width: isChatBoxVisible? "20%" : "0%", display: isChatBoxVisible ? "block" : "none"}}>
-                            <ChatBox
-                                isChatBoxVisible={isChatBoxVisible}
-                                currentScreenMode={this.state.currentScreenMode}
-                                profile={{
-                                    userId:roomData.id,
-                                    name: roomData.name,
-                                    roomId: roomData.roomId,
-                                    type: roomData.type
-                                }}
-                                socket={socket}
-                                noOfNewMessages={noOfNewMessages}
-                                clearNoOfNewMessages={this.clearNoOfNewMessages.bind(this)}
-                                isChatAllowed={this.state.isChatPublic || type==="teacher"}
-                                closeChatBox={this.closeChatBox.bind(this)}
-                                />
-                        </div>
+                        }
+                        {/* ================= 3=> ChatBox container start ================== */}
+
+
                     </div>
                     </div>
 
 
                     <div className="board-source-container" style={{ width: "100%", height: "100vh", display: (this.state.isWorkingMode && type === "student")? "block": "none"}}>
                         {this.teacherViews('board')}
-                        {type === "student" &&
+                        {type === "student" && !isMobileOrTablet &&
                             <div className="teacher-student-actions-right-working-mode d-flex flex-column justify-content-start">
                                 <div onClick={() => this.showSendMessageBox(roomData.sources[0])}
                                     className="teacher-student-action-right-icon-div d-flex flex-row justify-content-center"
