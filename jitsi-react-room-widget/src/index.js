@@ -32,11 +32,13 @@ if ( type === 'student' ) {
 }
  
 ReactDOM.render(<Provider store={store}>
+    {/* For Laptop or Desktop */}
     <MediaQuery minDeviceWidth={1280}>
         <Confernece 
             params={params} 
             isMobileOrTablet={false}/>
     </MediaQuery>
+    {/* For Mobile and Tablet */}
     <MediaQuery maxDeviceWidth={1280}>
         <Confernece 
             params={params} 

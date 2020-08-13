@@ -30,12 +30,18 @@ import SendChatMessage from './SendChatMessage';
 import RoomAnnouncement from './RoomAnnouncement';
 import ItemsLoader from '../assets/img/purple-gif-big.gif';
 
-
 import bellRing from '../assets/mesg_ting.mp3';
 
 import { webRootUrl, jitsiServerParams, socketSeverEndpoint, jitsiInitOptions } from '../config';
 import ScreenModesButtons from '../components/ScreenModes';
 import AppButtons from '../components/Buttons';
+import ErrorMessage from '../components/ErrorMessage';
+import PageLoader from '../components/PageLoader';
+import PortraitModeWarning from '../components/Mobile/PortraitModeWarning';
+import AppMobileView from '../components/Mobile';
+import MyVideoControls from '../components/MyVideoControls';
+
+import { openFullscreen, closeFullscreen } from '../utils';
 
 // import teacherBoardLoader from '../assets/img/teacher-board-loader.gif';
 
@@ -86,14 +92,14 @@ class Conference extends React.Component {
             noOfStudentsShowing: 20,
             isStudentsTrackUpdate: false,
             appMessage: "Stopped!",
-            roomJoinError: ""
+            roomJoinError: "",
         };
 
         //get page params and initialize socket
         socket = socketIOClient(this.state.socketEndpoint);
         this.addSocketEvents();
 
-        let params = this.props.params;
+        let params = null//this.props.params;
         if ( !params ) { //temporary for testing
             params= queryString.parse(window.location.search.substring(1));
         }
@@ -165,12 +171,15 @@ class Conference extends React.Component {
                     };
                     socket.emit('event', messageObj);
 
-                    window.JitsiMeetJS.init(jitsiInitOptions);
-                    window.JitsiMeetJS.setLogLevel(window.JitsiMeetJS.logLevels.ERROR); //setting log level only for errors
-                    connection = new window.JitsiMeetJS.JitsiConnection(null, null, jitsiServerParams);
-                    this.setConnectionListeners();
-                    connection.connect();
-
+                    if (window.JitsiMeetJS){
+                        window.JitsiMeetJS.init(jitsiInitOptions);
+                        window.JitsiMeetJS.setLogLevel(window.JitsiMeetJS.logLevels.ERROR); //setting log level only for errors    
+                        connection = new window.JitsiMeetJS.JitsiConnection(null, null, jitsiServerParams);
+                        this.setConnectionListeners();
+                        connection.connect();
+                    } else {
+                        message.error('Jitsi meet library is not loaded!')
+                    }    
                     // window.addEventListener(window.JitsiMeetJS.errors.conference.PASSWORD_REQUIRED, function () { message.error('Please provide room password'); });
                     //comment selected board later
                     this.setState({ roomData, isChatBoxVisible: (type==="teacher" ? true : false), selectedBoard: roomData.board_sources[3] });
@@ -184,6 +193,32 @@ class Conference extends React.Component {
         let $ = window.jQuery;
         $(window).bind('beforeunload', this.unload.bind(this));
         $(window).bind('unload', this.unload.bind(this));
+
+        if('orientation' in screen){            
+            window.screen.orientation.onchange = function() {
+                let mobileModeAppContainer = document.querySelector('#mobile-mode-container');
+                if (mobileModeAppContainer) {
+                    if (this.type.startsWith('landscape') && mobileModeAppContainer.webkitRequestFullScreen) {
+                        openFullscreen(mobileModeAppContainer);
+                    } else {
+                        closeFullscreen(mobileModeAppContainer);
+                    }
+                } else {
+                    console.error('mobile app container not rendered properly');
+                }
+            }
+        }
+
+        // on page load check if landscape so go to fullscreen mode
+        // setTimeout(()=>{
+        //     // In Mobile if student is already in landscape mode
+        //     if(this.props.isMobileOrTablet && screen['orientation'].type && screen['orientation'].type.startsWith('landscape')) {
+        //         let mobileModeAppContainer = document.querySelector('#mobile-mode-container');
+        //         if ( mobileModeAppContainer && isJoined ) {
+        //             openFullscreen(mobileModeAppContainer);
+        //         }
+        //     }
+        // }, 5000);
     }
     isBottomOfDiv = el => {
         if (el.getBoundingClientRect()){
@@ -883,7 +918,7 @@ class Conference extends React.Component {
                 socket.disconnect();
         
                 // if ( redirectToMainPage ) {
-                // window.location.href = webRootUrl;
+                window.location.href = webRootUrl;
                 // } else {
                 //     this.setState({ isLoggedIn: false, isStopped: true });
                 // }
@@ -909,10 +944,6 @@ class Conference extends React.Component {
         if ( connection && room ) {
             this.unload();
         }
-    }
-
-    leaveRoomBtn = (e) => {
-        this.unload();
     }
 
     handleDataValidation = ( roomData ) => {
@@ -1553,6 +1584,9 @@ class Conference extends React.Component {
         const { currentTeacherToggledView, roomData,
                 isScreenSharing, remoteUserSwappedId, isChatBoxVisible,
                 selectedBoard, currentScreenMode, clickedTeacherView } = this.state;
+        const {
+            isMobileOrTablet
+        } = this.props;
         const { type, bitrate } = roomData;
         const customStyle = {
             btnSwapScreen: {
@@ -1580,8 +1614,12 @@ class Conference extends React.Component {
             // }
         }
         if ( viewType === "video" ){
+            let teacherVideoContainerStyle = '';
+            if ( !isMobileOrTablet ) {
+                teacherVideoContainerStyle = `${((currentTeacherToggledView!=="video"||remoteUserSwappedId)&&currentScreenMode!=="default")?"video-div-screen-mode":""} ${(this.state.isWorkingMode && type === "student") ? "teacher-video-div-working-mode" : "w-100 teaher-video-div"} ${(currentTeacherToggledView === "video") ? (isChatBoxVisible? (currentScreenMode==="chatMode"?"teacher-div-large-with-chat-mode":"teacher-div-large-with-chat") : (currentScreenMode==="default"?"teacher-div-large":"teacher-div-large-full-screen-mode")) : (isChatBoxVisible? "teacher-div-small-with-chat": "teacher-div-small")}`
+            }
             return (
-                <div className={`${((currentTeacherToggledView!=="video"||remoteUserSwappedId)&&currentScreenMode!=="default")?"video-div-screen-mode":""} ${(this.state.isWorkingMode && type === "student") ? "teacher-video-div-working-mode" : "w-100 teaher-video-div"} ${(currentTeacherToggledView === "video") ? (isChatBoxVisible? (currentScreenMode==="chatMode"?"teacher-div-large-with-chat-mode":"teacher-div-large-with-chat") : (currentScreenMode==="default"?"teacher-div-large":"teacher-div-large-full-screen-mode")) : (isChatBoxVisible? "teacher-div-small-with-chat": "teacher-div-small")}`}
+                <div className={teacherVideoContainerStyle}
                     style={{
                         marginRight: (currentTeacherToggledView==="board"||currentTeacherToggledView==="screen"||remoteUserSwappedId)?"1.5rem":""
                     }}
@@ -1841,7 +1879,9 @@ class Conference extends React.Component {
             isScreenSharing, remoteUserSwappedId, isRecording,
             noOfNewPrivateMessages, isWorkingMode,
             isLocalAudioMute, isLocalVideoMute, currentScreenMode,
-            noOfStudentsShowing, appMessage, roomJoinError, clickedTeacherView } = this.state;
+            noOfStudentsShowing, appMessage, roomJoinError, clickedTeacherView,
+            isVideoMuteByTeacher 
+        } = this.state;
         const {
             isMobileOrTablet
         } = this.props;
@@ -1851,26 +1891,41 @@ class Conference extends React.Component {
         let isTeacherMuteStudentVideo = false;
 
         if ( !params.id || !params.type || !params.class_id ) {
-            return <div className="container" style={{ height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "center" }}>
-                <p style={{ fontSize: "35px", color: "#ff4d4f" }}>Please provide room info</p>
-            </div>
+            return <ErrorMessage message="Please provide room info" />
         } else if ( !isLoggedIn ) {
             return (<div style={{ paddingLeft: "0px", paddingRight: "0px", width: "100vw", height: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "center" }}>
-                {/* {this.state.isStopped ? <p style={{ fontSize: "35px", color: this.state.isStopped? "red" : "black" }}> {appMessage} </p> :
-                // <div style={{ width: "100%" }}>
-                //     <img src={loadingIcon} alt="" width="100%" height="100%" />
-                // </div>} */}
                 {roomJoinError!==""?
                     <p style={{ fontSize: "35px", color: "red" }}> {roomJoinError} </p>
                     :
-                    <div className="justify-content-center" style= {{ width: "100%", height: "100%", top: "50%", backgroundColor: 'white' }}>
-                        <img src={`https://api.getmycall.com/static/media/loading-icon.gif`} alt="" width="200" height="200" style={{ marginTop: "120px" }} />
-                    </div>
+                    <PageLoader isMobileOrTablet={isMobileOrTablet} />
                 }
-                {/* {this.state.isStopped && <Button onClick={()=> this.joinRoom()} type="primary"> Join Again </Button>} */}
             </div>)
-        }
-        else
+        } else if (isMobileOrTablet && type === "teacher"){
+            return <ErrorMessage message="Teacher mode not available for Mobile or Tablet." />
+        } else if (isMobileOrTablet && type === "student") {
+            return (<div width="100vw" height="100vh">
+                <AppMobileView
+                    teacherViews={this.teacherViews.bind(this)}
+
+                    id={id}
+                    type={type}
+                    remoteUserSwappedId={remoteUserSwappedId}
+                    currentTeacherToggledView={currentTeacherToggledView}
+                    isLocalVideoMute={isLocalVideoMute}
+                    isLocalAudioMute={isLocalAudioMute}
+                    isGlobalAudioMute={isGlobalAudioMute}
+                    isScreenSharing={isScreenSharing}
+                    isVideoMuteByTeacher={isVideoMuteByTeacher}
+                    isRecording={isRecording}
+
+                    toggleLocalSource={this.toggleLocalSource.bind(this)}
+                    handleScreenShareButton={this.handleScreenShareButton.bind(this)}
+                    handleRecordVideo={this.handleRecordVideo.bind(this)}
+                    unload={this.unload.bind(this)}
+                />
+                <PortraitModeWarning />
+            </div>);
+        } else
          {
             return (
                 <div className="w-100 h-100">
@@ -1894,7 +1949,7 @@ class Conference extends React.Component {
                                     <div className="d-flex flex-column justify-content-center">
                                         <div className="time-box-container d-flex flex-row justify-content-between">
                                             <div className="back-button-container">
-                                                <button onClick={()=>this.leaveRoomBtn()} type="button" width= "11rem" height="2rem" className="btn btn-primary main-button">
+                                                <button onClick={()=>this.unload()} type="button" width= "11rem" height="2rem" className="btn btn-primary main-button">
                                                     <div className="d-flex flex-row justify-content-center">
                                                         <div className="d-flex justify-content-start w-30">
                                                             <i className="fa fa-arrow-left btn-back-icon" aria-hidden="true" />
@@ -1958,7 +2013,7 @@ class Conference extends React.Component {
                                     <div className="row w-100" id="teacher-container">
                                         <div className={`${currentScreenMode!=="default"?"col-md-12 col-sm-12":"col-md-8 col-sm-8"} col-xs-12 w-100`} id={currentScreenMode==="default"?"large-video-container":"large-video-container-full-screen-mode"}>
                                             {currentTeacherToggledView==="video" ? this.teacherViews('video' ) : (currentTeacherToggledView==="board" ? this.teacherViews('board') : this.teacherViews('screen'))}
-                                            {type === "student" &&
+                                            {type === "student" && !isMobileOrTablet &&
                                                 <div className={`teacher-student-actions-right d-flex flex-column justify-content-start`}>
                                                     <div onClick={() => this.showSendMessageBox(roomData.sources[0])}
                                                         className="teacher-student-action-right-icon-div d-flex flex-row justify-content-center"
@@ -2008,94 +2063,23 @@ class Conference extends React.Component {
                                                     </div>
                                                 }
                     
-                                                <div id="main-video-actions-box-center" className="row">
-                                                    <div className="main-video-actions-box-center-content d-flex flex-row justify-content-center">
-                                                        {
-                                                            (type === "teacher" || remoteUserSwappedId === id) &&
-                                                            <Tooltip title={((currentTeacherToggledView==="board"||remoteUserSwappedId)  && type==="teacher")?"First move teacher to center.":""}>
-                                                                <div
-                                                                    style={{
-                                                                        fontSize: "1.8rem",
-                                                                        cursor: "pointer",
-                                                                        opacity: (remoteUserSwappedId && type === "teacher") ?0.8:1,
-                                                                        marginRight: ".4rem"
-                                                                    }}>
-                                                                    {isScreenSharing ? 
-                                                                        <Popconfirm
-                                                                            placement="top"
-                                                                            title="Do you want to Stop Screen Share!"
-                                                                            onConfirm={() => this.unload(true)}
-                                                                            okText="Ok"
-                                                                            cancelText="Cancel"
-                                                                        >
-                                                                            <div className="screen-share-icon">
-                                                                                <i className="fas fa-desktop" />
-                                                                            </div>
-                                                                            <div className="screen-share-stop-icon">
-                                                                                <i className="fa fa-times" aria-hidden="true" />
-                                                                            </div>
-                                                                        </Popconfirm>:
-                                                                        <div
-                                                                            onClick={() => this.handleScreenShareButton(isScreenSharing)}
-                                                                            className="screen-share-icon">
-                                                                            <i className="fas fa-desktop" />
-                                                                        </div>
-                                                                    }
-                                                                    
-                                                                </div>
-                                                            </Tooltip>
-                                                        }
-                                                        {<div
-                                                            onClick={() => { this.toggleLocalSource( id, isLocalAudioMute, 'audio' )}}
-                                                            style={{
-                                                                cursor: "pointer",
-                                                                marginLeft: "8px"
-                                                            }}>
-                                                            <img
-                                                                src={((isGlobalAudioMute && type==="student" ) || isLocalAudioMute) ?
-                                                                    "http://api.getmycall.com/static/media/mic-off.svg" :
-                                                                    "http://api.getmycall.com/static/media/mic-on.svg"
-                                                                }
-                                                                style={{
-                                                                    width: "30px",
-                                                                    height:"30px",
-                                                                    opacity: `${(isGlobalAudioMute && type === "student")? 0.5 : 1}`
-                                                            }} />
-                                                        </div>}
-                                                        {<div
-                                                            onClick={() => this.toggleLocalSource( id, isLocalVideoMute, 'video' )}
-                                                            style={{
-                                                                cursor: "pointer",
-                                                                marginLeft: "8px"
-                                                            }}>
-                                                            <img
-                                                                src={isLocalVideoMute ?
-                                                                    "https://api.getmycall.com/static/media/video-slash-solid.svg" :
-                                                                    "https://api.getmycall.com/static/media/video-solid.svg"
-                                                                }
-                                                                style={{
-                                                                    width: "30px",
-                                                                    height:"30px",
-                                                                    opacity: `${(this.state.isVideoMuteByTeacher && type === "student")? 0.5 : 1}`
-                                                            }} />
-                                                        </div>}
+                                                <MyVideoControls
+                                                    id={id}
+                                                    type={type}
+                                                    remoteUserSwappedId={remoteUserSwappedId}
+                                                    currentTeacherToggledView={currentTeacherToggledView}
+                                                    isLocalVideoMute={isLocalVideoMute}
+                                                    isLocalAudioMute={isLocalAudioMute}
+                                                    isGlobalAudioMute={isGlobalAudioMute}
+                                                    isScreenSharing={isScreenSharing}
+                                                    isVideoMuteByTeacher={isVideoMuteByTeacher}
+                                                    isRecording={isRecording}
 
-                                                                {
-                                                                type==="teacher" &&
-                                                                    <div
-                                                                        onClick={() => this.handleRecordVideo()}
-                                                                        style={{
-                                                                            fontSize: "1.8rem",
-                                                                            cursor: "pointer",
-                                                                            color: isRecording?"red": "black",
-                                                                            marginLeft: ".5rem"
-                                                                        }}>
-                                                                            <i className="fas fa-circle" />
-                                                                        </div>
-                                                                }
-                                                        <div onClick={this.leaveRoomBtn.bind(this)} style={{ backgroundImage: `url(${stopIcon})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', marginLeft: "8px", width: "35px", height: "35px", cursor: "pointer" }} />
-                                                    </div>
-                                                </div>
+                                                    toggleLocalSource={this.toggleLocalSource.bind(this)}
+                                                    handleScreenShareButton={this.handleScreenShareButton.bind(this)}
+                                                    handleRecordVideo={this.handleRecordVideo.bind(this)}
+                                                    unload={this.unload.bind(this)}
+                                                />
                                                 
                                                 {!isMobileOrTablet &&
                                                     <div className="row main-video-modes-actions-box-right">
@@ -2108,13 +2092,15 @@ class Conference extends React.Component {
                                                 }
                                             </div>
                                         </div>
-                                        <div className={currentScreenMode==="default"? "col-md-4 col-sm-4 col-xs-12 w-100 teacher-dashboard-normal-mode" : "col-md-12 col-sm-12 col-xs-12 w-100 teacher-dashboard-screen-mode"}>
+                                        {!isMobileOrTablet &&
+                                            <div className={currentScreenMode==="default"? "col-md-4 col-sm-4 col-xs-12 w-100 teacher-dashboard-normal-mode" : "col-md-12 col-sm-12 col-xs-12 w-100 teacher-dashboard-screen-mode"}>
                                                 {(currentTeacherToggledView==="video" && this.teacherViews('screen'))}
                                                 {(currentTeacherToggledView==="screen" || currentTeacherToggledView==="board") && this.teacherViews('video')}
 
                                                 {(currentTeacherToggledView==="video" || currentTeacherToggledView==="screen") && this.teacherViews('board')}
                                                 {(currentTeacherToggledView==="board") && this.teacherViews('screen')}
-                                        </div>
+                                            </div>
+                                        }
                                     </div>
                             }
                             {/* ================= teacher container end ================== */}
@@ -2391,7 +2377,7 @@ class Conference extends React.Component {
                                                         <i className="fas fa-circle" />
                                                     </div>
                                             }
-                                    <div onClick={this.leaveRoomBtn.bind(this)} style={{ backgroundImage: `url(${stopIcon})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', marginLeft: "8px", width: "35px", height: "35px", cursor: "pointer" }} />
+                                    <div onClick={this.unload.bind(this)} style={{ backgroundImage: `url(${stopIcon})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', marginLeft: "8px", width: "35px", height: "35px", cursor: "pointer" }} />
                                 </div>
                             </div>
                             <div className="teacher-video-div-working-mode">

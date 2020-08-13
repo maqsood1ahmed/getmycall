@@ -913,177 +913,18 @@ audio {
     background: #555; 
 }
 
-/* @media only screen and (max-width: 780px) {
-    #teacher-dashboard {
-        display: none;
-    }
-} */
-
-@media only screen and (max-width: 810px) {
-    .time-box-info {
-        border: 0.09rem #9772E8 solid;
-        padding: 0rem 1rem 0rem 1rem;
-        border-radius: 20px;
-        color: #9772E8;
-        margin-left: 0rem;
-        font-size: 16px;
-        font-weight: 600;
-        margin-left: 0.5rem;
-    }
-    .chat-button-container {
-        margin-right: 1rem;
-    }
-    .back-button-container{
-        margin-left: 1rem;
-    }
-    .main-button{
-        width: 2rem;
-        margin-right: 2rem;
+/* In portrail mode hide app container */
+#mobile-device-warning-message { display: none; }
+@media only screen and (orientation:portrait){
+    #mobile-mode-container  { display:none; }
+    #mobile-device-warning-message { display:block; }
+}
+@media only screen and (orientation:landscape){
+    #mobile-mode-container {
         position: relative;
+        height: 100%;
     }
-
-    .btn-chat-icon {
-        margin-left: 0rem;
-    }
-    .btn-chat-icon {
-        margin-right: 0rem;
-    }
-    .btn-chat-inner-text {
-        display: none !important;
-    }
-    /* .chat-button-container>button>span {
-        display: none;
-    } */
-}
-@media only screen and (max-width: 610px) {
-    .class-room-header-info {
-        font-size: 16px;
-        margin-left: 0rem;
-    }
-    #classroom-header {
-        height: 44px;
-    }
-
-    .class-room-header-content {
-        display: flex;
-        flex-direction: column;
-    }
-    .class-room-header-content-placeholder {
-        display: none;
-    }
-    #class-header-teacher-name {
-        margin-top: -7px;
-    }
-    .ant-popover-content {
-        width: 20rem;
-        /* padding: 0.5rem 1.3rem 0.5rem 1.3rem; */
-    }
-    .ant-popover-placement-bottom {
-        background-color: white;
-    }
-    .ant-popover {
-        border-radius: 1.3rem 0rem 0rem 1.3rem;
-        padding-top: 0px;
-    }
-}
-
-
-/* All these queries related to teacher */
-/* Extra small devices (phones, 575px and down) */
-@media only screen and (max-width: 575px) {
-    /* dynamic height change from React */
-    .teacher-div-large {
-        height: 300px;
-    }
-    .teacher-div-small {
-        height: 175px;
-    }
-    #large-video-container {
-        padding: 0rem 0rem 0rem 0rem;
-    }
-    .teacher-dashboard-normal-mode {
-        flex-direction: row;
-        margin-top: 1rem;
-        padding-left: 0rem;
-    }
-    .teacher-board-div {
-        margin-right: 0.5rem;
-    }
-    .teacher-screen-share-div-normal-mode {
-        margin-left: 0.5rem;
-    }
-    .teacher-actions-button{
-        width: 3rem;
-    }
-    .teacher-actions-button>div{
-        width: 1rem;
-    }
-}
-
-@media only screen and (min-width: 576px) {
-    /* dynamic height change from React */
-    .teacher-div-large {
-        height: 400px;
-    }
-    .teacher-div-large-full-screen-mode {
-        height: 40vh;
-    }
-    .teacher-div-small {
-        height: 175px;
-    }
-}
-
-/* Medium devices (landscape tablets, 768px and up) */
-@media only screen and (min-width: 768px) {
-    /* dynamic height change from React */
-    .teacher-div-large {
-        height: 450px;
-    }
-    .teacher-div-small {
-        height: 205px;
-    }
-    .teacher-div-large-with-chat{
-        height: 390px;
-    }
-    .teacher-div-small-with-chat{
-        height: 175px;
-    }
-    .teacher-div-large-full-screen-mode {
-        height: 89vh;
-    }
-    .teacher-div-large-with-chat-mode{
-        height: 89vh;
-    }
-}
-
-/* Large devices (laptops/desktops, 992px and up) */
-@media only screen and (min-width: 1024px) and (min-height:768px) {
-    /* dynamic height change from React */
-    .teacher-div-large {
-        height: 500px;
-    }
-    .teacher-div-small {
-        height: 230px;
-    }
-    .teacher-div-large-with-chat{
-        height: 440px;
-    }
-    .teacher-div-small-with-chat{
-        height: 200px;
-    }
-    .teacher-screen-share-div-screen-mode{
-        height: 330px;
-    }.teacher-board-div-screen-mode{
-        height: 330px;
-    }.video-div-screen-mode{
-        height: 330px;
-    }
-    .teacher-div-large-full-screen-mode {
-        height: 89vh;
-    }
-    .teacher-div-large-with-chat-mode{
-        height: 89vh;
-    }
+    #mobile-device-warning-message { display:none; }
 }
 
 /* Small devices (tablets or mobiles) */
@@ -1093,10 +934,19 @@ audio {
     }
     .teaher-video-div {
         width: 90vw !important;
-        height: 90vh !important;
+        height: 100vh !important;
     }
     .main-video-actions-box-center-content {
         width: 100vw;
+        border-radius: 0;
+    }
+    #teacher-video-tag{
+        border-radius: 0;
+        height: 100vh;
+    }
+    #main-video-actions-box-center{
+        position: absolute;
+        bottom: 0;
     }
 }
 
