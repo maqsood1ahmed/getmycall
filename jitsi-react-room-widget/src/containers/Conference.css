@@ -194,8 +194,10 @@ html, body {
 
 .teacher-actions-button-container-normal-mode {
     position: absolute;
-    top: 87%;
-}.teacher-actions-button-container-view-mode {
+    /* top: 87%; */
+    bottom: 0.1rem;
+}
+.teacher-actions-button-container-view-mode {
     position: absolute;
     top: 90%;
 }
@@ -222,12 +224,14 @@ html, body {
     flex: 1 1 0;
     margin-left: 1.7rem;
     padding-top: 0.5rem;
+    align-items: center;
 }
 
-#main-video-actionhs-box-center {
+#main-video-actions-box-center {
     display: flex;
-    flex: 2 1 0;    /* https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Flexible_Box_Layout/Controlling_Ratios_of_Flex_Items_Along_the_Main_Ax */
+    /* flex: 2 1 0;    https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Flexible_Box_Layout/Controlling_Ratios_of_Flex_Items_Along_the_Main_Ax */
     justify-content: center;
+    align-items: center;
 }
 .main-video-actions-box-center-content {
     z-index: 1;
@@ -238,6 +242,7 @@ html, body {
     align-items: center;
     justify-content: center;
     background: #9873e863;
+    color: white;
 }
 .screen-share-icon{
     position: relative;
@@ -263,8 +268,7 @@ html, body {
     display: flex;
     flex: 1 1 0;
     justify-content: flex-end;
-    right: 0.5rem;
-    bottom: 0.5rem;
+    align-items: center;
 }
 .main-video-actions-box-right-content {
     z-index: 1;
@@ -937,16 +941,57 @@ audio {
         height: 100vh !important;
     }
     .main-video-actions-box-center-content {
-        width: 100vw;
         border-radius: 0;
+        width: 100%;
+        background: none;
     }
     #teacher-video-tag{
         border-radius: 0;
         height: 100vh;
     }
-    #main-video-actions-box-center{
+    .student-mobile-controls{
+        width: 100vw;
+        display: flex;
+        flex-direction: row;
         position: absolute;
         bottom: 0;
+        background-color: #4b3684;
+        opacity: .8;
+        height: 16%;
+        font-size: 25px;
+        color: white;
+    }
+    .student-mobile-controls>div{
+        width: 33.33%;
+    }
+    .student-mobile-controls-left{
+        display: flex;
+        flex-direction: row;
+        padding-left: 1.5rem;
+        align-items: center;
+    }
+
+    i.fa {
+        display: inline-block;
+        border-radius: 50%;
+        box-shadow: 0px 0px 2px white;
+        padding: 0.25em 0.4em;
+    }
+
+    .main-video-actions-box-center-content>div>img{
+        display: inline-block;
+        border-radius: 50%;
+        box-shadow: 0px 0px 2px white;
+        padding: 0.25em 0.25em;
+    }
+    .mic-image-icon{
+        width: 40px !important;
+        height: 40px !important; 
+    }
+    .video-image-icon{
+        width: 40px !important;
+        height: 40px !important;
+        margin-left: .8rem;
     }
 }
 

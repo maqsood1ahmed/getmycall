@@ -61,9 +61,10 @@ const MyVideoControls = (props) => {
                     marginLeft: "8px"
                 }}>
                 <img
+                    className="mic-image-icon"
                     src={((isGlobalAudioMute && type==="student" ) || isLocalAudioMute) ?
-                        "http://api.getmycall.com/static/media/mic-off.svg" :
-                        "http://api.getmycall.com/static/media/mic-on.svg"
+                        "http://api.getmycall.com/static/media/mic-off.png" :
+                        "http://api.getmycall.com/static/media/mic-on.png"
                     }
                     style={{
                         width: "30px",
@@ -80,9 +81,10 @@ const MyVideoControls = (props) => {
                     marginLeft: "8px"
                 }}>
                 <img
+                    className="video-image-icon"
                     src={isLocalVideoMute ?
-                        "https://api.getmycall.com/static/media/video-slash-solid.svg" :
-                        "https://api.getmycall.com/static/media/video-solid.svg"
+                        "https://api.getmycall.com/static/media/video-slash-solid.png" :
+                        "https://api.getmycall.com/static/media/video-solid.png"
                     }
                     style={{
                         width: "30px",
@@ -100,13 +102,13 @@ const MyVideoControls = (props) => {
                             style={{
                                 fontSize: "1.8rem",
                                 cursor: "pointer",
-                                color: isRecording?"red": "black",
+                                color: isRecording?"red": "white",
                                 marginLeft: ".5rem"
                             }}>
                                 <i className="fas fa-circle" />
                             </div>
                     }
-            <div 
+            {/* <div 
                 onClick={props.unload.bind(this)} 
                 style={{ 
                     backgroundImage: `url(${stopIcon})`,
@@ -115,7 +117,7 @@ const MyVideoControls = (props) => {
                     backgroundRepeat: 'no-repeat',
                     marginLeft: "8px", 
                     width: "35px", height: "35px",
-                    cursor: "pointer" }} />
+                    cursor: "pointer" }} /> */}
         </div>
     </div>)
 };

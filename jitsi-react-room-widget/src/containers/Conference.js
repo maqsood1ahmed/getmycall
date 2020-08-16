@@ -27,7 +27,6 @@ import raiseHandIcon from '../assets/img/hand-point-up-regular.svg';
 import ChatBox from '../containers/ChatBox';
 import InputNote from '../containers/InputNote';
 import SendChatMessage from './SendChatMessage';
-import RoomAnnouncement from './RoomAnnouncement';
 import ItemsLoader from '../assets/img/purple-gif-big.gif';
 
 import bellRing from '../assets/mesg_ting.mp3';
@@ -42,6 +41,7 @@ import AppMobileView from '../components/Mobile';
 import MyVideoControls from '../components/MyVideoControls';
 
 import { openFullscreen, closeFullscreen } from '../utils';
+import ClassRoomHeader from '../components/ClassRoomHeader';
 
 // import teacherBoardLoader from '../assets/img/teacher-board-loader.gif';
 
@@ -104,7 +104,6 @@ class Conference extends React.Component {
             params= queryString.parse(window.location.search.substring(1));
         }
         this.state.params = params;
-        console.log(params, 'current params')
         
         this.smallVideosContainerRef = React.createRef();
     }
@@ -112,7 +111,9 @@ class Conference extends React.Component {
         let roomData = {};
 
         let params = this.state.params;
-        if ( params.id && params.type && params.class_id ) {
+        if ( params.id && params.type && params.class_id && 
+                ((!this.props.isMobileOrTablet && params.type === "teacher") || params.type==="student") 
+            ) {
             let response = await this.getUserData(params);
             console.log('=> => respone ', response)
             let roomId = params.class_id;
@@ -186,28 +187,41 @@ class Conference extends React.Component {
                 } else {
                     message.error('Must provide valid user params! See console errors.');
                 }
-            } else if(response.data && response.data.messge) {
-                this.setState({ isLoggedIn: false, roomJoinError: response.data.messge });
-            }
-        }
-        let $ = window.jQuery;
-        $(window).bind('beforeunload', this.unload.bind(this));
-        $(window).bind('unload', this.unload.bind(this));
-
-        if('orientation' in screen){            
-            window.screen.orientation.onchange = function() {
-                let mobileModeAppContainer = document.querySelector('#mobile-mode-container');
-                if (mobileModeAppContainer) {
-                    if (this.type.startsWith('landscape') && mobileModeAppContainer.webkitRequestFullScreen) {
-                        openFullscreen(mobileModeAppContainer);
-                    } else {
-                        closeFullscreen(mobileModeAppContainer);
-                    }
+            } else {
+                console.log('api response',response.data)
+                if(response.data && response.data.messge){
+                    this.setState({ isLoggedIn: false, roomJoinError: response.data.messge });
                 } else {
-                    console.error('mobile app container not rendered properly');
+                    this.setState({ isLoggedIn: false, roomJoinError: "Something went wrong when joining Room" });
+                }
+                
+            }
+
+            let $ = window.jQuery;
+            $(window).bind('beforeunload', this.unload.bind(this));
+            $(window).bind('unload', this.unload.bind(this));
+    
+            if('orientation' in screen){            
+                window.screen.orientation.onchange = function() {
+                    let mobileModeAppContainer = document.querySelector('#mobile-mode-container');
+                    if (mobileModeAppContainer) {
+                        if (this.type.startsWith('landscape') && mobileModeAppContainer.webkitRequestFullScreen) {
+                            openFullscreen(mobileModeAppContainer);
+                        } else {
+                            closeFullscreen(mobileModeAppContainer);
+                        }
+                    } else {
+                        console.error('mobile app container not rendered properly');
+                    }
                 }
             }
-        }
+        } else {
+            if (this.props.isMobileOrTablet && params.type === "teacher"){
+                this.setState({ isLoggedIn: false, roomJoinError: "Teacher mode not available for Mobile or Tablet."});
+            } else {
+                this.setState({ isLoggedIn: false, roomJoinError: "Failed to join class room."  });
+            }
+        } 
 
         // on page load check if landscape so go to fullscreen mode
         // setTimeout(()=>{
@@ -325,7 +339,7 @@ class Conference extends React.Component {
                     this.remoteStudentHandRaised(data.selectedSource);
                     break;
                 case 'new-announcment':
-                    this.handleChangeAnnouncement(null, data.newAnnouncement);
+                    this.handleChangeAnnouncement(data.newAnnouncement);
                     break;
                 case 'is-chat-public':
                     this.setState({ isChatPublic: data.isChatPublic });
@@ -906,7 +920,6 @@ class Conference extends React.Component {
                 for (let i = 0; i < localTracks.length; i++) {
                     localTracks[i].dispose();
                 }
-
                 this.clearScreenShareResources(id); //if screen share on then clear that as well
 
                 room.leave();
@@ -916,9 +929,10 @@ class Conference extends React.Component {
 
                 message.warn('Disconnected!!!')
                 socket.disconnect();
-        
                 // if ( redirectToMainPage ) {
-                window.location.href = webRootUrl;
+                if(!this.state.roomJoinError){
+                    window.location.href = webRootUrl;
+                }
                 // } else {
                 //     this.setState({ isLoggedIn: false, isStopped: true });
                 // }
@@ -1073,12 +1087,9 @@ class Conference extends React.Component {
         this.setState({ roomData });
     }
 
-    handleChangeAnnouncement = (e, announcment) => {
-        let { roomData } = this.state;
-        if ( e && e.target && e.target.name && e.target.name === "announcment" ) {
-            roomData.announcment = e.target.value;
-        } else if ( announcment ) {
-            roomData.announcment = announcment;
+    handleChangeAnnouncement = (announcment) => {
+        let { roomData } = this.state;        
+        if ( roomData.type !== 'teacher' ) {
             Modal.info({
                 title: 'Announcement',
                 content: (
@@ -1089,7 +1100,12 @@ class Conference extends React.Component {
                 onOk() {},
             });
         }
-        this.setState({ roomData });
+        this.setState(prevState => ({
+            roomData: {
+              ...prevState.roomData,           // copy all other key-value pairs of food object
+              announcment
+            }
+          }))
     }
 
     toggleLocalAudioByTeacher = async ( mute ) => {
@@ -1892,21 +1908,13 @@ class Conference extends React.Component {
 
         if ( !params.id || !params.type || !params.class_id ) {
             return <ErrorMessage message="Please provide room info" />
-        } else if ( !isLoggedIn ) {
-            return (<div style={{ paddingLeft: "0px", paddingRight: "0px", width: "100vw", height: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "center" }}>
-                {roomJoinError!==""?
-                    <p style={{ fontSize: "35px", color: "red" }}> {roomJoinError} </p>
-                    :
-                    <PageLoader isMobileOrTablet={isMobileOrTablet} />
-                }
-            </div>)
-        } else if (isMobileOrTablet && type === "teacher"){
-            return <ErrorMessage message="Teacher mode not available for Mobile or Tablet." />
+        }else if ( !isLoggedIn ) {
+            let roomStatusJSX = roomJoinError? <ErrorMessage message={roomJoinError}/>
+                                             : <PageLoader isMobileOrTablet={isMobileOrTablet} />
+            return(roomStatusJSX)
         } else if (isMobileOrTablet && type === "student") {
             return (<div width="100vw" height="100vh">
                 <AppMobileView
-                    teacherViews={this.teacherViews.bind(this)}
-
                     id={id}
                     type={type}
                     remoteUserSwappedId={remoteUserSwappedId}
@@ -1918,6 +1926,7 @@ class Conference extends React.Component {
                     isVideoMuteByTeacher={isVideoMuteByTeacher}
                     isRecording={isRecording}
 
+                    teacherViews={this.teacherViews.bind(this)}
                     toggleLocalSource={this.toggleLocalSource.bind(this)}
                     handleScreenShareButton={this.handleScreenShareButton.bind(this)}
                     handleRecordVideo={this.handleRecordVideo.bind(this)}
@@ -1943,62 +1952,17 @@ class Conference extends React.Component {
                     <div style={{ width: "100%", display: (this.state.isWorkingMode && type==="student")? "none": "block"}}>
                         
                         {/* =================== 1 => classroom header start ===================== */}
-                        {!isMobileOrTablet &&
-                            <div className="w-100" id="classroom-header">
-                                <div className="classroom-header-inner d-flex flex-row justify-content-between">
-                                    <div className="d-flex flex-column justify-content-center">
-                                        <div className="time-box-container d-flex flex-row justify-content-between">
-                                            <div className="back-button-container">
-                                                <button onClick={()=>this.unload()} type="button" width= "11rem" height="2rem" className="btn btn-primary main-button">
-                                                    <div className="d-flex flex-row justify-content-center">
-                                                        <div className="d-flex justify-content-start w-30">
-                                                            <i className="fa fa-arrow-left btn-back-icon" aria-hidden="true" />
-                                                        </div>
-                                                        <div className="btn-chat-inner-text d-flex justify-content-end w-70">Go Back</div>
-                                                    </div>
-                                                </button>
-                                            </div>
-                                            <div className="time-box-info">
-                                                <span className="time-start">08:30</span>  -  <span className="time-end">09:15</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="class-room-header-info d-flex flex-column justify-content-center">
-                                        <RoomAnnouncement
-                                            id={roomData}
-                                            roomId={roomData.roomId}
-                                            announcment={roomData.announcment}
-                                            type={roomData.type}
-                                            socket={socket}
-                                            handleChangeAnnouncement={(e) => this.handleChangeAnnouncement(e)}
-                                        />
-                                    </div>
-                                    <div className="main-button d-flex flex-column justify-content-center">
-                                    <div className="chat-button-container d-flex flex-column justify-content-center">
-                                        <button onClick={()=>this.toggleChatBox()} type="button" className="btn btn-primary main-button"
-                                            style={{
-                                                width: '9rem',
-                                                height: "2rem",
-                                                background: `${isChatBoxVisible? "rgb(121, 119, 128)" : "#9772E8"}`
-                                            }}>
-                                            <div className="d-flex flex-row justify-content-center">
-                                                <div className="btn-chat-inner-text d-flex justify-content-end w-70">Class Chat</div>
-                                                <div className="chat-button-icon d-flex justify-content-start w-30">
-                                                    <i className="fas fa-comment btn-chat-icon" />
-                                                </div>
-                                            </div>
-                                        </button>
-                                        {
-                                            (noOfNewMessages !== 0) &&
-                                                <div className="chat-messages-count">
-                                                    <span className="chat-messages-count-text">{noOfNewMessages}</span>
-                                                </div>
-                                        }
-                                    </div>
-                                </div>
-                                </div>
-                            </div>
-                        }
+                        {!isMobileOrTablet && 
+                            <ClassRoomHeader
+                                roomData={roomData}
+                                socket={socket}
+                                isChatBoxVisible={isChatBoxVisible}
+                                noOfNewMessages={noOfNewMessages}
+                                handleChangeAnnouncement={this.handleChangeAnnouncement.bind(this)}
+                                toggleChatBox={this.toggleChatBox.bind(this)}
+                                unload={this.unload.bind()}
+                            />}
+
                         {/* =================== classroom header end ===================== */}
                         
 
