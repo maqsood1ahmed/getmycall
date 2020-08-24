@@ -132,63 +132,62 @@ const AppMobileView = (props) => {
             </div>
             
             {/* 3=>screen share container */}
-            {isScreenSharing &&
+            <div
+                style={{
+                    opacity: isScreenSharing?1:0,
+                    position: currentScreen==="screen"?"":"absolute",
+                    width: currentScreen==="screen"? "100vw":"25vw",
+                    height: currentScreen==="screen"?"100vh":"35vh",
+                    top: currentScreen!=="screen"?"45vh":"0",
+                    left: currentScreen!=="screen"?"4%":"0",
+                    zIndex: currentScreen==="board"?"0":"1"
+                }}>
                 <div
                     style={{
-                        position: currentScreen==="screen"?"":"absolute",
-                        width: currentScreen==="screen"? "100vw":"25vw",
-                        height: currentScreen==="screen"?"100vh":"35vh",
-                        top: currentScreen!=="screen"?"45vh":"0",
-                        left: currentScreen!=="screen"?"4%":"0",
-                        zIndex: currentScreen==="board"?"0":"1"
+                        opacity: showSmallStudentScreen?1:0,
+                        height: "100%",
+                        border: currentScreen!=="screen"?"3px solid white":"",
+                        borderRadius: currentScreen!=="screen"?"10px":"",
+                        position: currentScreen!=="screen"?"relative":""
                     }}>
+                    <video id="teacher-screen-share-video"
+                        autoPlay
+                        poster="https://miro.medium.com/max/3200/0*-fWZEh0j_bNfhn2Q" 
+                    />
+                </div>
+                {currentScreen!=="screen" &&
+                    <div className="hide-small-box-icon"
+                        style={{left: "-1rem"}}
+                        onClick={()=>showOrHideSmallStudentScreenBox(!showSmallStudentScreen)}>
+                        {showSmallStudentScreen?
+                            <i className="fa fa-eye" aria-hidden="true" />:
+                            <i className="fa fa-eye-slash" aria-hidden="true"></i>
+                        }
+                    </div>
+                }
+                {showSmallStudentScreen &&
                     <div
                         style={{
-                            opacity: showSmallStudentScreen?1:0,
-                            height: "100%",
-                            border: currentScreen!=="screen"?"3px solid white":"",
-                            borderRadius: currentScreen!=="screen"?"10px":"",
-                            position: currentScreen!=="screen"?"relative":""
-                        }}>
-                        <video id="teacher-screen-share-video"
-                            autoPlay
-                            poster="https://miro.medium.com/max/3200/0*-fWZEh0j_bNfhn2Q" 
-                        />
-                    </div>
-                    {currentScreen!=="screen" &&
-                        <div className="hide-small-box-icon"
-                            style={{left: "-1rem"}}
-                            onClick={()=>showOrHideSmallStudentScreenBox(!showSmallStudentScreen)}>
-                            {showSmallStudentScreen?
-                                <i className="fa fa-eye" aria-hidden="true" />:
-                                <i className="fa fa-eye-slash" aria-hidden="true"></i>
-                            }
-                        </div>
-                    }
-                    {showSmallStudentScreen &&
-                        <div
+                            position: "absolute",
+                            top: "75%",
+                            right: "10%",
+                            zIndex: "1"
+                            // right: currentScreen==="board"?"90%":"10%"
+                        }}
+                        className="d-flex flex-row justify-content-end">
+                        <button
+                            onClick={()=>changeCurrentScreen(currentScreen==="screen"?"video":"screen")}
+                            type="button"
+                            className="btn btn-primary"
                             style={{
-                                position: "absolute",
-                                top: "75%",
-                                right: "10%",
-                                zIndex: "1"
-                                // right: currentScreen==="board"?"90%":"10%"
-                            }}
-                            className="d-flex flex-row justify-content-end">
-                            <button
-                                onClick={()=>changeCurrentScreen(currentScreen==="screen"?"video":"screen")}
-                                type="button"
-                                className="btn btn-primary"
-                                style={{
-                                    // backgroundColor: currentScreen==="screen"?"#6343AE":"",
-                                    width:"2.3rem", height:"2.3rem"
-                                }}>
-                                <i className={`fa ${currentScreen==="screen"?"fa-arrow-up":"fa-arrow-down"}`} aria-hidden="true" />
-                            </button>
-                        </div>
-                    }
-                </div>
-            }
+                                // backgroundColor: currentScreen==="screen"?"#6343AE":"",
+                                width:"2.3rem", height:"2.3rem"
+                            }}>
+                            <i className={`fa ${currentScreen==="screen"?"fa-arrow-up":"fa-arrow-down"}`} aria-hidden="true" />
+                        </button>
+                    </div>
+                }
+            </div>
 
             {/* 4=>small student video container */}
             <div 
