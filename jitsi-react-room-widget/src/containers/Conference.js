@@ -99,7 +99,7 @@ class Conference extends React.Component {
         socket = socketIOClient(this.state.socketEndpoint);
         this.addSocketEvents();
 
-        let params = null//this.props.params;
+        let params = this.props.params;
         if ( !params ) { //temporary for testing
             params= queryString.parse(window.location.search.substring(1));
         }
@@ -139,8 +139,8 @@ class Conference extends React.Component {
                         type: roomData.type,
                         tracks: [],
                         screenTracks: [],
-                        // bitrate: (roomData.bitrate ? roomData.bitrate : (roomData.type === 'teacher' ? '720' : '180')),
-                        bitrate: "180", //for now just testing
+                        bitrate: (roomData.bitrate ? roomData.bitrate : (roomData.type === 'teacher' ? '720' : '180')),
+                        // bitrate: "180", //for now just testing
                         isMute: roomData.mute,
                         class_id: params.class_id,
                         teacher_id: params.teacher_id
@@ -953,7 +953,7 @@ class Conference extends React.Component {
                 socket.disconnect();
                 // if ( redirectToMainPage ) {
                 if(!this.state.roomJoinError){
-                    // window.location.href = webRootUrl;
+                    window.location.href = webRootUrl;
                 }
                 // } else {
                 //     this.setState({ isLoggedIn: false, isStopped: true });
