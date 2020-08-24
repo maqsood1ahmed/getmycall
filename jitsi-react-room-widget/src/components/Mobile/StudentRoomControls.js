@@ -15,7 +15,11 @@ const StudentRoomControls = ({roomData, raiseHand, localSource, ...props}) => {
             <div
                 className="student-mobile-controls-hand-raised-icon"
                 onClick={() => !isHandRaised && raiseHand(localSource)}>
-                <i id={`studenthand-${localSource.id}`} className="fa fa-hand-point-up" style={{marginLeft: "2rem"}}/>
+                <i id={`studenthand-${localSource.id}`} className="fa fa-hand-point-up" 
+                    style={{
+                        marginLeft: "2rem", 
+                        backgroundColor: isHandRaised?"#d0f543":"none"
+                    }}/>
             </div>
         </div>
         <MyVideoControls

@@ -47,7 +47,7 @@ import StudentWorkingMode from '../components/StudentWorkinMode';
 
 const { Option } = Select;
 
-var studentHandRaiseTime = 10*60*1000; //60*1000=>1mint and 10*60*1000=10mint
+var studentHandRaiseTime = 6000//10*60*1000; //60*1000=>1mint and 10*60*1000=10mint
 
 var connection, isJoined, room;
 var screenConnection, isScreenJoined, screenRoom;
@@ -139,7 +139,8 @@ class Conference extends React.Component {
                         type: roomData.type,
                         tracks: [],
                         screenTracks: [],
-                        bitrate: (roomData.bitrate ? roomData.bitrate : (roomData.type === 'teacher' ? '720' : '180')),
+                        // bitrate: (roomData.bitrate ? roomData.bitrate : (roomData.type === 'teacher' ? '720' : '180')),
+                        bitrate: "180", //for now just testing
                         isMute: roomData.mute,
                         class_id: params.class_id,
                         teacher_id: params.teacher_id
@@ -307,8 +308,8 @@ class Conference extends React.Component {
                     break;
                 case 'videos-swapped':
                     let that=this;
-                    let { roomData } = this.state;
-                    //temp for mobile
+                    // let { roomData } = this.state;
+                    //for mobile flip not allowed because we are not storing remote tracks
                     if(this.props.isMobileOrTablet){
                         break;
                     }
@@ -331,6 +332,7 @@ class Conference extends React.Component {
                             waitForParticipant();
                         }
                     } else {
+                        console.log('flipped data', allParticipants, data)
                         this.flipVideo( data.selectedSource , data.teacherId, data.remoteUserSwappedId );
                         message.info(`Student ${data.remoteUserSwappedId} flipped to middle`);
                     }
@@ -427,102 +429,116 @@ class Conference extends React.Component {
         let { roomData } = this.state;
 
         if ( isTrackUpdate  ) {
-            let participantTracks = participant.tracks;
-            if ( (participant.position).toString() === "0" && isTrackUpdate ) {
-                for ( let i = 0; i < participantTracks.length ; i++ ) {
-                    let largeVideoTag = document.getElementById(`teacher-video-tag`);
-                    let largeAudioTag = document.getElementById(`teacher-audio-tag`);
+            try{
+                let participantTracks = participant.tracks;
+                if ( (participant.position).toString() === "0" && isTrackUpdate ) {
+                    for ( let i = 0; i < participantTracks.length ; i++ ) {
+                        let largeVideoTag = document.getElementById(`teacher-video-tag`);
+                        let largeAudioTag = document.getElementById(`teacher-audio-tag`);
 
-                    if( participantTracks[i].getType() === 'video' ) {
-                        if( largeVideoTag ) {
-                            participantTracks[i].attach($(`#teacher-video-tag`)[0]);
-                        }
-                    } else if ( largeAudioTag ) {
-                        // console.log('is teacher mute? => => ', participantTracks[i].isMuted());
-                        participantTracks[i].attach($(`#teacher-audio-tag`)[0]);
-
-                        if ( participantId === roomData.id && largeAudioTag ) {
-                            largeAudioTag.muted = true;
-                        } else {
-                            largeAudioTag.muted = false;
-                        }
-
-                    }
-                }
-            } else { //if position not zero then map all other as small videos
-                for ( let i = 0; i < participantTracks.length ; i++ ) {
-                    if (participantTracks[i].getType() === 'video') {
-                        if ( this.state.remoteUserSwappedId && participant.type === "teacher" ) { //if remoteUserSwappedId means flip Enabled and also if participant in loop is teacher then map to screen div
-                            console.log('mapping onto teacher screen share div => =>', participant, this.state.remoteUserSwappedId, allParticipants)
-                            let studentVideoTag = $(`#video-tag-${participant.position}`);
-                            let teacherVideoTag = $(`#teacher-screen-share-video`);
-                            participantTracks[i].attach(teacherVideoTag[0]);
-
-                            if (studentVideoTag && studentVideoTag[0]){
-                                participantTracks[i].detach($(`#video-tag-${participant.position}`)[0]); //also detach from small div
+                        if( participantTracks[i].getType() === 'video' ) {
+                            if( largeVideoTag ) {
+                                participantTracks[i].attach($(`#teacher-video-tag`)[0]);
                             }
-                        } else {
-                            if ($(`#video-tag-${participant.position}`) && $(`#video-tag-${participant.position}`)[0]){
-                                setTimeout(()=>{
-                                    participantTracks[i].attach($(`#video-tag-${participant.position}`)[0]);
-                                }, 500)
-                            }
-                            !this.state.remoteUserSwappedId && !this.state.isScreenSharing && participantTracks[i].detach($(`#teacher-screen-share-video`)[0]); //also detach from screen share div if it was before
-                        }
-                    } else {
-                        if($(`#audio-tag-${participant.position}`) && $(`#audio-tag-${participant.position}`)[0]) {
-                          participantTracks[i].attach($(`#audio-tag-${participant.position}`)[0]);
-                        }
-                        //for teacher audio mapped on small div no need to map on screen share div
-                        let audioTag = document.getElementById(`audio-tag-${participant.position}`);
-                        if ( audioTag ) {
-                            if ( participantId === roomData.id ) {
-                                audioTag.muted = true;
+                        } else if ( largeAudioTag ) {
+                            // console.log('is teacher mute? => => ', participantTracks[i].isMuted());
+                            participantTracks[i].attach($(`#teacher-audio-tag`)[0]);
+
+                            if ( participantId === roomData.id && largeAudioTag ) {
+                                largeAudioTag.muted = true;
                             } else {
-                                audioTag.muted = false;
+                                largeAudioTag.muted = false;
+                            }
+                        }
+                    }
+                } else { //if position not zero then map all other as small videos
+                    for ( let i = 0; i < participantTracks.length ; i++ ) {
+                        if (participantTracks[i].getType() === 'video') {
+                            if ( this.state.remoteUserSwappedId && participant.type === "teacher" ) { //if remoteUserSwappedId means flip Enabled and also if participant in loop is teacher then map to screen div
+                                console.log('mapping onto teacher screen share div => =>', participant, this.state.remoteUserSwappedId, allParticipants)
+                                let studentVideoTag = $(`#video-tag-${participant.position}`);
+                                let teacherVideoTag = $(`#teacher-screen-share-video`);
+                                participantTracks[i].attach(teacherVideoTag[0]);
+
+                                if (studentVideoTag && studentVideoTag[0]){
+                                    participantTracks[i].detach($(`#video-tag-${participant.position}`)[0]); //also detach from small div
+                                }
+                            } else {
+                                if ($(`#video-tag-${participant.position}`) && $(`#video-tag-${participant.position}`)[0]){
+                                    setTimeout(()=>{
+                                        participantTracks[i].attach($(`#video-tag-${participant.position}`)[0]);
+                                    }, 500)
+                                }
+                                !this.state.remoteUserSwappedId && !this.state.isScreenSharing && participantTracks[i].detach($(`#teacher-screen-share-video`)[0]); //also detach from screen share div if it was before
+                            }
+                        } else {
+                            if($(`#audio-tag-${participant.position}`) && $(`#audio-tag-${participant.position}`)[0]) {
+                            participantTracks[i].attach($(`#audio-tag-${participant.position}`)[0]);
+                            }
+                            //for teacher audio mapped on small div no need to map on screen share div
+                            let audioTag = document.getElementById(`audio-tag-${participant.position}`);
+                            if ( audioTag ) {
+                                if ( participantId === roomData.id ) {
+                                    audioTag.muted = true;
+                                } else {
+                                    audioTag.muted = false;
+                                }
                             }
                         }
                     }
                 }
+            } catch(error){
+                console.log("track updated failed ==> ", error);
             }
             this.setState({ isTrackUpdate: false });
         } else if (isStudentsTrackUpdate) {   //update only from 10 to 20 or 30
-            let participantTracks = participant.tracks;
-            if (participant.position > 0 && participant.type !== 'teacher') { //if !teacher
-                for ( let i = 0; i < participantTracks.length ; i++ ) {
-                    if ( participantId)
-                    if (participantTracks[i].getType() === 'video') {
-                        if ($(`#video-tag-${participant.position}`) && $(`#video-tag-${participant.position}`)[0]) {
-                            participantTracks[i].attach($(`#video-tag-${participant.position}`)[0]);
-                        }
-                    }else{
-                        if ($(`#audio-tag-${participant.position}`) && $(`#audio-tag-${participant.position}`)[0]) {
-                            participantTracks[i].attach($(`#audio-tag-${participant.position}`)[0]);
+            try{
+                let participantTracks = participant.tracks;
+                if (participant.position > 0 && participant.type !== 'teacher') { //if !teacher
+                    for ( let i = 0; i < participantTracks.length ; i++ ) {
+                        if ( participantId)
+                        if (participantTracks[i].getType() === 'video') {
+                            if ($(`#video-tag-${participant.position}`) && $(`#video-tag-${participant.position}`)[0]) {
+                                participantTracks[i].attach($(`#video-tag-${participant.position}`)[0]);
+                            }
+                        }else{
+                            if ($(`#audio-tag-${participant.position}`) && $(`#audio-tag-${participant.position}`)[0]) {
+                                participantTracks[i].attach($(`#audio-tag-${participant.position}`)[0]);
+                            }
                         }
                     }
                 }
+                this.setState({ isStudentsTrackUpdate: false });
+            }catch(error){
+                console.log("student track updated failed ==> ", error);
+                this.setState({ isStudentsTrackUpdate: false });
             }
-            this.setState({ isStudentsTrackUpdate: false })
         } else if ( isScreenTrackUpdate ) {
-            let screenTracks = participant.screenTracks;
-            if ( screenTracks[0] ) {
-                this.setState({ isScreenTrackUpdate: false, isScreenSharing: true });
-
-                screenTracks.forEach( track => {
-                    if ( participant.type === "student" ) {
-                        let screenVideo = $(`#teacher-video-tag`)[0];
-                        track.attach(screenVideo);
-                        // if ( screenRoom && this.state.roomData.type === "teacher" ) {
-                        //     screenRoom.addTrack(track);
-                        // }
-                    } else {
-                        let screenVideo = $(`#teacher-screen-share-video`)[0];
-                        track.attach(screenVideo)
-                        // if ( screenRoom && this.state.roomData.type === "teacher" ) {
-                        //     screenRoom.addTrack(track);
-                        // }
-                    }
-                })
+            try{
+                let screenTracks = participant.screenTracks;
+                if ( screenTracks[0] ) {
+                    this.setState({ isScreenTrackUpdate: false, isScreenSharing: true });
+    
+                    screenTracks.forEach( track => {
+                        if ( participant.type === "student" ) {
+                            let screenVideo = $(`#teacher-video-tag`)[0];
+                            track.attach(screenVideo);
+                            // if ( screenRoom && this.state.roomData.type === "teacher" ) {
+                            //     screenRoom.addTrack(track);
+                            // }
+                        } else {
+                            let screenVideo = $(`#teacher-screen-share-video`)[0];
+                            track.attach(screenVideo)
+                            // if ( screenRoom && this.state.roomData.type === "teacher" ) {
+                            //     screenRoom.addTrack(track);
+                            // }
+                        }
+                    })
+                    this.setState({ isScreenTrackUpdate: false });
+                }
+            }catch(error){
+                console.log("screen track updated failed ==> ", error);
+                this.setState({ isScreenTrackUpdate: false });
             }
         }
     }
@@ -883,36 +899,37 @@ class Conference extends React.Component {
     }
 
     onRemoveTrack (track) {
-        if (track.isLocal()) {
-            return;
-        }
-        try {
-            const participantId = track.getParticipantId();
-
-            let roomParticipant = room.getParticipantById(participantId)
-            let userInfo = roomParticipant ? (roomParticipant._displayName ? roomParticipant._displayName.split('###') : null) : null;
-            if ( userInfo ) {
-                let id = userInfo[0];
-                let position = userInfo[3];
-
-                let participant = allParticipants[id];
-
-                if ( participant['localTracks'] ) {
-                    let tracks = participant.tracks;
-                    tracks.forEach(( track, index ) => {
-                        if (track.getType() === 'video') {
-                            track.detach($(`#video-tag-${position}`));
-                        } else {
-                            track.detach($(`#audio-tag-${position}`));
-                        }
-                        delete allParticipants[id][tracks][index];
-                    })
-                }
+        if (track && room && room.getParticipantById ){
+            if (track.isLocal()) {
+                return;
             }
-        } catch (error) {
-            console.log('something went wrong when removing track ---> ', error);
+            try {
+                const participantId = track.getParticipantId();
+    
+                let roomParticipant = room.getParticipantById(participantId)
+                let userInfo = roomParticipant ? (roomParticipant._displayName ? roomParticipant._displayName.split('###') : null) : null;
+                if ( userInfo ) {
+                    let id = userInfo[0];
+                    let position = userInfo[3];
+    
+                    let participant = allParticipants[id];
+    
+                    if ( participant['localTracks'] ) {
+                        let tracks = participant.tracks;
+                        tracks.forEach(( track, index ) => {
+                            if (track.getType() === 'video') {
+                                track.detach($(`#video-tag-${position}`));
+                            } else {
+                                track.detach($(`#audio-tag-${position}`));
+                            }
+                            delete allParticipants[id][tracks][index];
+                        })
+                    }
+                }
+            } catch (error) {
+                console.log('something went wrong when removing track ---> ', error);
+            }
         }
-
     }
 
     unload = ( shouldStopScreenOnly= false ) => {
@@ -1038,7 +1055,7 @@ class Conference extends React.Component {
         socket.emit( 'event', messageObject);
 
         setTimeout(() => {
-            studentHand.style.backgroundColor = "#d0f543";
+            studentHand.style.backgroundColor = "";
             this.setState({ isStudentHandRaised: false });
         }, studentHandRaiseTime);
 
@@ -1323,29 +1340,34 @@ class Conference extends React.Component {
                         }
                     });
 
-                    Object.keys(allParticipants).forEach( id => {
-                        if ( id === sourceId ) {
-                            allParticipants[sourceId].position = "0";  //change remote user position to 0 in place of teacher
-                            if ( this.state.roomData.type === "student" && remoteUserSwappedId === roomData.id ) {
-                                allParticipants[sourceId].tracks.forEach( track => {
-                                    if ( track.getType() === 'audio' ) {
-                                        track.unmute();
-                                    }
-                                });
-                                room.setSenderVideoConstraint('720'); //set student bitrate at 720
+                    try{
+                        Object.keys(allParticipants).forEach( id => {
+                            if ( id === sourceId ) {
+                                allParticipants[sourceId].position = "0";  //change remote user position to 0 in place of teacher
+                                if ( this.state.roomData.type === "student" && remoteUserSwappedId === roomData.id ) {
+                                    allParticipants[sourceId].tracks.forEach( track => {
+                                        if ( track.getType() === 'audio' ) {
+                                            track.unmute();
+                                        }
+                                    });
+                                    room.setSenderVideoConstraint('720'); //set student bitrate at 720
+                                }
+                            } else if ( allParticipants[id].type === "teacher" ) {
+                                allParticipants[id].position = sourcePosition; //change teacher position to student div
+                                if ( this.state.roomData.type === "teacher" ) {
+                                    // allParticipants[id].tracks.forEach( track => {
+                                    //     if ( track.getType() === 'audio' ) {
+                                    //         track.mute();
+                                    //     }
+                                    // });
+                                    room.setSenderVideoConstraint('180'); //set teacher bitrate to 180
+                                }
                             }
-                        } else if ( allParticipants[id].type === "teacher" ) {
-                            allParticipants[id].position = sourcePosition; //change teacher position to student div
-                            if ( this.state.roomData.type === "teacher" ) {
-                                // allParticipants[id].tracks.forEach( track => {
-                                //     if ( track.getType() === 'audio' ) {
-                                //         track.mute();
-                                //     }
-                                // });
-                                room.setSenderVideoConstraint('180'); //set teacher bitrate to 180
-                            }
-                        }
-                    });
+                        });
+                    } catch(error){
+                            console.log('error when mapping keys=>', error)
+                        };
+                    
 
                     remoteUserSwappedId = sourceId;
                     this.setState({ roomData, isTrackUpdate: true, remoteUserSwappedId });
@@ -2145,12 +2167,16 @@ class Conference extends React.Component {
                                                                 <div className="row w-20 h-10 student-video-actions-top">
                                                                     {( (sourceUserId===id || isHandRaised) && !remoteUserSwappedId ) && 
                                                                         <div className="student-video-actions-top-icon" onClick={() => !isHandRaised && this.raiseHand(source)} style={{ cursor: 'pointer' }}>
-                                                                            <i id={`studenthand-${sourceUserId}`} className="fa fa-hand-point-up"></i>
+                                                                            <i id={`studenthand-${sourceUserId}`} className="fa fa-hand-point-up" 
+                                                                                style={{
+                                                                                    backgroundColor: isHandRaised?"#d0f543":"none",
+                                                                                    color: "#ffffff"
+                                                                                }} />
                                                                         </div>
                                                                     }
                                                                     {(source.noOfNewPrivateMessages>0) &&
-                                                                        <div className="student-video-actions-top-icon">
-                                                                            <span className="no-of-messages">1{source.noOfNewPrivateMessages}</span>
+                                                                        <div className="messages-number-circle">
+                                                                            {source.noOfNewPrivateMessages}
                                                                         </div>
                                                                     }
                                                                     {/* <div className="student-video-actions-top-icon" onClick={this.leaveRoomBtn.bind(this)}><i className="fa fa-hand-point-up"></i></div>

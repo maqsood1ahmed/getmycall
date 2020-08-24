@@ -23,6 +23,7 @@ const AppMobileView = (props) => {
     let isTeacherMuteStudentVideo = false;
     let localSource = props.roomData.sources.filter(source=>source.id===roomData.id);
     localSource = localSource && localSource[0];
+    
     const sourceUserId = localSource && localSource.id;
 
     useEffect(() => {
@@ -30,15 +31,17 @@ const AppMobileView = (props) => {
     }, [currentTeacherToggledView]);
     console.log('current teacher view===>', currentScreen, currentTeacherToggledView)
     if (isWorkingMode) {
-        return(<StudentWorkingMode 
-            teacherViews={(value)=>props.teacherViews(value)} 
-            isMobileOrTablet={true}>
-            <StudentRoomControls
-                {...props}
-                localSource={localSource}
-                isMobileOrTablet={true}
-            />
-        </StudentWorkingMode>);
+        return(<div id="mobile-mode-container">
+            <StudentWorkingMode 
+                teacherViews={(value)=>props.teacherViews(value)} 
+                isMobileOrTablet={true}>
+                <StudentRoomControls
+                    {...props}
+                    localSource={localSource}
+                    isMobileOrTablet={true}
+                />
+            </StudentWorkingMode>
+        </div>);
     } else {
         return(<div id="mobile-mode-container">
             {/* 1=>main teacher view */}
