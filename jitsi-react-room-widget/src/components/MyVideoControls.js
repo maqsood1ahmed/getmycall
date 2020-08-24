@@ -1,8 +1,6 @@
 import React from 'react';
 import { Tooltip, Popconfirm } from 'antd';
 
-import stopIcon from '../assets/img/stop.png';
-
 const MyVideoControls = (props) => {
     const {
         id,
@@ -18,7 +16,10 @@ const MyVideoControls = (props) => {
         isMobileOrTablet
     } = props;
     return(<div id="main-video-actions-box-center" className={`${!isMobileOrTablet?"row":""}`}>
-        <div className="main-video-actions-box-center-content d-flex flex-row justify-content-center">
+        <div className="main-video-actions-box-center-content d-flex flex-row justify-content-center"
+            style={{
+                width: type==="student"?"7rem":"13rem"
+            }}>
             {
                 (type === "teacher" || remoteUserSwappedId === id) &&
                 <Tooltip title={((currentTeacherToggledView==="board"||remoteUserSwappedId)  && type==="teacher")?"First move teacher to center.":""}>
@@ -58,7 +59,7 @@ const MyVideoControls = (props) => {
                 onClick={() => { props.toggleLocalSource( id, isLocalAudioMute, 'audio' )}}
                 style={{
                     cursor: "pointer",
-                    marginLeft: "8px"
+                    marginLeft: type==="student"?"0":"8px"
                 }}>
                 <img
                     className="mic-image-icon"
@@ -79,7 +80,8 @@ const MyVideoControls = (props) => {
                 style={{
                     cursor: "pointer",
                     marginLeft: "8px"
-                }}>
+                }}
+                className="toggle-video-icon-div">
                 <img
                     className="video-image-icon"
                     src={isLocalVideoMute ?
@@ -108,16 +110,6 @@ const MyVideoControls = (props) => {
                                 <i className="fas fa-circle" />
                             </div>
                     }
-            {/* <div 
-                onClick={props.unload.bind(this)} 
-                style={{ 
-                    backgroundImage: `url(${stopIcon})`,
-                    backgroundPosition: 'center',
-                    backgroundSize: 'cover',
-                    backgroundRepeat: 'no-repeat',
-                    marginLeft: "8px", 
-                    width: "35px", height: "35px",
-                    cursor: "pointer" }} /> */}
         </div>
     </div>)
 };

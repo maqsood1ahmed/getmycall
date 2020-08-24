@@ -12,14 +12,14 @@ export const openFullscreen = (elem) => {
     }
 }
 /* Close fullscreen */
-export const closeFullscreen = () => {
-    if (document.exitFullscreen) {
-    document.exitFullscreen();
-    } else if (document.mozCancelFullScreen) { /* Firefox */
-    document.mozCancelFullScreen();
-    } else if (document.webkitExitFullscreen) { /* Chrome, Safari and Opera */
-    document.webkitExitFullscreen();
-    } else if (document.msExitFullscreen) { /* IE/Edge */
-    document.msExitFullscreen();
+export const closeFullscreen = (elem) => {
+    if (elem.exitFullscreen) {
+    elem.exitFullscreen();
+    } else if (elem.mozCancelFullScreen) { /* Firefox */
+    elem.mozCancelFullScreen();
+    } else if (elem.webkitExitFullscreen) { /* Chrome, Safari and Opera */
+    elem.webkitExitFullscreen();
+    } else if (elem.msExitFullscreen) { /* IE/Edge */
+    elem.msExitFullscreen();
     }
 }
