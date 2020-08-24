@@ -21,7 +21,7 @@ const MyVideoControls = (props) => {
                 width: type==="student"?"7rem":"13rem"
             }}>
             {
-                (type === "teacher" || remoteUserSwappedId === id) &&
+                (!isMobileOrTablet && (type === "teacher" || remoteUserSwappedId === id)) &&
                 <Tooltip title={((currentTeacherToggledView==="board"||remoteUserSwappedId)  && type==="teacher")?"First move teacher to center.":""}>
                     <div
                         style={{

@@ -99,7 +99,7 @@ class Conference extends React.Component {
         socket = socketIOClient(this.state.socketEndpoint);
         this.addSocketEvents();
 
-        let params = this.props.params;
+        let params = null//this.props.params;
         if ( !params ) { //temporary for testing
             params= queryString.parse(window.location.search.substring(1));
         }
@@ -139,8 +139,8 @@ class Conference extends React.Component {
                         type: roomData.type,
                         tracks: [],
                         screenTracks: [],
-                        bitrate: (roomData.bitrate ? roomData.bitrate : (roomData.type === 'teacher' ? '720' : '180')),
-                        // bitrate: "180", //for now just testing
+                        // bitrate: (roomData.bitrate ? roomData.bitrate : (roomData.type === 'teacher' ? '720' : '180')),
+                        bitrate: "180", //for now just testing
                         isMute: roomData.mute,
                         class_id: params.class_id,
                         teacher_id: params.teacher_id
@@ -310,9 +310,6 @@ class Conference extends React.Component {
                     let that=this;
                     // let { roomData } = this.state;
                     //for mobile flip not allowed because we are not storing remote tracks
-                    if(this.props.isMobileOrTablet){
-                        break;
-                    }
                     if ( data.isRoomJoinResponse && data.remoteUserSwappedId && data.selectedSource ) {
                         function waitForParticipant(){
                             console.log('interval running to check value', allParticipants, data)
@@ -320,7 +317,11 @@ class Conference extends React.Component {
                                 ( allParticipants[data.remoteUserSwappedId].tracks || allParticipants[data.remoteUserSwappedId].screenTracks ) &&
                                 allParticipants[data.teacherId].tracks
                             ){
-                                that.flipVideo( data.selectedSource , data.teacherId, data.remoteUserSwappedId );
+                                if (isMobileOrTablet) {
+                                    that.flipVideoMobile( data.selectedSource , data.teacherId, data.remoteUserSwappedId );
+                                } else {
+                                    that.flipVideo( data.selectedSource , data.teacherId, data.remoteUserSwappedId );
+                                }
                                 message.info(`Student ${data.remoteUserSwappedId} flipped to middle`);
                             }
                             else{
@@ -333,7 +334,11 @@ class Conference extends React.Component {
                         }
                     } else {
                         console.log('flipped data', allParticipants, data)
-                        this.flipVideo( data.selectedSource , data.teacherId, data.remoteUserSwappedId );
+                        if (that.props.isMobileOrTablet) {
+                            that.flipVideoMobile( data.selectedSource , data.teacherId, data.remoteUserSwappedId );
+                        } else {
+                            that.flipVideo( data.selectedSource , data.teacherId, data.remoteUserSwappedId );
+                        }                        
                         message.info(`Student ${data.remoteUserSwappedId} flipped to middle`);
                     }
                     break;
@@ -426,7 +431,7 @@ class Conference extends React.Component {
 
     mapTracksOnTags = ( isTrackUpdate=false, isScreenTrackUpdate=false, participantId, isStudentsTrackUpdate=false ) => {
         let participant = allParticipants[participantId];
-        let { roomData } = this.state;
+        let { roomData, remoteUserSwappedId } = this.state;
 
         if ( isTrackUpdate  ) {
             try{
@@ -820,7 +825,7 @@ class Conference extends React.Component {
         let position = userInfo[3];
 
         //for mobile only map teacher and local video
-        if ( id.toString() === (this.state.roomData.id).toString() || (this.props.isMobileOrTablet && type!=="teacher")) {
+        if ( id.toString() === (this.state.roomData.id).toString()) {
             return;
         }
 
@@ -1261,6 +1266,20 @@ class Conference extends React.Component {
             console.error('error when switching to global mode.', error)
         }
 
+    }
+
+    flipVideoMobile = ( source, teacherId, remoteUserSwappedId) => {
+        console.log('teacher swapped user ===> ', remoteUserSwappedId, source, allParticipants);
+        if (source && source.id) {
+            let participant = allParticipants[source.id];
+            participant.tracks.forEach(track=>{
+                if (track.getType()==="video"){
+                    track.attach($(`#teacher-video-tag`)[0]);
+                } else if (track.getType()==="audio"){
+                    track.attach($(`#teacher-audio-tag`)[0]);
+                }
+            })
+        }
     }
 
 
