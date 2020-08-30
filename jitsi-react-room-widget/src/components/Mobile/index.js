@@ -29,7 +29,7 @@ const AppMobileView = (props) => {
     useEffect(() => {
         changeCurrentScreen(currentTeacherToggledView)
     }, [currentTeacherToggledView]);
-    console.log('current teacher view===>', currentScreen, currentTeacherToggledView)
+
     if (isWorkingMode) {
         return(<div id="mobile-mode-container">
             <StudentWorkingMode 
@@ -232,6 +232,9 @@ const AppMobileView = (props) => {
                 {...props}
                 localSource={localSource}
                 isMobileOrTablet={true}
+                currentScreen={currentScreen}
+                currentTeacherToggledView={currentTeacherToggledView}
+                changeCurrentScreen={changeCurrentScreen}
             />
         </div>);
     }

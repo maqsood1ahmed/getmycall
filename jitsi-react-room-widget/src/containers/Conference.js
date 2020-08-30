@@ -99,7 +99,7 @@ class Conference extends React.Component {
         socket = socketIOClient(this.state.socketEndpoint);
         this.addSocketEvents();
 
-        let params = null//this.props.params;
+        let params = this.props.params;
         if ( !params ) { //temporary for testing
             params= queryString.parse(window.location.search.substring(1));
         }
@@ -139,8 +139,8 @@ class Conference extends React.Component {
                         type: roomData.type,
                         tracks: [],
                         screenTracks: [],
-                        // bitrate: (roomData.bitrate ? roomData.bitrate : (roomData.type === 'teacher' ? '720' : '180')),
-                        bitrate: "180", //for now just testing
+                        bitrate: (roomData.bitrate ? roomData.bitrate : (roomData.type === 'teacher' ? '720' : '180')),
+                        // bitrate: "180", //for now just testing
                         isMute: roomData.mute,
                         class_id: params.class_id,
                         teacher_id: params.teacher_id
@@ -309,7 +309,11 @@ class Conference extends React.Component {
                 case 'videos-swapped':
                     let that=this;
                     // let { roomData } = this.state;
+                    //mobile flipped disabled
                     //for mobile flip not allowed because we are not storing remote tracks
+                    if (this.props.isMobileOrTablet){
+                        return;
+                    }
                     if ( data.isRoomJoinResponse && data.remoteUserSwappedId && data.selectedSource ) {
                         function waitForParticipant(){
                             console.log('interval running to check value', allParticipants, data)
@@ -317,11 +321,11 @@ class Conference extends React.Component {
                                 ( allParticipants[data.remoteUserSwappedId].tracks || allParticipants[data.remoteUserSwappedId].screenTracks ) &&
                                 allParticipants[data.teacherId].tracks
                             ){
-                                if (isMobileOrTablet) {
-                                    that.flipVideoMobile( data.selectedSource , data.teacherId, data.remoteUserSwappedId );
-                                } else {
-                                    that.flipVideo( data.selectedSource , data.teacherId, data.remoteUserSwappedId );
-                                }
+                                // if (isMobileOrTablet) {    //mobile flipped disabled
+                                //     that.flipVideoMobile( data.selectedSource , data.teacherId, data.remoteUserSwappedId );
+                                // } else {
+                                that.flipVideo( data.selectedSource , data.teacherId, data.remoteUserSwappedId );
+                                // }
                                 message.info(`Student ${data.remoteUserSwappedId} flipped to middle`);
                             }
                             else{
@@ -334,11 +338,11 @@ class Conference extends React.Component {
                         }
                     } else {
                         console.log('flipped data', allParticipants, data)
-                        if (that.props.isMobileOrTablet) {
-                            that.flipVideoMobile( data.selectedSource , data.teacherId, data.remoteUserSwappedId );
-                        } else {
-                            that.flipVideo( data.selectedSource , data.teacherId, data.remoteUserSwappedId );
-                        }                        
+                        // if (that.props.isMobileOrTablet) {     //mobile flipped disabled
+                        //     that.flipVideoMobile( data.selectedSource , data.teacherId, data.remoteUserSwappedId );
+                        // } else {
+                        that.flipVideo( data.selectedSource , data.teacherId, data.remoteUserSwappedId );
+                        // }                        
                         message.info(`Student ${data.remoteUserSwappedId} flipped to middle`);
                     }
                     break;
@@ -1268,19 +1272,20 @@ class Conference extends React.Component {
 
     }
 
-    flipVideoMobile = ( source, teacherId, remoteUserSwappedId) => {
-        console.log('teacher swapped user ===> ', remoteUserSwappedId, source, allParticipants);
-        if (source && source.id) {
-            let participant = allParticipants[source.id];
-            participant.tracks.forEach(track=>{
-                if (track.getType()==="video"){
-                    track.attach($(`#teacher-video-tag`)[0]);
-                } else if (track.getType()==="audio"){
-                    track.attach($(`#teacher-audio-tag`)[0]);
-                }
-            })
-        }
-    }
+    //mobile flipped disabled
+    // flipVideoMobile = ( source, teacherId, remoteUserSwappedId) => {
+    //     console.log('teacher swapped user ===> ', remoteUserSwappedId, source, allParticipants);
+    //     if (source && source.id) {
+    //         let participant = allParticipants[source.id];
+    //         participant.tracks.forEach(track=>{
+    //             if (track.getType()==="video"){
+    //                 track.attach($(`#teacher-video-tag`)[0]);
+    //             } else if (track.getType()==="audio"){
+    //                 track.attach($(`#teacher-audio-tag`)[0]);
+    //             }
+    //         })
+    //     }
+    // }
 
 
     flipVideo = ( source, teacherId, remoteUserSwappedId ) => {
@@ -1614,7 +1619,8 @@ class Conference extends React.Component {
     }
 
     toggleTeacherView = ( view ) => {
-        let { roomData, isMobileOrTablet } = this.state;
+        let { roomData } = this.state;
+        const { isMobileOrTablet } = this.props;
         if (view==='board' && this.state.remoteUserSwappedId){
             return;
         }

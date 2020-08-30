@@ -1046,6 +1046,9 @@ audio {
         background: white;
     }
 
+    /* .mobile-controls-change-default-screen-icon>img:hover {
+        transform: scale(1.25);
+      } */
 }
 
 /* Extra large devices (large laptops and desktops, 1200px and up) */

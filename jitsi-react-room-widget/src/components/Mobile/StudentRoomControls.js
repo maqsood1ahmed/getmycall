@@ -3,11 +3,19 @@ import MyVideoControls from '../MyVideoControls';
 import backArrowPNG from '../../assets/img/back-arrow.png';
 
 const StudentRoomControls = ({roomData, raiseHand, localSource, ...props}) => {
+    const {
+        currentScreen,
+        currentTeacherToggledView
+    } = props;
     const isHandRaised = localSource.isHandRaised ? localSource.isHandRaised : false;
     return(<div className="student-mobile-controls w-100">
         <div className="student-mobile-controls-left">
-            <div onClick={()=>props.unload()} className="student-mobile-controls-leave-room-icon">
+            <div onClick={()=>props.changeCurrentScreen(currentTeacherToggledView)} className="mobile-controls-change-default-screen-icon">
                 <img 
+                    style={{
+                        opacity: ((currentTeacherToggledView!=="video")&&currentScreen!==currentTeacherToggledView)?1:.5,
+                        pointerEvent: ((currentTeacherToggledView!=="video")&&currentScreen!==currentTeacherToggledView)?"none":"all"
+                    }}
                     src={backArrowPNG}
                     alt="Go Back"
                     width="35px" height="40px" />
