@@ -1,8 +1,17 @@
+var fs = require( 'fs' );
 var express = require('express');
+var cors = require('cors');
 var app = express();
-var server = require('http').Server(app);
-var io = require('socket.io')(server);
+app.use(cors());
+var http = require('http');
+var server = http.createServer(app);
 var path = require('path');
+
+server.listen(55555, function(){
+    console.log('server start at port => 55555')
+});
+
+var io = require('socket.io').listen(server);
 
 var ioClassRoom = io.of('/class-rooms');
 
@@ -15,10 +24,6 @@ app.get('/teacher-dashboard', function(req, res) {
 app.use(express.static(path.join(__dirname, 'public')));
 
 var rooms = {};
-
-server.listen(55555, function(){
-    console.log('server start at port => 55555')
-});
 
 ioClassRoom.on('connection', (socket) => {
     console.log('client connected => ', socket.id)

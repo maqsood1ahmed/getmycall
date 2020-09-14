@@ -8,6 +8,7 @@ import { withTranslation } from 'react-i18next';
 import { Modal } from 'antd';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import socketIOClient from 'socket.io-client';
 
 import { message, Select, notification, Tooltip } from 'antd';
 import './Conference.css';
@@ -88,7 +89,7 @@ class Conference extends React.Component {
         };
 
         //get page params and initialize socket
-        socket = io(this.state.socketEndpoint, { secure: true });
+        socket = socketIOClient(this.state.socketEndpoint, { secure: true, transports: ['xhr-polling'] });
         this.addSocketEvents();
 
         let params = this.props.params;
@@ -970,7 +971,7 @@ class Conference extends React.Component {
                 socket.disconnect();
                 // if ( redirectToMainPage ) {
                 if(!this.state.roomJoinError){
-                    // window.location.href = webRootUrl;
+                    window.location.href = webRootUrl;
                 }
                 // } else {
                 //     this.setState({ isLoggedIn: false, isStopped: true });
