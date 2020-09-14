@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
+import { withTranslation } from 'react-i18next';
+
 import StudentWorkingMode from '../StudentWorkinMode';
 import StudentRoomControls from './StudentRoomControls';
 
@@ -239,4 +241,4 @@ const AppMobileView = (props) => {
         </div>);
     }
 }
-export default AppMobileView;
+export default withTranslation()(AppMobileView);

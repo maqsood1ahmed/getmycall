@@ -2,11 +2,11 @@ import React from 'react';
 import { Tooltip  } from 'antd';
 
 const ScreenModesButtons = (props) => {
-    const { teacherView, currentScreenMode, changeScreenMode } = props;
+    const { teacherView, currentScreenMode, changeScreenMode, t } = props;
     return(
         <div className="row main-video-actions-box-right-content d-flex flex-row justify-content-end">
             {
-                <Tooltip title={currentScreenMode==="chatMode"?"Exist Comments Mode":"Comments Mode"}>
+                <Tooltip title={currentScreenMode==="chatMode"?t('commentsModeExitMsg'):t('commentsModeMsg')}>
                     <div
                         onClick={() => changeScreenMode("chatMode", teacherView)}
                         style={{
@@ -20,7 +20,7 @@ const ScreenModesButtons = (props) => {
                 </Tooltip>
             }
             {
-                <Tooltip title={currentScreenMode==="fullPageMode"?"Exist Full Page":"Full Page Mode"}>
+                <Tooltip title={currentScreenMode==="fullPageMode"?t('exitFullPageModeMsg'):t('fullPageModeMsg')}>
                     <div
                         id="full-screen-icon"
                         onClick={() => changeScreenMode("fullPageMode", teacherView)}

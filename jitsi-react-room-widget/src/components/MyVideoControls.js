@@ -13,7 +13,8 @@ const MyVideoControls = (props) => {
         isScreenSharing,
         isVideoMuteByTeacher,
         isRecording,
-        isMobileOrTablet
+        isMobileOrTablet,
+        t
     } = props;
     return(<div id="main-video-actions-box-center" className={`${!isMobileOrTablet?"row":""}`}>
         <div className="main-video-actions-box-center-content d-flex flex-row justify-content-center"
@@ -22,7 +23,7 @@ const MyVideoControls = (props) => {
             }}>
             {
                 (!isMobileOrTablet && (type === "teacher" || remoteUserSwappedId === id)) &&
-                <Tooltip title={((currentTeacherToggledView==="board"||remoteUserSwappedId)  && type==="teacher")?"First move teacher to center.":""}>
+                <Tooltip title={((currentTeacherToggledView==="board"||remoteUserSwappedId)  && type==="teacher")?t('flipMainResourceMessage'):""}>
                     <div
                         style={{
                             fontSize: "1.8rem",
@@ -35,8 +36,8 @@ const MyVideoControls = (props) => {
                                 placement="top"
                                 title="Do you want to Stop Screen Share!"
                                 onConfirm={() => props.unload(true)}
-                                okText="Ok"
-                                cancelText="Cancel"
+                                okText={t('okText')}
+                                cancelText={t('cancelText')}
                             >
                                 <div className="screen-share-icon">
                                     <i className="fas fa-desktop" />

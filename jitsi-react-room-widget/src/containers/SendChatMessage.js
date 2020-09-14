@@ -53,17 +53,19 @@ class SendChatMessage extends React.Component {
     }
 
     chatBoxTitle = () => {
+        const { t } = this.props;
         return(
             <div className="send-private-message-box-title d-flex flex-direction-row justify-content-around">
                 <span className="chat-box-close-icon d-flex flex-row justify-content-start" style={{ width: "35%" }}>
                     <i onClick={()=>this.props.hideMessageBox()} className="fas fa-times"></i>
                 </span>
-                <span className='p-1 chat-box-close-icon d-flex flex-row justify-content-start chat-header-text' style={{ width: "65%" }}>Private Chat <i className="fas fa-comment chat-box-icon"></i></span>
+                <span className='p-1 chat-box-close-icon d-flex flex-row justify-content-start chat-header-text' style={{ width: "65%" }}>{t('privateChat')}<i className="fas fa-comment chat-box-icon"></i></span>
             </div>
         )
     };
 
     chatBoxContent = () => {
+        const { t } = this.props;
         return (
             <div className="chat-box-body d-flex flex-column justify-content-between">
                 <ChatMessages 
@@ -80,7 +82,7 @@ class SendChatMessage extends React.Component {
                     </div>
                     <div className="input-note-buttons d-flex flex-row justify-content-between">
                         <div className="note-close-button">
-                            <button onClick={()=>this.props.hideMessageBox()} type="button" class="btn">Close</button>
+                            <button onClick={()=>this.props.hideMessageBox()} type="button" class="btn">{t('close')}</button>
                         </div>
                         <div className="chat-send-button">
                             <button disabled={!this.state.messageText ? true : false} onClick={this.sendMessage.bind(this)} type="button" class="btn"><img width="20px" height="20px" src={arrowSend} alt="Send" /></button>

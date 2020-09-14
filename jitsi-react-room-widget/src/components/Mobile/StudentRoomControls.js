@@ -5,7 +5,8 @@ import backArrowPNG from '../../assets/img/back-arrow.png';
 const StudentRoomControls = ({roomData, raiseHand, localSource, ...props}) => {
     const {
         currentScreen,
-        currentTeacherToggledView
+        currentTeacherToggledView,
+        t
     } = props;
     const isHandRaised = localSource.isHandRaised ? localSource.isHandRaised : false;
     return(<div className="student-mobile-controls w-100">
@@ -17,7 +18,7 @@ const StudentRoomControls = ({roomData, raiseHand, localSource, ...props}) => {
                         pointerEvent: ((currentTeacherToggledView!=="video")&&currentScreen!==currentTeacherToggledView)?"none":"all"
                     }}
                     src={backArrowPNG}
-                    alt="Go Back"
+                    alt={t("goBack")}
                     width="35px" height="40px" />
             </div>
             <div
@@ -32,6 +33,7 @@ const StudentRoomControls = ({roomData, raiseHand, localSource, ...props}) => {
         </div>
         <MyVideoControls
             {...props}
+            t={t}
             isMobileOrTablet={props.isMobileOrTablet}
         />
     </div>);

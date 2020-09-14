@@ -52,6 +52,9 @@ class ChatBox extends React.Component {
     }
     
     chatBoxTitle = () => {
+        const {
+            t
+        } = this.props;
         return(
             <div className="chat-box-title d-flex flex-direction-row justify-content-around">
                 <span className="chat-box-close-icon" style={{ width: "20%" }}>
@@ -59,7 +62,7 @@ class ChatBox extends React.Component {
                         <i onClick={()=>this.props.closeChatBox()} className="fas fa-times"></i>
                     </Tooltip>
                 </span>
-                <span className='p-1 d-flex justify-content-center chat-header-text' style={{ width: "80%" }}>Class Chat <i className="fas fa-comment chat-box-icon"></i></span>
+                <span className='p-1 d-flex justify-content-center chat-header-text' style={{ width: "80%" }}>{t('classChat')}<i className="fas fa-comment chat-box-icon"></i></span>
                 <span className="p-1" style={{ width: "20%" }}>
                     { this.props.profile.type === "teacher" &&
                         <Switch size="default" checked={this.state.isChatPublic} onChange={this.handleChatAccess.bind(this)} />

@@ -4,33 +4,27 @@ import { connect } from 'react-redux';
 import queryString from 'query-string';
 import axios from  'axios';
 import Iframe from 'react-iframe';
+import { withTranslation } from 'react-i18next';
 import { Modal } from 'antd';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 import { message, Select, notification, Tooltip } from 'antd';
-import socketIOClient from "socket.io-client";
 import './Conference.css';
 import { addMessages } from '../actions';
 
-import startIcon from '../assets/img/start.png';
-import stopIcon from '../assets/img/stop.png';
-import micOn from '../assets/img/mic-on.svg';
-import micOff from '../assets/img/mic-off.svg';
-import iconSwap from '../assets/img/swap_video.png'
-import loadingIcon from '../assets/img/loading-icon.gif';
-import swapTeacherSourcesIcon from '../assets/img/swap-teacher-sources.png';
-import videoSolidIcon from '../assets/img/video-solid.svg';
-import videoSlashIcon from '../assets/img/video-slash-solid.svg';
-import raiseHandIcon from '../assets/img/hand-point-up-regular.svg';
 import ChatBox from '../containers/ChatBox';
 import InputNote from '../containers/InputNote';
 import SendChatMessage from './SendChatMessage';
-import ItemsLoader from '../assets/img/purple-gif-big.gif';
 
 import bellRing from '../assets/mesg_ting.mp3';
 
-import { webRootUrl, jitsiServerParams, socketSeverEndpoint, jitsiInitOptions } from '../config';
+import { 
+    webRootUrl,
+    jitsiServerParams,
+    socketSeverEndpoint,
+    jitsiInitOptions
+} from '../config';
 import ScreenModesButtons from '../components/ScreenModes';
 import AppButtons from '../components/Buttons';
 import ErrorMessage from '../components/ErrorMessage';
@@ -43,11 +37,9 @@ import { openFullscreen, closeFullscreen } from '../utils';
 import ClassRoomHeader from '../components/ClassRoomHeader';
 import StudentWorkingMode from '../components/StudentWorkinMode';
 
-// import teacherBoardLoader from '../assets/img/teacher-board-loader.gif';
-
 const { Option } = Select;
 
-var studentHandRaiseTime = 6000//10*60*1000; //60*1000=>1mint and 10*60*1000=10mint
+var studentHandRaiseTime = 60*60*1000; //60*1000=>1mint or 10*60*1000=10mint or 60*60*1000=60mint
 
 var connection, isJoined, room;
 var screenConnection, isScreenJoined, screenRoom;
@@ -96,7 +88,7 @@ class Conference extends React.Component {
         };
 
         //get page params and initialize socket
-        socket = socketIOClient(this.state.socketEndpoint);
+        socket = io(this.state.socketEndpoint, { secure: true });
         this.addSocketEvents();
 
         let params = this.props.params;
@@ -114,11 +106,16 @@ class Conference extends React.Component {
         let roomData = {};
 
         let params = this.state.params;
+
+        //set app language
+        this.props.i18n.changeLanguage(params.lang);
+
         if ( params.id && params.type && params.class_id && 
                 ((!this.props.isMobileOrTablet && params.type === "teacher") || params.type==="student") 
             ) {
             let response = await this.getUserData(params);
             console.log('=> => respone ', response)
+
             let roomId = params.class_id;
             let type = params.type;
             if ( response.status && response.data && response.data.data ) {
@@ -131,6 +128,9 @@ class Conference extends React.Component {
                 if ( roomId && roomData.id && roomData.name && roomData.type &&
                     roomData.sources && ( roomData.sources.length > 0 ) &&
                     this.handleDataValidation( roomData ) ) {
+
+                    //remove source if duplicate to avoid app unexpected behaviour
+                    roomData.sources = this.removeDuplicateSource(roomData.sources);
 
                     let userSession = {
                         name: roomData.name,
@@ -195,7 +195,7 @@ class Conference extends React.Component {
                 if(response.data && response.data.messge){
                     this.setState({ isLoggedIn: false, roomJoinError: response.data.messge });
                 } else {
-                    this.setState({ isLoggedIn: false, roomJoinError: "Something went wrong when joining Room" });
+                    this.setState({ isLoggedIn: false, roomJoinError: this.props.t('joinRoomErrorMsg') });
                 }
                 
             }
@@ -239,6 +239,13 @@ class Conference extends React.Component {
         //     }
         // }, 5000);
     }
+
+    removeDuplicateSource = ( sources ) => {
+        let uniqueSources = [];
+        sources.map(source => uniqueSources.filter(a => a.position == source.position).length > 0 ? null : uniqueSources.push(source));
+        return uniqueSources;
+    }
+
     isBottomOfDiv = el => {
         if (el.getBoundingClientRect()){
             return el.getBoundingClientRect().bottom <= window.innerHeight;
@@ -285,7 +292,7 @@ class Conference extends React.Component {
             }
           }
         } catch (error) {
-            message.error('something went wrong when fetching user data.');
+            message.error(this.props.t('fetchUserDataMsg'));
             console.error('something went wrong when fetching user data. => ', error);
             return {
                 status: true,
@@ -326,7 +333,7 @@ class Conference extends React.Component {
                                 // } else {
                                 that.flipVideo( data.selectedSource , data.teacherId, data.remoteUserSwappedId );
                                 // }
-                                message.info(`Student ${data.remoteUserSwappedId} flipped to middle`);
+                                message.info(`${t('student')} ${data.remoteUserSwappedId} ${t('stdFlipToMiddleMsg')}`);
                             }
                             else{
                                 console.log('interval running to check value', allParticipants)
@@ -343,7 +350,7 @@ class Conference extends React.Component {
                         // } else {
                         that.flipVideo( data.selectedSource , data.teacherId, data.remoteUserSwappedId );
                         // }                        
-                        message.info(`Student ${data.remoteUserSwappedId} flipped to middle`);
+                        message.info(`${t('student')} ${data.remoteUserSwappedId} ${t('stdFlipToMiddleMsg')}`);
                     }
                     break;
                 case 'teacher-view-change':
@@ -367,7 +374,7 @@ class Conference extends React.Component {
                     this.onNewMessage(data);
                     break;
                 case 'private-chat-response':
-                    message.error("Can't Send message seems offline!");
+                    message.error(that.props.t('sendMessageErrorMsg'));
                     break;
                 case 'mute-all-students-audio':
                     if (this.state.roomData.type === "student"){this.toggleLocalAudioByTeacher(data.mute)}
@@ -390,12 +397,12 @@ class Conference extends React.Component {
                     console.error('socketio server message type undefined!')
                     break;
                 case 'teacher-joined-room':
-                    message.info('Teacher is in the class.');
+                    message.info(that.props.t('teacherJoinedMsg'));
                     $('body').append($(`<embed src=${bellRing} autostart="false" width="0" height="0" id="sound1"
                         enablejavascript="true" />`));
                     break;
                 case 'teacherLeaveRoom':
-                    message.info('Teacher Leave room.');
+                    message.info(that.props.t('teacherLeaveMsg'));
                     // window.location.reload()
                     break;
                 case 'error':
@@ -556,14 +563,14 @@ class Conference extends React.Component {
         if ( !isScreen ) {
             connection.addEventListener(window.JitsiMeetJS.events.connection.CONNECTION_ESTABLISHED, () => {
                 isConnected = true;
-                message.success('connection established.');
+                message.success(this.props.t('connectionEstablishedMsg'));
                 setTimeout(()=>{
                     this.joinRoom();
                 }, 1000)
             });
             connection.addEventListener(window.JitsiMeetJS.events.connection.CONNECTION_FAILED, function () {
                 isConnected = false;
-                message.error('connection failed.');
+                message.error(this.props.t('connectionFailedMsg'));
             });
             connection.addEventListener(window.JitsiMeetJS.events.connection.CONNECTION_DISCONNECTED,() => {
                 this.disconnect();
@@ -576,7 +583,7 @@ class Conference extends React.Component {
                 });
             window.JitsiMeetJS.mediaDevices.isDevicePermissionGranted().then( isGranted=>{
                 if ( !isGranted ) {
-                    message.error("Unable To Access Media Devices. ")
+                    message.error(this.props.t('getMediaErrorMessage'))
                     console.log('devices permission not granted => =>', isGranted)
                 }
             })
@@ -601,7 +608,7 @@ class Conference extends React.Component {
 
     onConferenceJoined ( isScreen = false) {
         if ( !isScreen ) {
-            message.success('conference joined');
+            message.success(this.props.t('conferenceJoinedMsg'));
             let userId = this.state.roomData.id;
             let userName = this.state.roomData.name;
             let type = this.state.roomData.type;
@@ -713,7 +720,7 @@ class Conference extends React.Component {
             })
             .catch(error => {
                 if ( error.name === window.JitsiMeetJS.errors.track.PERMISSION_DENIED ) {
-                    message.error('Please enable camera/microphone then refresh the page.', 10)
+                    message.error(this.props.t('enableCameraWarningMsg'), 10)
                 }
                 console.error("local tracks error => ", error);
             });
@@ -877,14 +884,15 @@ class Conference extends React.Component {
 
     onTrackMute = ( id, track ) => {
         let isLocal = id === this.state.roomData.id;
+        let { t } = this.props;
         if ( allParticipants[id] && allParticipants[id].name ) {
             if ( track.getType() === "audio" ) {
-                message.info(`${allParticipants[id].name} ${track.isMuted() ? " Mic Off" : " Mic On"}`);
+                message.info(`${allParticipants[id].name} ${track.isMuted() ? " "+t('micOff') : " "+t('micOn')}`);
                 if ( !this.state.isGlobalAudioMute ) {
                     isLocal && this.setState({ isLocalAudioMute: track.isMuted()});
                 }
             } else if ( track.getType() === "video" ) {
-                message.info(`${allParticipants[id].name} ${track.isMuted() ? " Video Off" : " Video On"}`);
+                message.info(`${allParticipants[id].name} ${track.isMuted() ? " "+t('videoOff') : " "+t('videoOn')}`);
                 isLocal && this.setState({ isLocalVideoMute: track.isMuted()});
 
                 if ( !this.state.isWorkingMode ) {
@@ -958,11 +966,11 @@ class Conference extends React.Component {
                 room = null;
                 connection = null;
 
-                message.warn('Disconnected!!!')
+                message.warn(this.props.t('roomStopMsg'));
                 socket.disconnect();
                 // if ( redirectToMainPage ) {
                 if(!this.state.roomJoinError){
-                    window.location.href = webRootUrl;
+                    // window.location.href = webRootUrl;
                 }
                 // } else {
                 //     this.setState({ isLoggedIn: false, isStopped: true });
@@ -1030,8 +1038,9 @@ class Conference extends React.Component {
 
     handleChangeResolutions = (value) => {
         let { roomData } = this.state;
+        const { t } = this.props;
         room.setSenderVideoConstraint(value);
-        message.success(`Resolution Changed to ${value}`)
+        message.success(`${t('resolutionChangedMsg')} ${value}`)
         roomData.bitrate = value;
         this.setState({ roomData });
     }
@@ -1054,7 +1063,7 @@ class Conference extends React.Component {
     raiseHand = ( source ) => {
         const { roomData, isStudentHandRaised } = this.state;
         if ( this.state.isStudentHandRaised ) {
-            message.warning('You already raised your hand!');
+            message.warning(this.props.t('raiseHandWarningMsg'));
             return
         }
         let studentHand = document.getElementById(`studenthand-${source.id}`);
@@ -1137,8 +1146,8 @@ class Conference extends React.Component {
     }
 
     toggleLocalAudioByTeacher = async ( mute ) => {
-        if (mute) { message.warning("Teacher Mute all");
-        } else if (!mute) { message.success("Now all Mic's have previous states."); }
+        if (mute) { message.warning(this.props.t('teacherMuteAllMsg'));
+        } else if (!mute) { message.success(this.props.t('micOldStateMsg')); }
 
         if ( mute ) {
             this.setState({ isGlobalAudioMute: mute });
@@ -1149,8 +1158,8 @@ class Conference extends React.Component {
         }
     }
     toggleLocalVideoByTeacher = async ( mute ) => {
-        if (mute) { message.warning('Teacher Stopped your Video!');
-        } else if (!mute) { message.success('Teacher Started your Video'); }
+        if (mute) { message.warning(this.props.t('teacherStopVideoMsg'));
+        } else if (!mute) { message.success(this.props.t('teacherStartVideoMsg')); }
         await this.toggleLocalSource( this.state.roomData.id, mute, "video", true );
         this.setState({ isVideoMuteByTeacher: mute });
     }
@@ -1402,7 +1411,7 @@ class Conference extends React.Component {
                 socket.emit( 'event', messageObject );
             }
         } catch ( error ) {
-            message.error('Something went wrong with video swap!');
+            message.error(this.props.t('videoSwapErrorMsg'));
             console.error('something went wrong with video swap!', error)
         }
     }
@@ -1644,7 +1653,8 @@ class Conference extends React.Component {
                 isScreenSharing, remoteUserSwappedId, isChatBoxVisible,
                 selectedBoard, currentScreenMode, clickedTeacherView } = this.state;
         const {
-            isMobileOrTablet
+            isMobileOrTablet,
+            t
         } = this.props;
 
         const { type, bitrate } = roomData;
@@ -1658,7 +1668,7 @@ class Conference extends React.Component {
                         marginRight: (currentTeacherToggledView==="board"||currentTeacherToggledView==="screen"||remoteUserSwappedId)?"1.5rem":""
                     }}
                     >
-                    <Tooltip title={( ( currentTeacherToggledView === "screen") && ( type === "teacher" ) )? "Flip Back to Center." : ""}>
+                    <Tooltip title={( ( currentTeacherToggledView === "screen") && ( type === "teacher" ) )? t('flipBackMsg') : ""}>
                         <video
                             style = {{
                                 pointerEvents: ( ( currentTeacherToggledView === "screen" ) && ( type === "teacher" ) )?"auto":"none",
@@ -1695,7 +1705,7 @@ class Conference extends React.Component {
                         type==="teacher" && this.state.isWorkingMode &&
                             <div  className="change-board-view d-flex flex-row justify-content-start">
                                 <div className="change-board-view-button">
-                                    <h2 style={{ color: "red" }} >Working Mode</h2>
+                                    <h2 style={{ color: "red" }} >{t('workingMOde')}</h2>
                                 </div>
                             </div>
 
@@ -1705,7 +1715,7 @@ class Conference extends React.Component {
                             <div  className="change-board-view d-flex flex-row justify-content-center">
                                 <div className="change-board-view-button">
                                     <Select
-                                        defaultValue="Choose View"
+                                        defaultValue={t('chooseView')}
                                         onChange={(index) => this.handleChangeBoard(roomData.board_sources[index])}
                                         className="change-board-button"
                                     >
@@ -1733,7 +1743,7 @@ class Conference extends React.Component {
                     } */}
                     {type==="teacher" &&
                         <div className={`change-teacher-view-arrow d-flex flex-row ${currentTeacherToggledView==="board"?"justify-content-end":"justify-content-start"}`}>
-                            <Tooltip title={( ( type === "teacher" ) )? (currentTeacherToggledView === "board"?"Flip back":"Flip to Center.") : ""}>
+                            <Tooltip title={( ( type === "teacher" ) )? (currentTeacherToggledView === "board"?t('flipBackMsg'):t('flipMsg')) : ""}>
                                 <button
                                     onClick={() => {
                                         if ( this.state.isWorkingMode ) {
@@ -1760,6 +1770,7 @@ class Conference extends React.Component {
                             <ScreenModesButtons
                                 teacherView="board"
                                 currentScreenMode={currentScreenMode}
+                                t={t}
                                 changeScreenMode={this.changeScreenMode.bind(this)}/>
                         </div>
                     }
@@ -1787,7 +1798,7 @@ class Conference extends React.Component {
                     } */}
                     { (type === "teacher" && isScreenSharing) &&
                         <div className={`change-teacher-view-arrow d-flex flex-row ${currentTeacherToggledView==="screen"?"justify-content-end":"justify-content-start"}`}>
-                            <Tooltip title={( (currentTeacherToggledView === "video" || currentTeacherToggledView === "screen") && isScreenSharing && ( type === "teacher" ) && !remoteUserSwappedId )? (currentTeacherToggledView === "screen"?"Flip back":"Flip to Center.") : ""}>
+                            <Tooltip title={( (currentTeacherToggledView === "video" || currentTeacherToggledView === "screen") && isScreenSharing && ( type === "teacher" ) && !remoteUserSwappedId )? (currentTeacherToggledView === "screen"?t('flipBackMsg'):t('flipMsg')) : ""}>
                                 <button onClick={() => this.toggleTeacherView( currentTeacherToggledView==="screen"?'video':"screen" )}  type="button" style={{width:"2.3rem", height:"2.3rem"}} className="btn btn-primary">
                                     <i className={`fa ${currentTeacherToggledView==="screen"?"fa-arrow-right":"fa-arrow-left"}`} aria-hidden="true" />
                                 </button>
@@ -1801,6 +1812,7 @@ class Conference extends React.Component {
                             <ScreenModesButtons
                                 teacherView="screen"
                                 currentScreenMode={currentScreenMode}
+                                t={t}
                                 changeScreenMode={this.changeScreenMode.bind(this)}/>
                         </div>
                     }
@@ -1853,7 +1865,7 @@ class Conference extends React.Component {
         }
     }
 
-    startScreenshareProgress = () => toast.info('Starting Screen Share', {
+    startScreenshareProgress = () => toast.info(this.props.t('startScreenSchareMsg'), {
                                                 position: "top-center",
                                                 autoClose: 4000,
                                                 hideProgressBar: false,
@@ -1891,17 +1903,7 @@ class Conference extends React.Component {
         }
     }
 
-    // selectStudentsButton = () => {
-    //     return(
-    //         <Select defaultValue="1-10" style={{ width: 80 }} onChange={console.log('handle change')}>
-    //             <Option value="1-10">1-10</Option>
-    //             <Option value="11-20">11-20</Option>
-    //             <Option value="21-30">21-30</Option>
-    //         </Select>);
-    // }
-
     render () {
-        console.log(allParticipants, 'all participants---')
         const { params, isLoggedIn, roomData,
             currentTeacherToggledView, noOfNewMessages,
             isChatBoxVisible, isInputNoteVisible, selectedSource,
@@ -1913,7 +1915,8 @@ class Conference extends React.Component {
             isVideoMuteByTeacher 
         } = this.state;
         const {
-            isMobileOrTablet
+            isMobileOrTablet,
+            t
         } = this.props;
         const { roomId, id, name, type } = roomData;
 
@@ -1978,6 +1981,7 @@ class Conference extends React.Component {
                         studentId={roomData.teacher_id} //now its teacher
                         studentName={roomData.sources[0].name}
                         noOfNewPrivateMessages={noOfNewPrivateMessages}
+                        t={t}
                         clearNoOfNewPrivateMessages={this.clearNoOfNewPrivateMessages.bind(this)}
                         isWorkingMode={isWorkingMode}
                     />                 
@@ -1998,6 +2002,7 @@ class Conference extends React.Component {
                         isVideoMuteByTeacher={isVideoMuteByTeacher}
                         isRecording={isRecording}
 
+                        t={t}
                         toggleLocalSource={this.toggleLocalSource.bind(this)}
                         handleScreenShareButton={this.handleScreenShareButton.bind(this)}
                         handleRecordVideo={this.handleRecordVideo.bind(this)}
@@ -2027,6 +2032,7 @@ class Conference extends React.Component {
                             socket={socket}
                             isChatBoxVisible={isChatBoxVisible}
                             noOfNewMessages={noOfNewMessages}
+                            t={t}
                             handleChangeAnnouncement={this.handleChangeAnnouncement.bind(this)}
                             toggleChatBox={this.toggleChatBox.bind(this)}
                             unload={this.unload.bind()}
@@ -2068,6 +2074,7 @@ class Conference extends React.Component {
                                                         studentId={roomData.teacher_id} //now its teacher
                                                         studentName={roomData.sources[0].name}
                                                         noOfNewPrivateMessages={noOfNewPrivateMessages}
+                                                        t={t}
                                                         clearNoOfNewPrivateMessages={this.clearNoOfNewPrivateMessages.bind(this)}
                                                     />
                                                 </div>
@@ -2082,6 +2089,7 @@ class Conference extends React.Component {
                                                             buttonFor="muteAll"
                                                             roomData={roomData}
                                                             isGlobalAudioMute={this.state.isGlobalAudioMute}
+                                                            t={t}
                                                             toggleGlobalSources={this.toggleGlobalSources.bind(this)}
                                                         />
                                                     }
@@ -2090,6 +2098,7 @@ class Conference extends React.Component {
                                                             buttonFor="workingMode"
                                                             isWorkingMode={isWorkingMode}
                                                             currentTeacherToggledView={currentTeacherToggledView}
+                                                            t={t}
                                                             switchToGlobalWorkingMode={this.switchToGlobalWorkingMode.bind(this)}/>
                                                     }
                                                 </div>
@@ -2106,6 +2115,7 @@ class Conference extends React.Component {
                                                     isVideoMuteByTeacher={isVideoMuteByTeacher}
                                                     isRecording={isRecording}
 
+                                                    t={t}
                                                     toggleLocalSource={this.toggleLocalSource.bind(this)}
                                                     handleScreenShareButton={this.handleScreenShareButton.bind(this)}
                                                     handleRecordVideo={this.handleRecordVideo.bind(this)}
@@ -2116,6 +2126,7 @@ class Conference extends React.Component {
                                                     {!clickedTeacherView &&  //if old screen mode variable is not null means currently small screen is big  
                                                         <ScreenModesButtons
                                                             currentScreenMode={currentScreenMode}
+                                                            t={t}
                                                             changeScreenMode={this.changeScreenMode.bind(this)}/>
                                                     }
                                                 </div>
@@ -2231,6 +2242,7 @@ class Conference extends React.Component {
                                                                             studentId={source.id}
                                                                             studentName={source.name}
                                                                             noOfNewPrivateMessages={source.noOfNewPrivateMessages}
+                                                                            t={t}
                                                                             clearNoOfNewPrivateMessages={this.clearNoOfNewPrivateMessages.bind(this)}
                                                                         />
                                                                         <div onClick={() => this.showInputNote(source)} className="student-action-right-icon-div d-flex flex-row justify-content-center"
@@ -2249,6 +2261,7 @@ class Conference extends React.Component {
                                                                             class_id={roomData.class_id}
                                                                             teacher_id={roomData.id}
                                                                             roomData={roomData}
+                                                                            t={t}
                                                                         />
                                                                         <div onClick={() => (source.id !== id) && this.toggleGlobalSources( source.id, "mute-student-video" )} className="student-action-right-icon-div d-flex flex-row justify-content-center"
                                                                             style={{
@@ -2302,6 +2315,7 @@ class Conference extends React.Component {
                                     roomId: roomData.roomId,
                                     type: roomData.type
                                 }}
+                                t={t}
                                 socket={socket}
                                 noOfNewMessages={noOfNewMessages}
                                 clearNoOfNewMessages={this.clearNoOfNewMessages.bind(this)}
@@ -2330,7 +2344,7 @@ const mapDispatchToProps = dispatch => {
     }
 }
 
-export default connect( null , mapDispatchToProps )(Conference);
+export default connect( null , mapDispatchToProps )(withTranslation()(Conference));
 
 // Hj8G9gVgEV9MRq
 

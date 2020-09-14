@@ -2,7 +2,9 @@ import React from 'react';
 import RoomAnnouncement from './RoomAnnouncement';
 
 const ClassRoomHeader = (props) => {
-    const { socket, roomData, isChatBoxVisible, noOfNewMessages } = props;
+    const { 
+        socket, roomData, isChatBoxVisible,
+        noOfNewMessages, t } = props;
     return(<div className="w-100" id="classroom-header">
         <div className="classroom-header-inner d-flex flex-row justify-content-between">
             <div className="d-flex flex-column justify-content-center">
@@ -13,7 +15,7 @@ const ClassRoomHeader = (props) => {
                                 <div className="d-flex justify-content-start w-30">
                                     <i className="fa fa-arrow-left btn-back-icon" aria-hidden="true" />
                                 </div>
-                                <div className="btn-chat-inner-text d-flex justify-content-end w-70">Go Back</div>
+                                <div className="btn-chat-inner-text d-flex justify-content-end w-70">{t('goBack')}</div>
                             </div>
                         </button>
                     </div>
@@ -29,6 +31,7 @@ const ClassRoomHeader = (props) => {
                     announcment={roomData.announcment}
                     type={roomData.type}
                     socket={socket}
+                    t={t}
                     handleChangeAnnouncement={(e) => props.handleChangeAnnouncement(e)}
                 />
             </div>
@@ -41,7 +44,7 @@ const ClassRoomHeader = (props) => {
                         background: `${isChatBoxVisible? "rgb(121, 119, 128)" : "#9772E8"}`
                     }}>
                     <div className="d-flex flex-row justify-content-center">
-                        <div className="btn-chat-inner-text d-flex justify-content-end w-70">Class Chat</div>
+                        <div className="btn-chat-inner-text d-flex justify-content-end w-70">{t('classChat')}</div>
                         <div className="chat-button-icon d-flex justify-content-start w-30">
                             <i className="fas fa-comment btn-chat-icon" />
                         </div>

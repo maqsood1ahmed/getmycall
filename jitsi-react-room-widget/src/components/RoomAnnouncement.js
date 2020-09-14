@@ -32,6 +32,7 @@ const RoomAnnouncement = (props) => {
     }
 
     const popOverJSXContent = () => {
+        const { t } = props;
         return (
             <div className="note-input-div">
                 <div className="note-input">
@@ -39,10 +40,10 @@ const RoomAnnouncement = (props) => {
                 </div>
                 <div className="input-note-buttons d-flex flex-row justify-content-between">
                     <div className="note-close-button">
-                        <button onClick={()=>toggleRoomAnnouncementPopover(false)} type="button" className="btn">Close</button>
+                        <button onClick={()=>toggleRoomAnnouncementPopover(false)} type="button" className="btn">{t('close')}</button>
                     </div>
                     <div className="note-save-button">
-                        <button disabled={!announcment ? true : false} onClick={()=>updateRoomAnnouncement()} type="button" className="btn"> Change </button>
+                        <button disabled={!announcment ? true : false} onClick={()=>updateRoomAnnouncement()} type="button" className="btn">{t('change')}</button>
                     </div>
                 </div>
             </div>

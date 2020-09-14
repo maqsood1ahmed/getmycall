@@ -25,12 +25,13 @@ class InputNote extends React.Component {
                 <span className="chat-box-close-icon d-flex flex-row justify-content-start" style={{ width: "35%" }}>
                     <i onClick={()=>this.props.hideInputNote()} className="fas fa-times"></i>
                 </span>
-                <span className='p-1 chat-box-close-icon d-flex flex-row justify-content-start chat-header-text' style={{ width: "65%" }}>Save Note <i className="fas fa-comment chat-box-icon"></i></span>
+                <span className='p-1 chat-box-close-icon d-flex flex-row justify-content-start chat-header-text' style={{ width: "65%" }}>{this.props.t('saveNote')}<i className="fas fa-comment chat-box-icon"></i></span>
             </div>
         )
     };
 
     noteJSXContent = () => {
+        const { t } = this.props;
         return (
             <div className="note-input-div">
                 <div className="note-input">
@@ -38,10 +39,10 @@ class InputNote extends React.Component {
                 </div>
                 <div className="input-note-buttons d-flex flex-row justify-content-between">
                     <div className="note-close-button">
-                        <button onClick={()=>this.props.hideInputNote()} type="button" class="btn">Close</button>
+                        <button onClick={()=>this.props.hideInputNote()} type="button" class="btn">{t('close')}</button>
                     </div>
                     <div className="note-save-button">
-                        <button disabled={!this.state.noteText ? true : false} onClick={this.saveNote.bind(this)} type="button" class="btn">Save</button>
+                        <button disabled={!this.state.noteText ? true : false} onClick={this.saveNote.bind(this)} type="button" class="btn">{t('save')}</button>
                     </div>
                 </div>
             </div>
@@ -49,7 +50,7 @@ class InputNote extends React.Component {
     };
 
     saveNote = async () => {
-        const { student_id, class_id, teacher_id } = this.props;
+        const { student_id, class_id, teacher_id, t } = this.props;
         
         try {
           let params = { 
@@ -69,7 +70,7 @@ class InputNote extends React.Component {
               message.error(response.data.message);
           }
         } catch (error) {
-            message.error('something went wrong when saving note.');
+            message.error(t('saveNoteErrorMsg'));
             console.error('something went wrong when saving note. => ', error);
         }
     }
