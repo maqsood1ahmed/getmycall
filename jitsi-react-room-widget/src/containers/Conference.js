@@ -89,7 +89,7 @@ class Conference extends React.Component {
         };
 
         //get page params and initialize socket
-        socket = socketIOClient(this.state.socketEndpoint, { secure: true, transports: ['xhr-polling'] });
+        socket = socketIOClient(this.state.socketEndpoint, { secure: true, transports: ['polling'] });
         this.addSocketEvents();
 
         let params = this.props.params;

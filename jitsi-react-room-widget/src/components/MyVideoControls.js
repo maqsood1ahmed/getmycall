@@ -1,6 +1,12 @@
 import React from 'react';
 import { Tooltip, Popconfirm } from 'antd';
 
+import micOnPNG from '../assets/img/mic-on.png';
+import micOffPNG from '../assets/img/mic-off.png';
+import videoOnPNG from '../assets/img/video-solid.png';
+import videoOffPNG from '../assets/img/video-slash-solid.png';
+
+
 const MyVideoControls = (props) => {
     const {
         id,
@@ -62,19 +68,29 @@ const MyVideoControls = (props) => {
                     cursor: "pointer",
                     marginLeft: type==="student"?"0":"8px"
                 }}>
-                <img
-                    className="mic-image-icon"
-                    src={((isGlobalAudioMute && type==="student" ) || isLocalAudioMute) ?
-                        "http://api.getmycall.com/static/media/mic-off.png" :
-                        "http://api.getmycall.com/static/media/mic-on.png"
-                    }
-                    style={{
-                        width: "30px",
-                        height:"30px",
-                        opacity: `${(isGlobalAudioMute && type === "student")? 0.5 : 1}`
-                    }}
-                    alt="mic" 
-                />
+                {((isGlobalAudioMute && type==="student" ) || isLocalAudioMute) ?
+                    <img
+                        className="mic-image-icon"
+                        src={micOffPNG}
+                        style={{
+                            width: "30px",
+                            height:"30px",
+                            opacity: `${(isGlobalAudioMute && type === "student")? 0.5 : 1}`
+                        }}
+                        alt="mic" 
+                    />:
+                    <img
+                        className="mic-image-icon"
+                        src={micOnPNG}
+                        style={{
+                            width: "30px",
+                            height:"30px",
+                            opacity: `${(isGlobalAudioMute && type === "student")? 0.5 : 1}`
+                        }}
+                        alt="mic" 
+                    />
+
+                }
             </div>}
             {<div
                 onClick={() => props.toggleLocalSource( id, isLocalVideoMute, 'video' )}
@@ -83,19 +99,28 @@ const MyVideoControls = (props) => {
                     marginLeft: "8px"
                 }}
                 className="toggle-video-icon-div">
-                <img
-                    className="video-image-icon"
-                    src={isLocalVideoMute ?
-                        "https://api.getmycall.com/static/media/video-slash-solid.png" :
-                        "https://api.getmycall.com/static/media/video-solid.png"
-                    }
-                    style={{
-                        width: "30px",
-                        height:"30px",
-                        opacity: `${(isVideoMuteByTeacher && type === "student")? 0.5 : 1}`
-                    }}
-                    alt="video"
-                />
+                {isLocalVideoMute ?
+                    <img
+                        className="video-image-icon"
+                        src={videoOffPNG}
+                        style={{
+                            width: "30px",
+                            height:"30px",
+                            opacity: `${(isVideoMuteByTeacher && type === "student")? 0.5 : 1}`
+                        }}
+                        alt="video"
+                    />:
+                    <img
+                        className="video-image-icon"
+                        src={videoOnPNG}
+                        style={{
+                            width: "30px",
+                            height:"30px",
+                            opacity: `${(isVideoMuteByTeacher && type === "student")? 0.5 : 1}`
+                        }}
+                        alt="video"
+                    />
+                }
             </div>}
 
                     {
