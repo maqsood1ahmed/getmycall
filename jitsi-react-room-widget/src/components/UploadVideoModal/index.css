@@ -1,0 +1,27 @@
+.upload-video-modal .modal-body {
+    display: flex;
+    flex-direction: column;
+}
+
+.upload-video-modal .ant-modal-body {
+    padding-bottom: 8px !important;
+}
+
+.video-basic-info {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 5px;
+}
+
+.recording-upload-status{
+    margin-top: 10px;
+}
+
+.recording-success-message{
+    color: #4F8A10;
+    background-color: #DFF2BF;
+}
+.recording-failed-message{
+    color: #D8000C;
+    background-color: #FFD2D2;
+}

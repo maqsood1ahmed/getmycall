@@ -1,5 +1,5 @@
 import React from 'react';
-import MyVideoControls from '../MyVideoControls';
+import MyVideoControls from '../../containers/MyVideoControls/MyVideoControls';
 import backArrowPNG from '../../assets/img/back-arrow.png';
 
 const StudentRoomControls = ({roomData, raiseHand, localSource, ...props}) => {

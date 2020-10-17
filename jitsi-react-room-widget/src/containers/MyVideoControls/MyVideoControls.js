@@ -1,10 +1,13 @@
 import React from 'react';
 import { Tooltip, Popconfirm } from 'antd';
 
+import RecordVideo from './RecordVideo';
+
 const MyVideoControls = (props) => {
     const {
         id,
         type,
+        roomId,
         remoteUserSwappedId,
         currentTeacherToggledView,
         isLocalVideoMute,
@@ -90,17 +93,11 @@ const MyVideoControls = (props) => {
             </div>}
 
             {type==="teacher" &&
-                <div className="controls-icon-div">
-                    <div
-                        onClick={() => props.handleRecordVideo()}
-                        style={{
-                            fontSize: "28px",
-                            color: isRecording?"red": "white",
-                        }}
-                        className="control-icon">
-                            <i className="fas fa-circle" />
-                    </div>
-                </div>
+                <RecordVideo
+                    t={t}
+                    roomId={roomId}
+                    isRecording={isRecording}
+                    setVideoRecordingStatus={props.setVideoRecordingStatus}/>
             }
         </div>
     </div>)

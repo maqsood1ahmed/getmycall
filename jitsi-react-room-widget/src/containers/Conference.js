@@ -10,13 +10,26 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import socketIOClient from 'socket.io-client';
 
-import { message, Select, notification, Tooltip } from 'antd';
+import { message, Select, notification, Tooltip, Typography, Progress } from 'antd';
 import './Conference.css';
 import { addMessages } from '../actions';
 
 import ChatBox from '../containers/ChatBox';
 import InputNote from '../containers/InputNote';
 import SendChatMessage from './SendChatMessage';
+
+import ScreenModesButtons from '../components/ScreenModes';
+import AppButtons from '../components/Buttons';
+import ErrorMessage from '../components/ErrorMessage';
+import PageLoader from '../components/PageLoader';
+import PortraitModeWarning from '../components/Mobile/PortraitModeWarning';
+import AppMobileView from '../components/Mobile';
+import MyVideoControls from './MyVideoControls/MyVideoControls';
+
+import { openFullscreen, closeFullscreen } from '../utils';
+import ClassRoomHeader from '../components/ClassRoomHeader';
+import StudentWorkingMode from '../components/StudentWorkinMode';
+
 
 import bellRing from '../assets/mesg_ting.mp3';
 
@@ -26,18 +39,6 @@ import {
     socketSeverEndpoint,
     jitsiInitOptions
 } from '../config';
-import ScreenModesButtons from '../components/ScreenModes';
-import AppButtons from '../components/Buttons';
-import ErrorMessage from '../components/ErrorMessage';
-import PageLoader from '../components/PageLoader';
-import PortraitModeWarning from '../components/Mobile/PortraitModeWarning';
-import AppMobileView from '../components/Mobile';
-import MyVideoControls from '../components/MyVideoControls';
-
-import { openFullscreen, closeFullscreen } from '../utils';
-import ClassRoomHeader from '../components/ClassRoomHeader';
-import StudentWorkingMode from '../components/StudentWorkinMode';
-
 const { Option } = Select;
 
 var studentHandRaiseTime = 60*60*1000; //60*1000=>1mint or 10*60*1000=10mint or 60*60*1000=60mint
@@ -1107,15 +1108,8 @@ class Conference extends React.Component {
         }
     }
 
-    handleRecordVideo = () => {
-        let { isRecording, roomData } = this.state;
-        if ( !isRecording ) {
-            // room.startRecording({ mode: "file" });
-            this.setState({ isRecording: true })
-        } else {
-            // room.stopRecording();
-            this.setState({ isRecording: false })
-        }
+    setVideoRecordingStatus = (isRecording) => {
+        this.setState({ isRecording })
     }
 
     updateHandRaised = ( remoteSource, isHandRaised ) => {
@@ -1957,7 +1951,6 @@ class Conference extends React.Component {
                     teacherViews={this.teacherViews.bind(this)}
                     toggleLocalSource={this.toggleLocalSource.bind(this)}
                     handleScreenShareButton={this.handleScreenShareButton.bind(this)}
-                    handleRecordVideo={this.handleRecordVideo.bind(this)}
                     raiseHand={this.raiseHand.bind(this)}
                     unload={this.unload.bind(this)}
                 />
@@ -1998,6 +1991,7 @@ class Conference extends React.Component {
                 <MyVideoControls
                         id={id}
                         type={type}
+                        roomId={roomId}
                         remoteUserSwappedId={remoteUserSwappedId}
                         currentTeacherToggledView={currentTeacherToggledView}
                         isLocalVideoMute={isLocalVideoMute}
@@ -2010,7 +2004,7 @@ class Conference extends React.Component {
                         t={t}
                         toggleLocalSource={this.toggleLocalSource.bind(this)}
                         handleScreenShareButton={this.handleScreenShareButton.bind(this)}
-                        handleRecordVideo={this.handleRecordVideo.bind(this)}
+                        setVideoRecordingStatus={this.setVideoRecordingStatus.bind(this)}
                         unload={this.unload.bind(this)}
                     />
                 </div>
@@ -2111,6 +2105,7 @@ class Conference extends React.Component {
                                                 <MyVideoControls
                                                     id={id}
                                                     type={type}
+                                                    roomId={roomId}
                                                     remoteUserSwappedId={remoteUserSwappedId}
                                                     currentTeacherToggledView={currentTeacherToggledView}
                                                     isLocalVideoMute={isLocalVideoMute}
@@ -2123,7 +2118,7 @@ class Conference extends React.Component {
                                                     t={t}
                                                     toggleLocalSource={this.toggleLocalSource.bind(this)}
                                                     handleScreenShareButton={this.handleScreenShareButton.bind(this)}
-                                                    handleRecordVideo={this.handleRecordVideo.bind(this)}
+                                                    setVideoRecordingStatus={this.setVideoRecordingStatus.bind(this)}
                                                     unload={this.unload.bind(this)}
                                                 />
                                                 
@@ -2334,7 +2329,6 @@ class Conference extends React.Component {
 
                     </div>
                     </div>
-
                     {/* place holder div to detect end of page */}
                     {/* <div id="end-of-page-div" /> */}
                 </div>

@@ -807,12 +807,22 @@ audio {
     height: 2rem;
 }
 
-
+.upload-progress-box {
+    position: absolute;
+    top: 55px;
+    right: 5px;
+    background-color: rgba(255,255,255, 0.9) !important;
+    width: 350px;
+    height: 108px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 10px 0px 0px 10px;
+}
 
 .Toastify__toast.Toastify__toast--info {
     border-radius: 0.7rem !important;
     background-color: #9670e3 !important;
-
 }
 
 .ant-tooltip-inner {

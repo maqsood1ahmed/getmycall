@@ -58,7 +58,16 @@ i18n.use(LanguageDetector).init({
             conferenceJoinedMsg: "conference joined",
             roomStopMsg: "Disconnected!",
             joinRoomErrorMsg: "Something went wrong when joining Room",
-            fetchUserDataMsg: "Something went wrong when fetching user data."
+            fetchUserDataMsg: "Something went wrong when fetching user data.",
+
+            startRecordingMessage: "Are you sure to start recording?",
+            stopRecordingMessage: "Are you sure to stop recording?",
+            startRecordingFailed: 'Unable To Start Recording.',
+            recordingStarted: 'recording started',
+            cancelUpload: 'Are you sure to cancel upload?',
+            recordingUploadSuccess:'Recording uploaded successfully.',
+            recordingUploadFailed: 'Unable to save recording to server!',
+            upload: "Upload"
       }
     },
     hebrew: {
