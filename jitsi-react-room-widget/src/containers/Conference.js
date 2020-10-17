@@ -90,7 +90,8 @@ class Conference extends React.Component {
 
         //get page params and initialize socket
         socket = socketIOClient(this.state.socketEndpoint, { secure: true, transports: ['polling'] });
-        this.addSocketEvents();
+        let that = this;
+        this.addSocketEvents(that);
 
         let params = this.props.params;
         if ( !params ) { //temporary for testing
@@ -302,7 +303,7 @@ class Conference extends React.Component {
         }
     }
 
-    addSocketEvents = () => {
+    addSocketEvents = (that) => {
         socket.on('event', (messageObj) => {
             console.log(messageObj, 'signal from socket server. => =>');
             let type = messageObj.type;
@@ -315,7 +316,6 @@ class Conference extends React.Component {
                     console.log('successfully joined socket room =>', data);
                     break;
                 case 'videos-swapped':
-                    let that=this;
                     // let { roomData } = this.state;
                     //mobile flipped disabled
                     //for mobile flip not allowed because we are not storing remote tracks
@@ -375,7 +375,8 @@ class Conference extends React.Component {
                     this.onNewMessage(data);
                     break;
                 case 'private-chat-response':
-                    message.error(that.props.t('sendMessageErrorMsg'));
+                    let sendMessageErrorMsg = that.props.t('sendMessageErrorMsg'); 
+                    message.error(sendMessageErrorMsg);
                     break;
                 case 'mute-all-students-audio':
                     if (this.state.roomData.type === "student"){this.toggleLocalAudioByTeacher(data.mute)}
@@ -398,12 +399,15 @@ class Conference extends React.Component {
                     console.error('socketio server message type undefined!')
                     break;
                 case 'teacher-joined-room':
-                    message.info(that.props.t('teacherJoinedMsg'));
+                    console.log('teacher joined room', that.props)
+                    let teacherJoinedMsg = that.props.t('teacherJoinedMsg');
+                    message.info(teacherJoinedMsg);
                     $('body').append($(`<embed src=${bellRing} autostart="false" width="0" height="0" id="sound1"
                         enablejavascript="true" />`));
                     break;
                 case 'teacherLeaveRoom':
-                    message.info(that.props.t('teacherLeaveMsg'));
+                    let teacherLeaveMsg = that.props.t('teacherLeaveMsg');
+                    message.info(teacherLeaveMsg);
                     // window.location.reload()
                     break;
                 case 'error':
