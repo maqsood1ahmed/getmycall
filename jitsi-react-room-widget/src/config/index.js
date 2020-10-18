@@ -1,5 +1,6 @@
 export const webRootUrl = "https://wfh.wnets.net/";
 export const socketSeverEndpoint = "https://api.getmycall.com";
+export const uploadRecordingEndpoint = "https://rec.getmycall.com/upload_recording.php?";
 export const jitsiServerParams = {
     //Our Own custom Jitsi server configs
     hosts: {

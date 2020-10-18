@@ -87,6 +87,7 @@ class Conference extends React.Component {
             isStudentsTrackUpdate: false,
             appMessage: "Stopped!",
             roomJoinError: "",
+            stopRecordingAndGoBack: false
         };
 
         //get page params and initialize socket
@@ -241,6 +242,13 @@ class Conference extends React.Component {
         //         }
         //     }
         // }, 5000);
+
+        // window.onbeforeunload = function() {
+        //     if (isRecording){
+        //         return "Please Stop recording!";
+        //     }
+        //     return undefined;
+        // }
     }
 
     removeDuplicateSource = ( sources ) => {
@@ -585,7 +593,7 @@ class Conference extends React.Component {
             window.JitsiMeetJS.mediaDevices.addEventListener(
                 JitsiMeetJS.events.mediaDevices.DEVICE_LIST_CHANGED,(devices) => {
                     console.log('devices list changed => ', devices);
-                    message.info("Devices List Changed.")
+                    message.info(this.props.t('deviceListChanged'))
                 });
             window.JitsiMeetJS.mediaDevices.isDevicePermissionGranted().then( isGranted=>{
                 if ( !isGranted ) {
@@ -962,25 +970,26 @@ class Conference extends React.Component {
             if ( shouldStopScreenOnly ) {
                 this.clearScreenShareResources(id);
             } else {
-                for (let i = 0; i < localTracks.length; i++) {
-                    localTracks[i].dispose();
-                }
-                this.clearScreenShareResources(id); //if screen share on then clear that as well
+                if (this.state.isRecording) {
+                    console.log('unloading recorder')
+                    this.setState({ stopRecordingAndGoBack: true })
+                } else if(!this.state.roomJoinError){
+                    console.log('unloading center')
+                    for (let i = 0; i < localTracks.length; i++) {
+                        localTracks[i].dispose();
+                    }
+                    this.clearScreenShareResources(id); //if screen share on then clear that as well
+    
+                    room && room.leave();
+                    connection && connection.disconnect();
+                    room = null;
+                    connection = null;
 
-                room.leave();
-                connection.disconnect();
-                room = null;
-                connection = null;
+                    message.warn(this.props.t('roomStopMsg'));
+                    socket.disconnect();
 
-                message.warn(this.props.t('roomStopMsg'));
-                socket.disconnect();
-                // if ( redirectToMainPage ) {
-                if(!this.state.roomJoinError){
                     window.location.href = webRootUrl;
                 }
-                // } else {
-                //     this.setState({ isLoggedIn: false, isStopped: true });
-                // }
             }
         }
     }
@@ -1109,6 +1118,7 @@ class Conference extends React.Component {
     }
 
     setVideoRecordingStatus = (isRecording) => {
+        console.log('setting isrecording', isRecording)
         this.setState({ isRecording })
     }
 
@@ -1911,13 +1921,13 @@ class Conference extends React.Component {
             noOfNewPrivateMessages, isWorkingMode,
             isLocalAudioMute, isLocalVideoMute, currentScreenMode,
             noOfStudentsShowing, appMessage, roomJoinError, clickedTeacherView,
-            isVideoMuteByTeacher 
+            isVideoMuteByTeacher, stopRecordingAndGoBack
         } = this.state;
         const {
             isMobileOrTablet,
             t
         } = this.props;
-        const { roomId, id, name, type } = roomData;
+        const { roomId, id, name, type, lesson_id, allow_record } = roomData;
 
         let isFlipEnabled = false;
         let isTeacherMuteStudentVideo = false;
@@ -1991,7 +2001,9 @@ class Conference extends React.Component {
                 <MyVideoControls
                         id={id}
                         type={type}
-                        roomId={roomId}
+                        lesson_id={lesson_id}
+                        allow_record={allow_record}
+                        stopRecordingAndGoBack={stopRecordingAndGoBack}
                         remoteUserSwappedId={remoteUserSwappedId}
                         currentTeacherToggledView={currentTeacherToggledView}
                         isLocalVideoMute={isLocalVideoMute}
@@ -2105,7 +2117,9 @@ class Conference extends React.Component {
                                                 <MyVideoControls
                                                     id={id}
                                                     type={type}
-                                                    roomId={roomId}
+                                                    lesson_id={lesson_id}
+                                                    allow_record={allow_record}
+                                                    stopRecordingAndGoBack={stopRecordingAndGoBack}
                                                     remoteUserSwappedId={remoteUserSwappedId}
                                                     currentTeacherToggledView={currentTeacherToggledView}
                                                     isLocalVideoMute={isLocalVideoMute}

@@ -7,7 +7,8 @@ const MyVideoControls = (props) => {
     const {
         id,
         type,
-        roomId,
+        lesson_id,
+        allow_record,
         remoteUserSwappedId,
         currentTeacherToggledView,
         isLocalVideoMute,
@@ -17,6 +18,7 @@ const MyVideoControls = (props) => {
         isVideoMuteByTeacher,
         isRecording,
         isMobileOrTablet,
+        stopRecordingAndGoBack,
         t
     } = props;
     return(<div id="main-video-actions-box-center" className={`${!isMobileOrTablet?"row":""}`}>
@@ -91,13 +93,16 @@ const MyVideoControls = (props) => {
                     }
                 </div>
             </div>}
-
-            {type==="teacher" &&
+            {(allow_record && allow_record.toString()==='1') ?
                 <RecordVideo
                     t={t}
-                    roomId={roomId}
+                    lesson_id={lesson_id}
                     isRecording={isRecording}
-                    setVideoRecordingStatus={props.setVideoRecordingStatus}/>
+                    isLocalAudioMute={isLocalAudioMute}
+                    stopRecordingAndGoBack={stopRecordingAndGoBack}
+                    setVideoRecordingStatus={props.setVideoRecordingStatus}
+                    unload={props.unload}
+                />: ''
             }
         </div>
     </div>)

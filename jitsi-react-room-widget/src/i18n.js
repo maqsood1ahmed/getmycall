@@ -67,7 +67,9 @@ i18n.use(LanguageDetector).init({
             cancelUpload: 'Are you sure to cancel upload?',
             recordingUploadSuccess:'Recording uploaded successfully.',
             recordingUploadFailed: 'Unable to save recording to server!',
-            upload: "Upload"
+            upload: "Upload",
+            videoName: 'Video Name',
+            deviceListChanged: "Devices List Changed."
       }
     },
     hebrew: {

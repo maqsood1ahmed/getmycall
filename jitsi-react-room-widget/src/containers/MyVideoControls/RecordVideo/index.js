@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 import { message, Popconfirm } from 'antd';
 import { getMimeTypes, mergeAudioStreams } from '../../../utils'
 
-import axios from 'axios';
 import UploadVideoModal from '../../../components/UploadVideoModal/index';
+import { uploadRecordingEndpoint, webRootUrl } from '../../../config';
 
 import './index.css';
 
@@ -15,13 +16,17 @@ let recordClient, stream,
             cursor: "always"
         },
         audio: captureDesktopAudio
-    };
+    },
+    voiceStream, desktopStream;
 
 const RecordVideo = (props) => {
     const {
-        roomId,
+        lesson_id,
         isRecording,
         setVideoRecordingStatus,
+        stopRecordingAndGoBack,
+        isLocalAudioMute,
+        unload,
         t
     } = props;
     const [blobData, setBlobData] = useState(null);
@@ -36,9 +41,20 @@ const RecordVideo = (props) => {
         setUploadVideoProgress(0);
     }
 
+    useEffect(()=>{
+        if (stopRecordingAndGoBack){
+            stopRecording()
+        }
+    }, [stopRecordingAndGoBack])
+
+    useEffect(()=>{
+        if (voiceStream){
+            voiceStream.getAudioTracks()[0].enabled = !isLocalAudioMute;
+        }
+    }, [isLocalAudioMute])
+
     const startRecording = async () => {
         setInitialStates();
-        let voiceStream, desktopStream;
         try{
             desktopStream = await navigator.mediaDevices.getDisplayMedia(gdmOptions);
             desktopStream.getVideoTracks()[0].onended = () => {
@@ -48,6 +64,7 @@ const RecordVideo = (props) => {
                 
             if (captureMic === true) {
                 voiceStream = await navigator.mediaDevices.getUserMedia({ video: false, audio: captureMic });
+                voiceStream.getAudioTracks()[0].enabled = !isLocalAudioMute;
             }
             
             const tracks = [
@@ -75,10 +92,9 @@ const RecordVideo = (props) => {
     const stopRecording = () => {
         recordClient && recordClient.stop();
         clearRecordingResources();
-        setVideoRecordingStatus(false)
-
-        let recordingName = roomId + '__' + (new Date().toISOString()) + '.webm';
+        let recordingName = lesson_id + '.webm';
         setRecordingName(recordingName);
+        setVideoRecordingStatus(false)
         setShowUploadVideoModal(true);
     };
 
@@ -100,9 +116,14 @@ const RecordVideo = (props) => {
           }
         }
         setUploadingStatus('uploading');
-        axios.post('http://localhost:8001/upload', formData, config)
+        const uploadVideoEndpoint = uploadRecordingEndpoint + 'lesson_id='+lesson_id;
+        axios.post(uploadVideoEndpoint, formData, config)
             .then(res=>{
                 setUploadingStatus('success');
+                setVideoRecordingStatus(false)
+                if (stopRecordingAndGoBack){
+                    unload();
+                }
             }).catch(err=>{
                 setUploadingStatus('failed');
                 console.error('Failed to upload file ---> ', err);
@@ -136,13 +157,16 @@ const RecordVideo = (props) => {
                         />
                 </div>
             </Popconfirm>
-            <UploadVideoModal 
+            <UploadVideoModal
                 show={showUploadVideoModal}
                 recordingName={recordingName}
                 uploadVideoProgress={uploadVideoProgress}
+                stopRecordingAndGoBack={stopRecordingAndGoBack}
                 uploadingStatus={uploadingStatus}
                 handleUploadVideo={handleUploadVideo}
                 setShowUploadVideoModal={setShowUploadVideoModal}
+                setVideoRecordingStatus={setVideoRecordingStatus}
+                unload={unload}
                 t={t}
             />
         </div>

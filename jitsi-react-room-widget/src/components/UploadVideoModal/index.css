@@ -1,3 +1,9 @@
+.upload-video-modal .ant-modal-close-x {
+    display: flex !important;
+    flex-direction: column;
+    justify-content: center;
+}
+
 .upload-video-modal .modal-body {
     display: flex;
     flex-direction: column;
@@ -9,8 +15,17 @@
 
 .video-basic-info {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     margin-bottom: 5px;
+}
+.video-info-header{
+    font-size: 18px;
+    font-weight: 600;
+}
+.video-name-text{
+    font-size: 17px;
+    font-weight: 500;
+    margin-left: 5px;
 }
 
 .recording-upload-status{

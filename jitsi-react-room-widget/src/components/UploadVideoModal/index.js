@@ -7,6 +7,7 @@ const UploadVideoModal = (props) => {
     const {
         show,
         recordingName,
+        stopRecordingAndGoBack,
         uploadVideoProgress,
         handleUploadVideo,
         setShowUploadVideoModal,
@@ -19,9 +20,15 @@ const UploadVideoModal = (props) => {
         if (uploadingStatus === 'inactive' || uploadingStatus === 'uploading'){
             if (window.confirm(t('cancelUpload'))){
                 setShowUploadVideoModal(false);
+                if (stopRecordingAndGoBack){
+                    props.unload();
+                }
             }
         } else if (uploadingStatus === 'success' || uploadingStatus === 'failed') {
             setShowUploadVideoModal(false);
+            if (stopRecordingAndGoBack){
+                props.unload();
+            }
         }
     }
     return(
@@ -36,12 +43,10 @@ const UploadVideoModal = (props) => {
         >
             <div className='modal-body'>
                 <div className='video-basic-info'>
-                    <h6>
-                        Video Name: 
-                    </h6>
-                    <p>
-                        {' '}{recordingName}
-                    </p>
+                        <p className="video-info-header">{t('videoName')}{':'}</p> 
+                        <p className="video-name-text">
+                            {recordingName}
+                        </p> 
                 </div>
                 <Progress percent={parseInt(uploadVideoProgress)} />
                 <div className="recording-upload-status">
