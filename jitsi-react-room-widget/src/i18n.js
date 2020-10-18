@@ -60,7 +60,7 @@ i18n.use(LanguageDetector).init({
             joinRoomErrorMsg: "Something went wrong when joining Room",
             fetchUserDataMsg: "Something went wrong when fetching user data.",
 
-            startRecordingMessage: "Are you sure to start recording?",
+            startRecordingMessage: "You can share this tab or entire screen. be sure you press Share Audio as well",
             stopRecordingMessage: "Are you sure to stop recording?",
             startRecordingFailed: 'Unable To Start Recording.',
             recordingStarted: 'recording started',
@@ -70,7 +70,7 @@ i18n.use(LanguageDetector).init({
             upload: "Upload",
             videoName: 'Video Name',
             deviceListChanged: "Devices List Changed.",
-            retryUpload: 'Retry Upload'
+            retryUpload: 'Retry Upload',
       }
     },
     hebrew: {
@@ -129,7 +129,7 @@ i18n.use(LanguageDetector).init({
         joinRoomErrorMsg: "משהו השתבש בעת הצטרפות לחדר",
         fetchUserDataMsg: "משהו השתבש בעת אחזור נתוני משתמשים.",
         
-        startRecordingMessage: "האם להתחיל הקלטה?",
+        startRecordingMessage: "ביכולתך להקליט את כל המסך או את הטאב הזה. נא לא לשכוח לסמן שתף אודיו Share Audio",
         stopRecordingMessage: "האם לסיים הקלטה?",
         startRecordingFailed: 'לא ניתן להתחיל הקלטה.',
         recordingStarted: 'ההקלטה התחילה',
