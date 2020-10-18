@@ -87,7 +87,8 @@ class Conference extends React.Component {
             isStudentsTrackUpdate: false,
             appMessage: "Stopped!",
             roomJoinError: "",
-            stopRecordingAndGoBack: false
+            stopRecordingAndGoBack: false,
+            uploadingStatus: 'inactive'
         };
 
         //get page params and initialize socket
@@ -104,7 +105,10 @@ class Conference extends React.Component {
         this.smallVideosContainerRef = React.createRef();
     }
     async componentDidMount () {
-        let {
+        const {
+            isRecording
+        } = this.state;
+        const {
             isMobileOrTablet
         } = this.props;
         let roomData = {};
@@ -204,9 +208,11 @@ class Conference extends React.Component {
                 
             }
 
-            let $ = window.jQuery;
-            $(window).bind('beforeunload', this.unload.bind(this));
-            $(window).bind('unload', this.unload.bind(this));
+            // let $ = window.jQuery;
+            // $(window).bind('beforeunload', this.unload.bind(this));
+            // $(window).bind('unload', this.unload.bind(this));
+
+            window.addEventListener('beforeunload', ()=>this.handleUnloadPage());
     
             if (isMobileOrTablet){
                 if('orientation' in screen){            
@@ -242,13 +248,6 @@ class Conference extends React.Component {
         //         }
         //     }
         // }, 5000);
-
-        // window.onbeforeunload = function() {
-        //     if (isRecording){
-        //         return "Please Stop recording!";
-        //     }
-        //     return undefined;
-        // }
     }
 
     removeDuplicateSource = ( sources ) => {
@@ -586,9 +585,9 @@ class Conference extends React.Component {
                 isConnected = false;
                 message.error(this.props.t('connectionFailedMsg'));
             });
-            connection.addEventListener(window.JitsiMeetJS.events.connection.CONNECTION_DISCONNECTED,() => {
-                this.disconnect();
-            });
+            // connection.addEventListener(window.JitsiMeetJS.events.connection.CONNECTION_DISCONNECTED,() => {
+            //     this.disconnect();
+            // });
 
             window.JitsiMeetJS.mediaDevices.addEventListener(
                 JitsiMeetJS.events.mediaDevices.DEVICE_LIST_CHANGED,(devices) => {
@@ -1008,10 +1007,29 @@ class Conference extends React.Component {
         }
     }
 
+    handleUnloadPage(e) {
+        const {
+            isRecording,
+            uploadingStatus
+        } = this.state;
+        var message = "";
+        if (isRecording){
+            message="Please stop recording!";
+            (e || window.event).returnValue = message; //Gecko + IE
+            return message;
+        } else if (uploadingStatus === 'active' || uploadingStatus === 'uploading'){
+            message="Are you sure to Close!";
+            (e || window.event).returnValue = message; //Gecko + IE
+            return message;
+        }
+        return undefined;
+    }
+
     componentWillUnmount () {
         if ( connection && room ) {
             this.unload();
         }
+        window.removeEventListener('beforeunload', ()=> this.handleUnloadPage);
     }
 
     handleDataValidation = ( roomData ) => {
@@ -1120,6 +1138,9 @@ class Conference extends React.Component {
     setVideoRecordingStatus = (isRecording) => {
         console.log('setting isrecording', isRecording)
         this.setState({ isRecording })
+    }
+    setUploadingStatus = (uploadingStatus) => {
+        this.setState({ uploadingStatus });
     }
 
     updateHandRaised = ( remoteSource, isHandRaised ) => {
@@ -1921,7 +1942,7 @@ class Conference extends React.Component {
             noOfNewPrivateMessages, isWorkingMode,
             isLocalAudioMute, isLocalVideoMute, currentScreenMode,
             noOfStudentsShowing, appMessage, roomJoinError, clickedTeacherView,
-            isVideoMuteByTeacher, stopRecordingAndGoBack
+            isVideoMuteByTeacher, stopRecordingAndGoBack, uploadingStatus
         } = this.state;
         const {
             isMobileOrTablet,
@@ -2012,11 +2033,13 @@ class Conference extends React.Component {
                         isScreenSharing={isScreenSharing}
                         isVideoMuteByTeacher={isVideoMuteByTeacher}
                         isRecording={isRecording}
+                        uploadingStatus={uploadingStatus}
 
                         t={t}
                         toggleLocalSource={this.toggleLocalSource.bind(this)}
                         handleScreenShareButton={this.handleScreenShareButton.bind(this)}
                         setVideoRecordingStatus={this.setVideoRecordingStatus.bind(this)}
+                        setUploadingStatus={this.setUploadingStatus.bind(this)}
                         unload={this.unload.bind(this)}
                     />
                 </div>
@@ -2128,11 +2151,13 @@ class Conference extends React.Component {
                                                     isScreenSharing={isScreenSharing}
                                                     isVideoMuteByTeacher={isVideoMuteByTeacher}
                                                     isRecording={isRecording}
+                                                    uploadingStatus={uploadingStatus}
 
                                                     t={t}
                                                     toggleLocalSource={this.toggleLocalSource.bind(this)}
                                                     handleScreenShareButton={this.handleScreenShareButton.bind(this)}
                                                     setVideoRecordingStatus={this.setVideoRecordingStatus.bind(this)}
+                                                    setUploadingStatus={this.setUploadingStatus.bind(this)}
                                                     unload={this.unload.bind(this)}
                                                 />
                                                 

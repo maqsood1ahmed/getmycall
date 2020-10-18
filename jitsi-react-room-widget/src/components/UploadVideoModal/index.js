@@ -17,7 +17,7 @@ const UploadVideoModal = (props) => {
 
     const handleCancelUpload = () => {
         console.log(uploadingStatus, 'uploading status')
-        if (uploadingStatus === 'inactive' || uploadingStatus === 'uploading'){
+        if (uploadingStatus === 'active' || uploadingStatus === 'uploading'){
             if (window.confirm(t('cancelUpload'))){
                 setShowUploadVideoModal(false);
                 if (stopRecordingAndGoBack){
@@ -35,7 +35,7 @@ const UploadVideoModal = (props) => {
         <Modal
           title="Upload Conference Recording"
           visible={show}
-          okText={t('upload')}
+          okText={uploadingStatus==='failed'? t('retryUpload') : t('upload')}
           cancelText={t('cancelText')}
           onOk={handleUploadVideo}
           onCancel={handleCancelUpload}

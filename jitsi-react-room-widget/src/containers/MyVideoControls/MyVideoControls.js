@@ -19,6 +19,8 @@ const MyVideoControls = (props) => {
         isRecording,
         isMobileOrTablet,
         stopRecordingAndGoBack,
+        uploadingStatus,
+        setUploadingStatus,
         t
     } = props;
     return(<div id="main-video-actions-box-center" className={`${!isMobileOrTablet?"row":""}`}>
@@ -100,8 +102,10 @@ const MyVideoControls = (props) => {
                     isRecording={isRecording}
                     isLocalAudioMute={isLocalAudioMute}
                     stopRecordingAndGoBack={stopRecordingAndGoBack}
+                    uploadingStatus={uploadingStatus}
                     setVideoRecordingStatus={props.setVideoRecordingStatus}
                     unload={props.unload}
+                    setUploadingStatus={setUploadingStatus}
                 />: ''
             }
         </div>

@@ -69,7 +69,8 @@ i18n.use(LanguageDetector).init({
             recordingUploadFailed: 'Unable to save recording to server!',
             upload: "Upload",
             videoName: 'Video Name',
-            deviceListChanged: "Devices List Changed."
+            deviceListChanged: "Devices List Changed.",
+            retryUpload: 'Retry Upload'
       }
     },
     hebrew: {
@@ -126,7 +127,19 @@ i18n.use(LanguageDetector).init({
         conferenceJoinedMsg: "הוועידה הצטרפה",
         roomStopMsg: "מנותק!",
         joinRoomErrorMsg: "משהו השתבש בעת הצטרפות לחדר",
-        fetchUserDataMsg: "משהו השתבש בעת אחזור נתוני משתמשים."
+        fetchUserDataMsg: "משהו השתבש בעת אחזור נתוני משתמשים.",
+        
+        startRecordingMessage: "האם להתחיל הקלטה?",
+        stopRecordingMessage: "האם לסיים הקלטה?",
+        startRecordingFailed: 'לא ניתן להתחיל הקלטה.',
+        recordingStarted: 'ההקלטה התחילה',
+        cancelUpload: 'האם אתה בטוח שברצונך לבטל את העלאת ההקלטה לשרת??',
+        recordingUploadSuccess:'ההקלטה הועלתה לשרת בהצלחה.',
+        recordingUploadFailed: 'העלאה לשרת נכשלה!',
+        upload: "העלה לשרת",
+        videoName: 'שם הוידאו',
+        deviceListChanged: "רשימת המכשירים השתנתה.",
+        retryUpload:"נסה להעלות שוב"
       }
     },
   },

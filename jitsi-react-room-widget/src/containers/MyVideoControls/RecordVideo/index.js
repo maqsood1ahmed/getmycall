@@ -26,13 +26,14 @@ const RecordVideo = (props) => {
         setVideoRecordingStatus,
         stopRecordingAndGoBack,
         isLocalAudioMute,
+        uploadingStatus,
+        setUploadingStatus,
         unload,
         t
     } = props;
     const [blobData, setBlobData] = useState(null);
     const [showUploadVideoModal, setShowUploadVideoModal] = useState(false);
     const [uploadVideoProgress, setUploadVideoProgress] = useState(0);
-    const [uploadingStatus, setUploadingStatus] = useState('inactive');
     const [recordingName, setRecordingName] = useState('');
 
     const setInitialStates = () => {
@@ -94,13 +95,14 @@ const RecordVideo = (props) => {
         clearRecordingResources();
         let recordingName = lesson_id + '.webm';
         setRecordingName(recordingName);
-        setVideoRecordingStatus(false)
+        setVideoRecordingStatus(false);
+        setUploadingStatus('active');
         setShowUploadVideoModal(true);
     };
 
     const handleUploadVideo = () => {
         if (uploadingStatus === 'success') {
-            message.warning();
+            message.warning('');
             return;
         }
         let formData = new FormData();
