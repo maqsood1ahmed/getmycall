@@ -71,6 +71,7 @@ i18n.use(LanguageDetector).init({
             videoName: 'Video Name',
             deviceListChanged: "Devices List Changed.",
             retryUpload: 'Retry Upload',
+            saveToMyComputer: 'Save to my computer'
       }
     },
     hebrew: {
@@ -139,7 +140,8 @@ i18n.use(LanguageDetector).init({
         upload: "העלה לשרת",
         videoName: 'שם הוידאו',
         deviceListChanged: "רשימת המכשירים השתנתה.",
-        retryUpload:"נסה להעלות שוב"
+        retryUpload:"נסה להעלות שוב",
+        saveToMyComputer: "שמור גם למחשב שלי"
       }
     },
   },

@@ -4,7 +4,7 @@ import { message, Popconfirm } from 'antd';
 import { getMimeTypes, mergeAudioStreams } from '../../../utils'
 
 import UploadVideoModal from '../../../components/UploadVideoModal/index';
-import { uploadRecordingEndpoint, webRootUrl } from '../../../config';
+import { uploadRecordingEndpoint } from '../../../config';
 
 import './index.css';
 
@@ -100,6 +100,15 @@ const RecordVideo = (props) => {
         setShowUploadVideoModal(true);
     };
 
+    const downloadRecordedVideo = () => {
+        const downloadVideoLink = document.getElementById('download-video-link'),
+            blob = new Blob([blobData], {type: 'video/webm'}),
+            url = window.URL.createObjectURL(blob);
+        downloadVideoLink.href = url;
+        downloadVideoLink.download = recordingName;
+        downloadVideoLink.click();
+    }
+
     const handleUploadVideo = () => {
         if (uploadingStatus === 'success') {
             message.warning('');
@@ -165,6 +174,7 @@ const RecordVideo = (props) => {
                 uploadVideoProgress={uploadVideoProgress}
                 stopRecordingAndGoBack={stopRecordingAndGoBack}
                 uploadingStatus={uploadingStatus}
+                downloadRecordedVideo={downloadRecordedVideo}
                 handleUploadVideo={handleUploadVideo}
                 setShowUploadVideoModal={setShowUploadVideoModal}
                 setVideoRecordingStatus={setVideoRecordingStatus}

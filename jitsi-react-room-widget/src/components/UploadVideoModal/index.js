@@ -12,6 +12,7 @@ const UploadVideoModal = (props) => {
         handleUploadVideo,
         setShowUploadVideoModal,
         uploadingStatus,
+        downloadRecordedVideo,
         t
     } = props;
 
@@ -47,6 +48,15 @@ const UploadVideoModal = (props) => {
                         <p className="video-name-text">
                             {recordingName}
                         </p> 
+                </div>
+                <div className="download-button-container">
+                    <button onClick={()=>downloadRecordedVideo()} type="button" width= "11rem" height="2rem" id="download-video-button" className="btn btn-primary main-button">
+                        <div className="d-flex flex-row justify-content-center">
+                            <div className="btn-chat-inner-text d-flex justify-content-end w-70">{t('saveToMyComputer')}</div>
+                        </div>
+                    </button>
+                    {/* eslint-disable-next-line */}
+                    <a href="#" id="download-video-link" style={{display: 'none'}}>download</a>
                 </div>
                 <Progress percent={parseInt(uploadVideoProgress)} />
                 <div className="recording-upload-status">
