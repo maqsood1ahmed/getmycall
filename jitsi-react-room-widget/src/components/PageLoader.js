@@ -1,5 +1,5 @@
 import React from 'react';
-// import loadingIcon from '../assets/img/loading-icon.gif';
+import loadingIcon from '../assets/img/loading-icon.gif';  //just using it make part of build folder assets
 const PageLoader = (props) => {
     const {
         isMobileOrTablet
