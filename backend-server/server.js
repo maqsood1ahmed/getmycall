@@ -15,12 +15,12 @@ var io = require('socket.io').listen(server);
 
 var ioClassRoom = io.of('/class-rooms');
 
-app.get('/', function(req, res) {
-    res.sendFile(__dirname + '/public/index.html');
-});
-app.get('/teacher-dashboard', function(req, res) {
-    res.sendFile(__dirname + '/public/teacher-dashboard.html');
-});
+// app.get('/', function(req, res) {
+//     res.sendFile(__dirname + '/public/index.html');
+// });
+// app.get('/teacher-dashboard', function(req, res) {
+//     res.sendFile(__dirname + '/public/teacher-dashboard.html');
+// });
 app.use(express.static(path.join(__dirname, 'public')));
 
 var rooms = {};
