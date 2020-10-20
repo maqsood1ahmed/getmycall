@@ -97,17 +97,14 @@ class Conference extends React.Component {
         this.addSocketEvents(that);
 
         let params = this.props.params;
-        if ( !params ) { //temporary for testing
-            params= queryString.parse(window.location.search.substring(1));
-        }
+        // if ( !params ) { //temporary for testing
+        //     params= queryString.parse(window.location.search.substring(1));
+        // }
         this.state.params = params;
         
         this.smallVideosContainerRef = React.createRef();
     }
     async componentDidMount () {
-        const {
-            isRecording
-        } = this.state;
         const {
             isMobileOrTablet
         } = this.props;
@@ -154,7 +151,6 @@ class Conference extends React.Component {
                         teacher_id: params.teacher_id
                     }
 
-                    // //***change teacher id later in both if and else block currenlty using manually
                     // //*** its related to sources */
                     let id = roomData.id; //in case of student add without change
                     // if ( roomData.type === "teacher" ) {
@@ -208,10 +204,6 @@ class Conference extends React.Component {
                 
             }
 
-            // let $ = window.jQuery;
-            // $(window).bind('beforeunload', this.unload.bind(this));
-            // $(window).bind('unload', this.unload.bind(this));
-
             window.addEventListener('beforeunload', ()=>this.handleUnloadPage());
     
             if (isMobileOrTablet){
@@ -236,18 +228,7 @@ class Conference extends React.Component {
             } else {
                 this.setState({ isLoggedIn: false, roomJoinError: "Failed to join class room."  });
             }
-        } 
-
-        // on page load check if landscape so go to fullscreen mode
-        // setTimeout(()=>{
-        //     // In Mobile if student is already in landscape mode
-        //     if(this.props.isMobileOrTablet && screen['orientation'].type && screen['orientation'].type.startsWith('landscape')) {
-        //         let mobileModeAppContainer = document.querySelector('#mobile-mode-container');
-        //         if ( mobileModeAppContainer && isJoined ) {
-        //             openFullscreen(mobileModeAppContainer);
-        //         }
-        //     }
-        // }, 5000);
+        }
     }
 
     removeDuplicateSource = ( sources ) => {

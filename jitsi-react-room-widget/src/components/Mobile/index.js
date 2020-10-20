@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 import { withTranslation } from 'react-i18next';
 
@@ -19,6 +19,9 @@ const AppMobileView = (props) => {
     const [showSmallStudentVideo, showOrHideSmallStudentVideoBox] = useState(true);
     const [showSmallStudentBoard, showOrHideSmallStudentBoardBox] = useState(true);
     const [showSmallStudentScreen, showOrHideSmallStudentScreenBox] = useState(true);
+    
+    const [showStudentControls, setShowStudentControls] = useState(true);
+    const [controlsIntervalId, setControlsIntervalId] = useState(null);
 
     const [currentScreen, changeCurrentScreen] = useState(currentTeacherToggledView);
 
@@ -32,16 +35,57 @@ const AppMobileView = (props) => {
         changeCurrentScreen(currentTeacherToggledView)
     }, [currentTeacherToggledView]);
 
+    useEffect(() => {
+        setTimeout(()=>setShowStudentControls(false), 5000);
+    }, []);
+
+    const mounted = useRef();
+    useEffect(() => {
+        if (!mounted.current) {
+            mounted.current = true;
+        } else {
+            let $ = window.jQuery;
+            if (currentScreen === 'board'){
+                let boardElement = document.getElementById('borad-div-when-center');
+                if (boardElement){
+                    var h = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+                    $("#borad-div-when-center").height(h);
+                }
+            }else{
+                let boardElement = document.getElementById('borad-div-when-center');
+                if (boardElement){
+                    $("#borad-div-when-center").height(130);
+                }
+            }
+        }
+    });
+
+    const hideVideoControlsInterval = (show) => {
+        setShowStudentControls(show);
+        if (show===true){
+            if (controlsIntervalId){
+                clearInterval(controlsIntervalId);
+                const controlsShowInterval = setTimeout(()=>setShowStudentControls(false), 5000);
+                setControlsIntervalId(controlsShowInterval);
+            } else {
+                const controlsShowInterval = setTimeout(()=>setShowStudentControls(false), 5000);
+                setControlsIntervalId(controlsShowInterval);
+            }
+        }
+    }
+
     if (isWorkingMode) {
         return(<div id="mobile-mode-container">
             <StudentWorkingMode 
                 teacherViews={(value)=>props.teacherViews(value)} 
                 isMobileOrTablet={true}>
-                <StudentRoomControls
-                    {...props}
-                    localSource={localSource}
-                    isMobileOrTablet={true}
-                />
+                {showStudentControls &&
+                    <StudentRoomControls
+                        {...props}
+                        localSource={localSource}
+                        isMobileOrTablet={true}
+                    />
+                }
             </StudentWorkingMode>
         </div>);
     } else {
@@ -51,7 +95,7 @@ const AppMobileView = (props) => {
                 style ={{
                     position: currentScreen==="video"?"static":"absolute",
                     width: currentScreen==="video"? "100vw":"25vw",
-                    height: currentScreen==="video"?"100vh":"35vh",
+                    height: currentScreen==="video"?"100vh":"130px",
                     top: currentScreen==="board"?"4%":(currentScreen==="screen"?"45vh":"0"),
                     left: (currentScreen==="board"||currentScreen==="screen")?"4%":"0",
                     zIndex: currentScreen==="video"?"0":"1"
@@ -65,6 +109,7 @@ const AppMobileView = (props) => {
                         borderRadius: currentScreen!=="video"?"10px":"",
                         position: currentScreen!=="video"?"relative":""
                     }}
+                    onClick={()=>hideVideoControlsInterval(!showStudentControls)}
                     id="teacher-video-tag" autoPlay />
                 <audio autoPlay width="0%" height="0%" id="teacher-audio-tag"></audio>
                 {currentScreen!=="video" &&
@@ -84,11 +129,12 @@ const AppMobileView = (props) => {
                 style={{
                     position: currentScreen==="board"?"":"absolute",
                     width: currentScreen==="board"? "100vw":"25vw",
-                    height: currentScreen==="board"?"100vh":"35vh",
+                    // height: currentScreen==="board"?"100vh":"130px",
                     top: currentScreen!=="board"?"4%":"0",
                     left: currentScreen!=="board"?"4%":"0",
                     zIndex: currentScreen==="board"?"0":"1"
-                }}>
+                }}
+                id="borad-div-when-center">
                 <div
                     style={{
                         opacity: showSmallStudentBoard?1:0,
@@ -139,11 +185,13 @@ const AppMobileView = (props) => {
                     opacity: isScreenSharing?1:0,
                     position: currentScreen==="screen"?"":"absolute",
                     width: currentScreen==="screen"? "100vw":"25vw",
-                    height: currentScreen==="screen"?"100vh":"35vh",
+                    height: currentScreen==="screen"?"100vh":"130px",
                     top: currentScreen!=="screen"?"45vh":"0",
                     left: currentScreen!=="screen"?"4%":"0",
                     zIndex: currentScreen==="board"?"0":"1"
-                }}>
+                }}
+                onClick={()=>hideVideoControlsInterval(!showStudentControls)}
+                >
                 <div
                     style={{
                         opacity: showSmallStudentScreen?1:0,
@@ -195,6 +243,7 @@ const AppMobileView = (props) => {
             <div 
                 className="mobile-small-video-box"
                 id={`video-box-${localSource.position}`}
+                onClick={()=>hideVideoControlsInterval(!showStudentControls)}
             >
                 {
                     allParticipants[sourceUserId] &&
@@ -230,14 +279,16 @@ const AppMobileView = (props) => {
             </div>
             
             {/* 5=>student room controls */}
-            <StudentRoomControls
-                {...props}
-                localSource={localSource}
-                isMobileOrTablet={true}
-                currentScreen={currentScreen}
-                currentTeacherToggledView={currentTeacherToggledView}
-                changeCurrentScreen={changeCurrentScreen}
-            />
+            {showStudentControls &&
+                <StudentRoomControls
+                    {...props}
+                    localSource={localSource}
+                    isMobileOrTablet={true}
+                    currentScreen={currentScreen}
+                    currentTeacherToggledView={currentTeacherToggledView}
+                    changeCurrentScreen={changeCurrentScreen}
+                />
+            }
         </div>);
     }
 }

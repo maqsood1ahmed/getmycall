@@ -896,7 +896,8 @@ audio {
         bottom: 0;
         background-color: #4b3684;
         opacity: .8;
-        height: 16%;
+        /* height: 16%; */
+        height: 3.5rem;
         font-size: 25px;
         color: white;
     }
@@ -934,7 +935,7 @@ audio {
     .teacher-video-div-working-mode-mobile  {
         position: absolute;
         width: 25vw;
-        height: 35vh;
+        height: 130px;
         top: 4%;
         right: 4%;
     }
@@ -942,13 +943,13 @@ audio {
     .mobile-small-video-box {
         position: absolute;
         width: 25vw;
-        height: 35vh;
+        height: 130px;
         top: 4%;
         right: 4%;
     }
     .student-video-tag{
         width: 25vw;
-        height: 35vh;
+        height: 130px;
         position: fixed;
         object-fit: fill;
         border-radius: 10px;
