@@ -934,7 +934,7 @@ audio {
     } */
     .teacher-video-div-working-mode-mobile  {
         position: absolute;
-        width: 25vw;
+        width: 180px;
         height: 130px;
         top: 4%;
         right: 4%;
@@ -942,13 +942,13 @@ audio {
 
     .mobile-small-video-box {
         position: absolute;
-        width: 25vw;
+        width: 180px;
         height: 130px;
         top: 4%;
         right: 4%;
     }
     .student-video-tag{
-        width: 25vw;
+        width: 180px;
         height: 130px;
         position: fixed;
         object-fit: fill;

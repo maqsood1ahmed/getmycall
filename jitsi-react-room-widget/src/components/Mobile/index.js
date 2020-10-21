@@ -54,6 +54,7 @@ const AppMobileView = (props) => {
             }else{
                 let boardElement = document.getElementById('borad-div-when-center');
                 if (boardElement){
+                    $("#borad-div-when-center").width(180);
                     $("#borad-div-when-center").height(130);
                 }
             }
@@ -94,7 +95,7 @@ const AppMobileView = (props) => {
             <div
                 style ={{
                     position: currentScreen==="video"?"static":"absolute",
-                    width: currentScreen==="video"? "100vw":"25vw",
+                    width: currentScreen==="video"? "100vw":"180px",
                     height: currentScreen==="video"?"100vh":"130px",
                     top: currentScreen==="board"?"4%":(currentScreen==="screen"?"45vh":"0"),
                     left: (currentScreen==="board"||currentScreen==="screen")?"4%":"0",
@@ -128,7 +129,7 @@ const AppMobileView = (props) => {
             <div
                 style={{
                     position: currentScreen==="board"?"":"absolute",
-                    width: currentScreen==="board"? "100vw":"25vw",
+                    width: currentScreen==="board"? "100vw":"180px",
                     // height: currentScreen==="board"?"100vh":"130px",
                     top: currentScreen!=="board"?"4%":"0",
                     left: currentScreen!=="board"?"4%":"0",
@@ -184,7 +185,7 @@ const AppMobileView = (props) => {
                 style={{
                     opacity: isScreenSharing?1:0,
                     position: currentScreen==="screen"?"":"absolute",
-                    width: currentScreen==="screen"? "100vw":"25vw",
+                    width: currentScreen==="screen"? "100vw":"180px",
                     height: currentScreen==="screen"?"100vh":"130px",
                     top: currentScreen!=="screen"?"45vh":"0",
                     left: currentScreen!=="screen"?"4%":"0",

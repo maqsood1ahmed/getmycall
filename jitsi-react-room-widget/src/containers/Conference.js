@@ -689,22 +689,20 @@ class Conference extends React.Component {
     getLocalTracks () {
         let options = {
             devices: ['audio', 'video'],
-            minFps: "15",
-            resolution: 720,
+            minFps: "5",
             constraints: {
                 video: {
                     aspectRatio: 16 / 9,
                     height: {
-                        ideal: 720,
-                        max: 720,
-                        min: 720
+                        ideal: 1080,
+                        max: 1080,
+                        min: 240
                     },
                     width: {
-                        ideal: 1280,
-                        max: 1280,
-                        min: 1280
+                        ideal: 1920,
+                        max: 1920,
+                        min: 426
                     }
-
                 }
             }
         }
